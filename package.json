@@ -1,0 +1,8 @@
+{
+  "name": "musicbrainz-bookmarklets",
+  "version": "0.1.0",
+  "author": "David Kellner",
+  "devDependencies": {
+    "uglify-js": "^3.12.6"
+  }
+}
