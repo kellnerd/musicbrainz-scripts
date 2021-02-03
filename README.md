@@ -8,6 +8,14 @@ Running `node bookmarkletify.js snippet.js` outputs a minified version of `snipp
 
 Before you run the above script you have to make sure that you have setup *Node.js* and have installed the dependencies of the script via `npm install`.
 
+## [Expand collapsed mediums](src/expandCollapsedMediums.js)
+
+```js
+javascript:void $('.expand-disc').trigger('click');
+```
+
+Expands all collapsed mediums in the release editor, useful for large releases.
+
 ## [Guess Unicode punctuation](src/guessUnicodePunctuation.js)
 
 ```js
