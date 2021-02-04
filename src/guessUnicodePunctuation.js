@@ -13,6 +13,7 @@ function transformInputValues(inputSelector, substitutionRules) {
 		});
 		if (value != input.value) { // update and highlight changed values
 			$(input).val(value)
+				.trigger('change')
 				.css('background-color', 'yellow');
 		}
 	});
