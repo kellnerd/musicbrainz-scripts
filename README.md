@@ -47,7 +47,7 @@ javascript:void $('.expand-disc').trigger('click');
 [![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/guessUnicodePunctuation.user.js?raw=1)
 
 ```js
-javascript:(function(){var n=(n=['input#name','input#comment','input.track-name','input[id^=disc-title]','input[name$=\\.name]','input[name$=\\.comment]']).join(),a=[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'n'(?=\W|$)/g,'\u2019n\u2019'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']],t='background-color';$(n).css(t,'').each((n,e)=>{let g=e.value;g&&(a.forEach(([$,n])=>{g=g.replace($,n)}),g!=e.value&&$(e).val(g).trigger('change').css(t,'yellow'))})})();
+javascript:(function(){function n(n,a){var t='background-color';$(n).css(t,'').each((n,g)=>{let e=g.value;e&&(a.forEach(([n,$])=>{e=e.replace(n,$)}),e!=g.value&&$(g).val(e).trigger('change').css(t,'yellow'))})}var g=[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'n'(?=\W|$)/g,'\u2019n\u2019'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']],e=[[/'''/g,'<b>'],[/''/g,'<i>'],...g,[/<b>/g,"'''"],[/<i>/g,"''"]];n(['input#name','input#comment','input.track-name','input[id^=disc-title]','input[name$=\\.name]','input[name$=\\.comment]'].join(),g),n('textarea',e)})();
 ```
 
 - Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
@@ -55,3 +55,5 @@ javascript:(function(){var n=(n=['input#name','input#comment','input.track-name'
 - Highlights all updated input fields in order to allow the user to review the changes.
 - Works for release/medium/track titles and release disambiguation comments (in the release editor)
   and for entity names and disambiguation comments (on their respective edit and creation pages).
+- Experimental support for annotations and edit notes.
+  Preserves apostrophe-based markup (bold, italic) but might break URLs if they contain punctuation symbols.

@@ -1,6 +1,6 @@
 import { transformInputValues } from './transformInputValues';
 
-const transformationRules = [
+export const transformationRules = [
 	[/(?<=\W|^)"(.+?)"(?=\W|$)/g, '“$1”'], // double quoted text
 	[/(?<=\W|^)'n'(?=\W|$)/g, '’n’'], // special case: 'n'
 	[/(?<=\W|^)'(.+?)'(?=\W|$)/g, '‘$1’'], // single quoted text
@@ -16,6 +16,15 @@ const transformationRules = [
 	[/-/g, '‐'], // ... and finally the hyphens should be remaining
 	// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
 	// TODO: localize quotes using release/lyrics language
+];
+
+export const transformationRulesToPreserveMarkup = [
+	[/'''/g, '<b>'], // bold text (temporary change to preserve apostrophe-based markup)
+	[/''/g, '<i>'], // italic text (temporary change)
+	...transformationRules,
+	/* restore apostrophe-based markup (used for annotations and edit notes on MusicBrainz) */
+	[/<b>/g, "'''"],
+	[/<i>/g, "''"],
 ];
 
 /**
