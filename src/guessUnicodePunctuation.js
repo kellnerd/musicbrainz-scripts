@@ -28,6 +28,7 @@ function guessUnicodePunctuation() {
 	const titleInputSelectors = [
 		'input#name', // release title (release editor)
 		'input.track-name', // all track titles (release editor)
+		'input[id^=disc-title]', // all medium titles (release editor)
 		'#id-edit-recording\\.name', // recording name (recording editor)
 		'#id-edit-work\\.name', // work name (work editor)
 	];
