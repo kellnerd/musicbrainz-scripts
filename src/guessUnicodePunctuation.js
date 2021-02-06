@@ -39,6 +39,8 @@ function guessUnicodePunctuation() {
 		[/'/g, '’'], // ... and finally the apostrophes should be remaining
 		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
 		[/ - /g, ' – '], // en dash as separator
+		[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g, '$1‐$2‐$3'], // hyphens for ISO 8601 dates, e.g. 1987‐07–30
+		[/(\d{4})-(\d{2})(?=\W|$)/g, '$1‐$2'], // hyphen for ISO 8601 partial dates, e.g. 2016-04
 		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 		[/-/g, '‐'], // ... and finally the hyphens should be remaining
 		// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
