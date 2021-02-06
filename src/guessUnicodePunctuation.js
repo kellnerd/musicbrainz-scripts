@@ -7,6 +7,7 @@ function transformInputValues(inputSelector, substitutionRules) {
 	$(inputSelector).css('background-color', ''); // disable possible previously highlighted changes
 	$(inputSelector).each((_index, input) => {
 		let value = input.value;
+		if (!value) return; // skip empty inputs
 		substitutionRules.forEach(([searchValue, newValue]) => {
 			value = value.replace(searchValue, newValue);
 			console.debug(value);

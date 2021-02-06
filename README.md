@@ -19,7 +19,7 @@ Expands all collapsed mediums in the release editor, useful for large releases.
 ## [Guess Unicode punctuation](src/guessUnicodePunctuation.js)
 
 ```js
-javascript:void function(d,a){$(d).css('background-color',''),$(d).each((d,g)=>{let e=g.value;a.forEach(([$,d])=>{e=e.replace($,d)}),e!=g.value&&$(g).val(e).trigger('change').css('background-color','yellow')})}(['input#name','input.track-name','#id-edit-recording\\.name','#id-edit-work\\.name'].join(),[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']]);
+javascript:void function(d,a){$(d).css('background-color',''),$(d).each((d,g)=>{let e=g.value;e&&(a.forEach(([$,d])=>{e=e.replace($,d)}),e!=g.value&&$(g).val(e).trigger('change').css('background-color','yellow'))})}(['input#name','input.track-name','#id-edit-recording\\.name','#id-edit-work\\.name'].join(),[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']]);
 ```
 
 - Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
