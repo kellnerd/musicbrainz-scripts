@@ -23,4 +23,5 @@ javascript:void function(d,i){$(d).css('background-color',''),$(d).each((d,e)=>{
 ```
 
 - Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
-- Works for release title and track titles (in the release editor), recording and work title (on their respective edit pages).
+- Highlights all updated input fields in order to allow the user to review the changes.
+- Works for release/medium/track titles (in the release editor) and for recording/work titles (on their respective edit pages).

@@ -23,6 +23,7 @@ function transformInputValues(inputSelector, substitutionRules) {
 /**
  * Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
+ * Highlights all updated input fields in order to allow the user to review the changes.
  */
 function guessUnicodePunctuation() {
 	const titleInputSelectors = [
