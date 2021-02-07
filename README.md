@@ -8,6 +8,19 @@ Running `node bookmarkletify.js snippet.js` outputs a minified version of `snipp
 
 Before you run the above script you have to make sure that you have setup *Node.js* and have installed the dependencies of the script via `npm install`.
 
+## [Enumerate track titles](src/enumerateTrackTitles.js)
+
+```js
+javascript:void function(){let e=$('input.track-name'),t=prompt('Numbering prefix, preceded by flags:\n+\tappend to current titles\n_\tpad numbers','Part '),[,n,a]=t.match(/^([+_]*)(.+)/),i=n.includes('_'),l=n.includes('+');const r=e.length.toString().length,m=new Intl.NumberFormat('en',{minimumIntegerDigits:r});e.each((e,t)=>{let n=e+1;i&&(n=m.format(n));let r=a+n;l&&(r=(t.value+r).replace(/([.!?]),/,'$1')),$(t).val(r)})}();
+```
+
+- Renames all tracks using their absolute track number and a customizable prefix.
+- Useful to number the parts of an audiobook without chapters and other releases with untitled tracks.
+- Asks the user to input a numbering prefix which can optionally be preceded by flags:
+  - Append the number (including the given prefix) to the current titles: `+`
+  - Pad numbers with leading zeros to the same length: `_`
+  - *Example*: `+_, Part ` renames track 27/143 "Title" to "Title, Part 027"
+
 ## [Expand collapsed mediums](src/expandCollapsedMediums.js)
 
 ```js
