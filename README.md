@@ -8,6 +8,15 @@ Running `node bookmarkletify.js snippet.js` outputs a minified version of `snipp
 
 Before you run the above script you have to make sure that you have setup *Node.js* and have installed the dependencies of the script via `npm install`.
 
+## [Change all release dates](src/changeAllReleaseDates.js)
+
+```js
+javascript:(()=>{function n(e,a){$('input.partial-date-'+e).val(a).trigger('change')}!function(){var e=prompt('Date for all release events (YYYY-MM-DD):'),[,a,t,e]=/(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(e)||[];n('year',a),n('month',t),n('day',e)}()})();
+```
+
+- Changes the date for all release events of a release according to the user's input.
+- Useful to correct the dates for digital media releases (with lots of release events) which are using the wrong first release date of the release group.
+
 ## [Enumerate track titles](src/enumerateTrackTitles.js)
 
 ```js
