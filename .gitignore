@@ -1,2 +1,5 @@
 # NPM
 node_modules/
+
+# bundled code for debugging purposes
+dist/bookmarklets/

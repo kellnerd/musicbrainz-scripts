@@ -1,11 +1,15 @@
 {
   "name": "musicbrainz-bookmarklets",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "David Kellner",
   "license": "MIT",
   "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
   "devDependencies": {
     "rollup": "^2.38.5",
-    "uglify-js": "^3.12.6"
+    "uglify-js": "^3.12.6",
+    "extract-comments": "^1.1.0"
   }
 }
