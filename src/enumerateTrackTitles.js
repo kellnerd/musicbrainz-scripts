@@ -24,5 +24,5 @@ export function enumerateTrackTitles(prefix = '', flags = {}) {
 		}
 		console.debug(newTitle);
 		$(input).val(newTitle);
-	});
+	}).trigger('change'); // necessary if the tracklist is not the active tab
 }

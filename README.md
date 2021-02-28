@@ -19,7 +19,7 @@ javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger
 ## [Enumerate Track Titles](src/enumerateTrackTitles.js)
 
 ```js
-javascript:(function(){const e=prompt('Numbering prefix, preceded by flags:\n+ append to current titles\n_ pad numbers','Part ');let[,n,t]=e.match(/^([+_]*)(.+)/);n={append:n.includes('+'),padNumbers:n.includes('_')},function(r='',p={}){let e=$('input.track-name');var n=e.length.toString().length;const l=new Intl.NumberFormat('en',{minimumIntegerDigits:n});e.each((e,n)=>{let t=e+1;p.padNumbers&&(t=l.format(t));let a=r+t;p.append&&(a=(n.value+a).replace(/([.!?]),/,'$1')),$(n).val(a)})}(t,n)})();
+javascript:(function(){const e=prompt('Numbering prefix, preceded by flags:\n+ append to current titles\n_ pad numbers','Part ');let[,n,t]=e.match(/^([+_]*)(.+)/);n={append:n.includes('+'),padNumbers:n.includes('_')},function(a='',p={}){let e=$('input.track-name');var n=e.length.toString().length;const i=new Intl.NumberFormat('en',{minimumIntegerDigits:n});e.each((e,n)=>{let t=e+1;p.padNumbers&&(t=i.format(t));let r=a+t;p.append&&(r=(n.value+r).replace(/([.!?]),/,'$1')),$(n).val(r)}).trigger('change')}(t,n)})();
 ```
 
 - Renames all tracks using their absolute track number and a customizable prefix.
