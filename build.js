@@ -5,9 +5,12 @@ import { rollup } from 'rollup';
 import UglifyJS from 'uglify-js';
 
 async function build(debug = false) {
+	// build userscripts
+	const userscriptBasePath = 'src/userscripts';
+	const userscriptNames = await buildUserscripts(userscriptBasePath, debug);
 	// prepare bookmarklets
-	const bookmarkletPath = 'src/bookmarklets';
-	const bookmarklets = await buildBookmarklets(bookmarkletPath, debug);
+	const bookmarkletBasePath = 'src/bookmarklets';
+	const bookmarklets = await buildBookmarklets(bookmarkletBasePath, debug);
 	// prepare README file and write header
 	const readmePath = 'README.md';
 	const readme = fs.createWriteStream(readmePath);
@@ -15,12 +18,57 @@ async function build(debug = false) {
 	readme.write(readmeHeader);
 	// write bookmarklets and their extracted documentation to the README
 	for (let fileName in bookmarklets) {
-		const scriptPath = path.join(bookmarkletPath, fileName);
-		readme.write(`\n## [${scriptName(fileName)}](${relevantSourceFile(fileName, bookmarkletPath)})\n`);
+		const baseName = path.basename(fileName, '.js');
+		const bookmarkletPath = path.join(bookmarkletBasePath, fileName);
+		readme.write(`\n## [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
+		// insert an install button if there is a userscript of the same name
+		if (userscriptNames.includes(baseName)) {
+			readme.write(sourceAndInstallButton(baseName));
+		}
 		readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
-		readme.write(extractDocumentation(scriptPath) + '\n');
+		readme.write(extractDocumentation(bookmarkletPath) + '\n');
 	}
 	readme.close();
+}
+
+
+/**
+ * Build a userscript for each JavaScript module inside the given source directory.
+ * @param {string} srcPath Source directory containing the modules.
+ * @returns {Promise<string[]>} Array of userscript file names (without extension).
+ */
+async function buildUserscripts(srcPath, debug = false) {
+	const scriptFiles = await getScriptFiles(srcPath);
+	scriptFiles
+		.map((file) => path.join(srcPath, file))
+		.forEach((modulePath) => buildUserscript(modulePath, debug));
+	return scriptFiles.map((file) => path.basename(file, '.user.js'));
+}
+
+
+/**
+ * Bundles the given module into a userscript.
+ * @param {string} modulePath Path to the executable module of the userscript.
+ */
+async function buildUserscript(modulePath, debug = false) {
+	/**
+	 * Bundle all used modules with rollup and prepend the generated metadata block.
+	 * @type {import('rollup').RollupOptions} 
+	 */
+	const rollupOptions = {
+		input: modulePath,
+		output: {
+			dir: 'dist',
+			format: 'iife', // immediately invoked function expression (prevents naming conflicts)
+			banner: generateMetadataBlock(modulePath),
+		},
+	};
+	const bundle = await rollup(rollupOptions);
+	if (debug) {
+		console.debug(`${modulePath} depends on:`, bundle.watchFiles);
+	}
+	await bundle.write(rollupOptions.output);
+	await bundle.close();
 }
 
 
@@ -46,7 +94,7 @@ async function buildBookmarklets(srcPath, debug = false) {
  */
 async function buildBookmarklet(modulePath, debug = false) {
 	/**
-	 * Bundle all used modules into an IIFE (immediately invoked function expression) with rollup.
+	 * Bundle all used modules into an IIFE with rollup.
 	 * @type {import('rollup').RollupOptions} 
 	 */
 	const rollupOptions = {
@@ -90,6 +138,57 @@ async function buildBookmarklet(modulePath, debug = false) {
 
 
 /**
+ * Generates the metadata block for the given userscript from the JSON file of the same name.
+ * @param {string} userscriptPath 
+ */
+function generateMetadataBlock(userscriptPath) {
+	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.json');
+	const baseName = path.basename(metadataPath, '.json');
+	const date = new Date(); // current date will be used as version identifier
+	/** @type {Object} */
+	const metadata = JSON.parse(fs.readFileSync(metadataPath, { encoding: 'utf-8' }));
+	const metadataBlock = ['// ==UserScript=='];
+
+	function addProperty(key, value) {
+		metadataBlock.push(`// @${key.padEnd(12)} ${value}`);
+	}
+
+	function parse(key, fallback = undefined) {
+		const value = metadata[key] || fallback;
+		if (value) {
+			if (Array.isArray(value)) {
+				value.forEach((value) => addProperty(key, value));
+			} else {
+				addProperty(key, value);
+			}
+		}
+	}
+
+	parse('name', camelToTitleCase(baseName));
+	addProperty('version', `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`);
+	addProperty('namespace', GitHubUserJS.repoUrl());
+	parse('author');
+	parse('description');
+	parse('icon');
+	addProperty('homepageURL', GitHubUserJS.readmeUrl(baseName));
+	addProperty('downloadURL', GitHubUserJS.rawUrl(baseName));
+	addProperty('updateURL', GitHubUserJS.rawUrl(baseName));
+	parse('supportURL', GitHubUserJS.supportUrl());
+	parse('require');
+	parse('resource');
+	parse('grant', 'none');
+	parse('run-at');
+	parse('inject-into');
+	parse('match');
+	parse('include');
+	parse('exclude');
+
+	metadataBlock.push('// ==/UserScript==\n');
+	return metadataBlock.join('\n');
+}
+
+
+/**
  * Extract the first documentation block comment from the given JavaScript module.
  * @param {string} scriptPath Path to the script file.
  * @returns {string}
@@ -119,11 +218,11 @@ async function getScriptFiles(directory) {
 
 
 /**
- * Returns the name of the script for the given file by converting the file name in camel case into title case.
- * @param {string} fileName 
+ * Converts the name from camel case into title case.
+ * @param {string} name
  */
-function scriptName(fileName) {
-	return path.basename(fileName, '.js')
+function camelToTitleCase(name) {
+	return name
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.replace(/^./, c => c.toUpperCase());
 }
@@ -149,6 +248,59 @@ function relevantSourceFile(fileName, basePath) {
 function zipObject(keys, values) {
 	return Object.fromEntries(keys.map((_, i) => [keys[i], values[i]]));
 }
+
+
+/**
+ * Converts a string into an identifier that is compatible with Markdown's heading anchors.
+ * @param {string} string
+ */
+function slugify(string) {
+	return encodeURIComponent(
+		string.trim()
+			.toLowerCase()
+			.replace(/\s+/g, '-')
+	);
+}
+
+
+/**
+ * Generates button-like links to install a userscript and to view its source code on GitHub.
+ * @param {string} baseName Name of the userscript file (without extension).
+ */
+function sourceAndInstallButton(baseName) {
+	const sourceButtonLink = 'https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png';
+	const installButtonLink = 'https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png';
+	return `\n[![Source](${sourceButtonLink})](${GitHubUserJS.sourceUrl(baseName)})\n` +
+		`[![Install](${installButtonLink})](${GitHubUserJS.rawUrl(baseName)})\n`;
+}
+
+
+/**
+ * Location of the userscripts on GitHub.
+ */
+const GitHubUserJS = {
+	repository: 'kellnerd/musicbrainz-bookmarklets',
+	branch: 'main',
+	basePath: 'dist',
+	repoUrl: function () {
+		return `https://github.com/${this.repository}`;
+	},
+	path: function (baseName) {
+		return `${this.branch}/${this.basePath}/${baseName}.user.js`;
+	},
+	sourceUrl: function (baseName) {
+		return `${this.repoUrl()}/blob/${this.path(baseName)}`;
+	},
+	rawUrl: function (baseName) {
+		return `https://raw.githubusercontent.com/${this.repository}/${this.path(baseName)}`;
+	},
+	readmeUrl: function (baseName) {
+		return `${this.repoUrl()}#${slugify(camelToTitleCase(baseName))}`;
+	},
+	supportUrl: function () {
+		return `${this.repoUrl()}/issues`;
+	}
+};
 
 
 build();
