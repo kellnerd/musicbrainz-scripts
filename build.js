@@ -145,7 +145,6 @@ function generateMetadataBlock(userscriptPath) {
 	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.json');
 	const baseName = path.basename(metadataPath, '.json');
 	const date = new Date(); // current date will be used as version identifier
-	/** @type {Object} */
 	const metadata = JSON.parse(fs.readFileSync(metadataPath, { encoding: 'utf-8' }));
 	const metadataBlock = ['// ==UserScript=='];
 
@@ -165,7 +164,7 @@ function generateMetadataBlock(userscriptPath) {
 	}
 
 	parse('name', camelToTitleCase(baseName));
-	addProperty('version', `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`);
+	addProperty('version', [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('.'));
 	addProperty('namespace', GitHubUserJS.repoUrl());
 	parse('author');
 	parse('description');
@@ -270,8 +269,8 @@ function slugify(string) {
 function sourceAndInstallButton(baseName) {
 	const sourceButtonLink = 'https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png';
 	const installButtonLink = 'https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png';
-	return `\n[![Source](${sourceButtonLink})](${GitHubUserJS.sourceUrl(baseName)})\n` +
-		`[![Install](${installButtonLink})](${GitHubUserJS.rawUrl(baseName)})\n`;
+	return `\n[![Source](${sourceButtonLink})](${GitHubUserJS.path(baseName)})\n` +
+		`[![Install](${installButtonLink})](${GitHubUserJS.path(baseName)}?raw=1)\n`;
 }
 
 
@@ -286,13 +285,10 @@ const GitHubUserJS = {
 		return `https://github.com/${this.repository}`;
 	},
 	path: function (baseName) {
-		return `${this.branch}/${this.basePath}/${baseName}.user.js`;
-	},
-	sourceUrl: function (baseName) {
-		return `${this.repoUrl()}/blob/${this.path(baseName)}`;
+		return `${this.basePath}/${baseName}.user.js`;
 	},
 	rawUrl: function (baseName) {
-		return `https://raw.githubusercontent.com/${this.repository}/${this.path(baseName)}`;
+		return `https://raw.githubusercontent.com/${this.repository}/${this.branch}/${this.path(baseName)}`;
 	},
 	readmeUrl: function (baseName) {
 		return `${this.repoUrl()}#${slugify(camelToTitleCase(baseName))}`;

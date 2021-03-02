@@ -43,8 +43,8 @@ javascript:void $('.expand-disc').trigger('click');
 
 ## [Guess Unicode Punctuation](src/guessUnicodePunctuation.js)
 
-[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](https://github.com/kellnerd/musicbrainz-bookmarklets/blob/main/dist/guessUnicodePunctuation.user.js)
-[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js)
+[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/guessUnicodePunctuation.user.js)
+[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/guessUnicodePunctuation.user.js?raw=1)
 
 ```js
 javascript:(function(){var d=(d=['input#name','input.track-name','input[id^=disc-title]','#id-edit-recording\\.name','#id-edit-work\\.name']).join(),a=[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']];$(d).css('background-color',''),$(d).each((d,e)=>{let g=e.value;g&&(a.forEach(([d,$])=>{g=g.replace(d,$)}),g!=e.value&&$(e).val(g).trigger('change').css('background-color','yellow'))})})();
