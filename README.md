@@ -1,10 +1,14 @@
 # musicbrainz-bookmarklets
 
-**[Bookmarklets](https://en.wikipedia.org/wiki/Bookmarklet) and other JavaScript snippets for MusicBrainz.org**
+**[Bookmarklets](https://en.wikipedia.org/wiki/Bookmarklet) and [Userscripts](https://en.wikipedia.org/wiki/Userscript) for [MusicBrainz.org](https://musicbrainz.org)**
 
-In order to use one of the bookmarklets you have to save the compressed code snippet from the respective section below as a bookmark. Make sure to add the bookmark to a toolbar of your browser which you can easily access while you are editing.
+In order to use one of the **bookmarklets** you have to save the compressed code snippet from the respective section below as a bookmark. Make sure to add the bookmark to a toolbar of your browser which you can easily access while you are editing.
 
-Running `node run build` compiles [all bookmarklets](src/bookmarklets/) and generates an updated version of `README.md` which is based on the most recent version of the code. Before you can run this command you have to ensure that you have setup *Node.js* and have installed the dependencies of the build script via `npm install`.
+While bookmarklets are good for trying things out because they do not require additional software to be installed, **userscripts** are more convenient if you need a snippet frequently. In case you have installed a userscript manager browser extension you can simply install userscripts from this page by clicking the *Install* button. Another benefit of them is that you will receive automatic updates if your userscript manager is configured accordingly.
+
+### Development
+
+Running `node build.js` compiles [all userscripts](src/userscripts/) and [all bookmarklets](src/bookmarklets/) before it generates an updated version of `README.md`. Before you can run this command you have to ensure that you have setup *Node.js* and have installed the dependencies of the build script via `npm install`.
 
 ## [Change All Release Dates](src/changeAllReleaseDates.js)
 
@@ -38,6 +42,9 @@ javascript:void $('.expand-disc').trigger('click');
 - Expands all collapsed mediums in the release editor, useful for large releases.
 
 ## [Guess Unicode Punctuation](src/guessUnicodePunctuation.js)
+
+[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](https://github.com/kellnerd/musicbrainz-bookmarklets/blob/main/dist/guessUnicodePunctuation.user.js)
+[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js)
 
 ```js
 javascript:(function(){var d=(d=['input#name','input.track-name','input[id^=disc-title]','#id-edit-recording\\.name','#id-edit-work\\.name']).join(),a=[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']];$(d).css('background-color',''),$(d).each((d,e)=>{let g=e.value;g&&(a.forEach(([d,$])=>{g=g.replace(d,$)}),g!=e.value&&$(e).val(g).trigger('change').css('background-color','yellow'))})})();

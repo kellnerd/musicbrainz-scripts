@@ -1,0 +1,8 @@
+{
+	"name": "MusicBrainz: Guess Unicode punctuation",
+	"author": "kellnerd",
+	"description": "Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.",
+	"match": [
+		"*://*.musicbrainz.org/release/*/edit"
+	]
+}
