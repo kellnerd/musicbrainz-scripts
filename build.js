@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import extractComments from 'extract-comments';
 import { rollup } from 'rollup';
+import strip from '@rollup/plugin-strip';
 import UglifyJS from 'uglify-js';
 
 async function build(debug = false) {
@@ -62,6 +63,11 @@ async function buildUserscript(modulePath, debug = false) {
 			format: 'iife', // immediately invoked function expression (prevents naming conflicts)
 			banner: generateMetadataBlock(modulePath),
 		},
+		plugins: [
+			strip({
+				functions: ['console.debug'],
+			})
+		],
 	};
 	const bundle = await rollup(rollupOptions);
 	if (debug) {
