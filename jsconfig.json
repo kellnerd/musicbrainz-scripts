@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"lib": [
+			"dom",
 			"esnext"
 		]
 	},
