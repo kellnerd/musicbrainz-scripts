@@ -2,6 +2,7 @@ import { transformInputValues } from "./transformInputValues";
 
 const transformationRules = [
 	[/(?<=\W|^)"(.+?)"(?=\W|$)/g, '“$1”'], // double quoted text
+	[/(?<=\W|^)'n'(?=\W|$)/g, '’n’'], // special case: 'n'
 	[/(?<=\W|^)'(.+?)'(?=\W|$)/g, '‘$1’'], // single quoted text
 	// ... which is enclosed by non-word characters or at the beginning/end of the title
 	[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
