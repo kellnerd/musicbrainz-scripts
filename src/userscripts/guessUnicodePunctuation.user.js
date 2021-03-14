@@ -1,4 +1,8 @@
-import { guessUnicodePunctuation } from '../guessUnicodePunctuation';
+import {
+	guessUnicodePunctuation,
+	transformationRulesToPreserveMarkup,
+} from '../guessUnicodePunctuation';
+import { transformInputValues } from '../transformInputValues';
 import guessPunctuationIcon from './icons/guessPunctuation.png';
 
 const buttonTemplate = {
@@ -23,10 +27,15 @@ function insertIconButtonAfter(targetInput) {
 
 // parse the path of the current page
 const path = window.location.pathname.split('/');
-const entityType = path[1];
+const entityType = path[1], pageType = path[path.length - 1];
 
 // insert "Guess punctuation" buttons on all entity edit and creation pages
-if (entityType == 'release') { // release editor
+if (pageType == 'edit_annotation') { // annotation edit page
+	// insert button for entity annotations after the "Preview" button
+	$(buttonTemplate.standard)
+		.on('click', () => transformInputValues('#id-edit-annotation\\.text', transformationRulesToPreserveMarkup))
+		.appendTo('.buttons');
+} else if (entityType == 'release') { // release editor
 	const releaseInputs = [
 		'input#name', // release title
 		'input#comment', // release disambiguation comment
@@ -37,14 +46,21 @@ if (entityType == 'release') { // release editor
 	];
 	// button for the release information tab (after disambiguation comment input field)
 	insertIconButtonAfter('input#comment')
-		.on('click', () => guessUnicodePunctuation(releaseInputs));
+		.on('click', () => {
+			guessUnicodePunctuation(releaseInputs);
+			transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
+		});
 	// button for the tracklist tab (after the guess case button)
 	$(buttonTemplate.standard)
 		.on('click', () => guessUnicodePunctuation(tracklistInputs))
 		.appendTo('.guesscase .buttons');
 	// global button (next to the release editor navigation buttons)
 	$(buttonTemplate.global)
-		.on('click', () => guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]))
+		.on('click', () => {
+			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]); // both release info and tracklist data
+			transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
+			// exclude annotations from the global action as the changes are hard to verify
+		})
 		.appendTo('#release-editor > .buttons');
 } else { // edit pages for all other entity types (except url)
 	const entityInputs = [
@@ -55,4 +71,11 @@ if (entityType == 'release') { // release editor
 	// tested for: artist, event, label, place, recording, release group, series, work
 	insertIconButtonAfter('input[name$=\\.comment]')
 		.on('click', () => guessUnicodePunctuation(entityInputs));
+	// global button after the "Enter edit" button
+	$(buttonTemplate.global)
+		.on('click', () => {
+			guessUnicodePunctuation(entityInputs);
+			transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
+		})
+		.insertAfter('button.submit');
 }

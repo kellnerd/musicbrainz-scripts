@@ -3,12 +3,13 @@
 // @version      2021.3.14
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
-// @description  Searches and replaces ASCII punctuation symbols for many text input fields by their preferred Unicode counterparts. Provides a "Guess punctuation" button for titles, names and disambiguation comments on all entity edit and creation pages.
+// @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
 // @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#guess-unicode-punctuation
 // @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        none
+// @match        *://*.musicbrainz.org/*/*/edit_annotation
 // @match        *://*.musicbrainz.org/artist/*/edit
 // @match        *://*.musicbrainz.org/artist/create
 // @match        *://*.musicbrainz.org/event/*/edit
@@ -77,6 +78,21 @@
 	];
 
 	/**
+	 * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
+	 * by temporarily changing them to characters that will not be touched by the transformation rules.
+	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
+	 */
+	const transformationRulesToPreserveMarkup = [
+		[/'''/g, '<b>'], // bold text
+		[/''/g, '<i>'], // italic text
+		[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // Base64 encode URLs
+		...transformationRules,
+		[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // decode Base64 URLs
+		[/<b>/g, "'''"],
+		[/<i>/g, "''"],
+	];
+
+	/**
 	 * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
@@ -109,10 +125,15 @@
 
 	// parse the path of the current page
 	const path = window.location.pathname.split('/');
-	const entityType = path[1];
+	const entityType = path[1], pageType = path[path.length - 1];
 
 	// insert "Guess punctuation" buttons on all entity edit and creation pages
-	if (entityType == 'release') { // release editor
+	if (pageType == 'edit_annotation') { // annotation edit page
+		// insert button for entity annotations after the "Preview" button
+		$(buttonTemplate.standard)
+			.on('click', () => transformInputValues('#id-edit-annotation\\.text', transformationRulesToPreserveMarkup))
+			.appendTo('.buttons');
+	} else if (entityType == 'release') { // release editor
 		const releaseInputs = [
 			'input#name', // release title
 			'input#comment', // release disambiguation comment
@@ -123,14 +144,21 @@
 		];
 		// button for the release information tab (after disambiguation comment input field)
 		insertIconButtonAfter('input#comment')
-			.on('click', () => guessUnicodePunctuation(releaseInputs));
+			.on('click', () => {
+				guessUnicodePunctuation(releaseInputs);
+				transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
+			});
 		// button for the tracklist tab (after the guess case button)
 		$(buttonTemplate.standard)
 			.on('click', () => guessUnicodePunctuation(tracklistInputs))
 			.appendTo('.guesscase .buttons');
 		// global button (next to the release editor navigation buttons)
 		$(buttonTemplate.global)
-			.on('click', () => guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]))
+			.on('click', () => {
+				guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]); // both release info and tracklist data
+				transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
+				// exclude annotations from the global action as the changes are hard to verify
+			})
 			.appendTo('#release-editor > .buttons');
 	} else { // edit pages for all other entity types (except url)
 		const entityInputs = [
@@ -141,6 +169,13 @@
 		// tested for: artist, event, label, place, recording, release group, series, work
 		insertIconButtonAfter('input[name$=\\.comment]')
 			.on('click', () => guessUnicodePunctuation(entityInputs));
+		// global button after the "Enter edit" button
+		$(buttonTemplate.global)
+			.on('click', () => {
+				guessUnicodePunctuation(entityInputs);
+				transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
+			})
+			.insertAfter('button.submit');
 	}
 
 }());
