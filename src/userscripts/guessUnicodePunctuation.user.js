@@ -68,7 +68,7 @@ if (pageType == 'edit_annotation') { // annotation edit page
 		'input[name$=\\.comment]', // entity disambiguation comment
 	];
 	// button after the disambiguation comment input field
-	// tested for: artist, event, label, place, recording, release group, series, work
+	// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 	insertIconButtonAfter('input[name$=\\.comment]')
 		.on('click', () => guessUnicodePunctuation(entityInputs));
 	// global button after the "Enter edit" button

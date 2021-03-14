@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.3.14
+// @version      2021.3.15
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -9,25 +9,10 @@
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        none
-// @match        *://*.musicbrainz.org/*/*/edit_annotation
-// @match        *://*.musicbrainz.org/artist/*/edit
-// @match        *://*.musicbrainz.org/artist/create
-// @match        *://*.musicbrainz.org/event/*/edit
-// @match        *://*.musicbrainz.org/event/create
-// @match        *://*.musicbrainz.org/label/*/edit
-// @match        *://*.musicbrainz.org/label/create
-// @match        *://*.musicbrainz.org/place/*/edit
-// @match        *://*.musicbrainz.org/place/create
-// @match        *://*.musicbrainz.org/recording/*/edit
-// @match        *://*.musicbrainz.org/recording/create
-// @match        *://*.musicbrainz.org/release/*/edit
+// @match        *://*.musicbrainz.org/*/create
 // @match        *://*.musicbrainz.org/release/add
-// @match        *://*.musicbrainz.org/release-group/*/edit
-// @match        *://*.musicbrainz.org/release-group/create
-// @match        *://*.musicbrainz.org/series/*/edit
-// @match        *://*.musicbrainz.org/series/create
-// @match        *://*.musicbrainz.org/work/*/edit
-// @match        *://*.musicbrainz.org/work/create
+// @match        *://*.musicbrainz.org/*/*/edit
+// @match        *://*.musicbrainz.org/*/*/edit_annotation
 // ==/UserScript==
 
 (function () {
@@ -166,7 +151,7 @@
 			'input[name$=\\.comment]', // entity disambiguation comment
 		];
 		// button after the disambiguation comment input field
-		// tested for: artist, event, label, place, recording, release group, series, work
+		// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 		insertIconButtonAfter('input[name$=\\.comment]')
 			.on('click', () => guessUnicodePunctuation(entityInputs));
 		// global button after the "Enter edit" button
