@@ -18,11 +18,17 @@ export const transformationRules = [
 	// TODO: localize quotes using release/lyrics language
 ];
 
+/**
+ * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
+ * by temporarily changing them to characters that will not be touched by the transformation rules.
+ * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
+ */
 export const transformationRulesToPreserveMarkup = [
-	[/'''/g, '<b>'], // bold text (temporary change to preserve apostrophe-based markup)
-	[/''/g, '<i>'], // italic text (temporary change)
+	[/'''/g, '<b>'], // bold text
+	[/''/g, '<i>'], // italic text
+	[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // Base64 encode URLs
 	...transformationRules,
-	/* restore apostrophe-based markup (used for annotations and edit notes on MusicBrainz) */
+	[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // decode Base64 URLs
 	[/<b>/g, "'''"],
 	[/<i>/g, "''"],
 ];

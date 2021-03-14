@@ -4,8 +4,7 @@
  * - Highlights all updated input fields in order to allow the user to review the changes.
  * - Works for release/medium/track titles and release disambiguation comments (in the release editor)
  *   and for entity names and disambiguation comments (on their respective edit and creation pages).
- * - Experimental support for annotations and edit notes.
- *   Preserves apostrophe-based markup (bold, italic) but might break URLs if they contain punctuation symbols.
+ * - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
  */
 
 import {
@@ -23,7 +22,12 @@ const titleInputSelectors = [
 	'input[name$=\\.comment]', // entity disambiguation comment (edit pages)
 ];
 
-guessUnicodePunctuation(titleInputSelectors);
+const textareaSelectors = [
+	'#annotation', // release annotation (release editor)
+	'#edit-note-text', // edit note (release editor)
+	'#id-edit-annotation\\.text', // annotation (edit annotation pages)
+	'.edit-note', // edit note (edit pages)
+];
 
-// guess punctuation of annotations and edit notes
-transformInputValues('textarea', transformationRulesToPreserveMarkup);
+guessUnicodePunctuation(titleInputSelectors);
+transformInputValues(textareaSelectors.join(), transformationRulesToPreserveMarkup);
