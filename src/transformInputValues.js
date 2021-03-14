@@ -5,19 +5,22 @@
  * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
  */
 export function transformInputValues(inputSelector, substitutionRules) {
-	$(inputSelector).css('background-color', ''); // disable possible previously highlighted changes
-	$(inputSelector).each((_index, input) => {
-		let value = input.value;
-		if (!value)
-			return; // skip empty inputs
-		substitutionRules.forEach(([searchValue, newValue]) => {
-			value = value.replace(searchValue, newValue);
-			console.debug(value);
+	const highlightProperty = 'background-color';
+	$(inputSelector)
+		.css(highlightProperty, '') // disable possible previously highlighted changes
+		.each((_index, input) => {
+			let value = input.value;
+			if (!value) {
+				return; // skip empty inputs
+			}
+			substitutionRules.forEach(([searchValue, newValue]) => {
+				value = value.replace(searchValue, newValue);
+				console.debug(value);
+			});
+			if (value != input.value) { // update and highlight changed values
+				$(input).val(value)
+					.trigger('change')
+					.css(highlightProperty, 'yellow');
+			}
 		});
-		if (value != input.value) { // update and highlight changed values
-			$(input).val(value)
-				.trigger('change')
-				.css('background-color', 'yellow');
-		}
-	});
 }

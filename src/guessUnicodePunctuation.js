@@ -1,4 +1,4 @@
-import { transformInputValues } from "./transformInputValues";
+import { transformInputValues } from './transformInputValues';
 
 const transformationRules = [
 	[/(?<=\W|^)"(.+?)"(?=\W|$)/g, '“$1”'], // double quoted text

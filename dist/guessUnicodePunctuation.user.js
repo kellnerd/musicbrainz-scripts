@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.3.4
+// @version      2021.3.14
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many text input fields by their preferred Unicode counterparts. Provides a "Guess punctuation" button for titles, names and disambiguation comments on all entity edit and creation pages.
@@ -39,20 +39,23 @@
 	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
 	 */
 	function transformInputValues(inputSelector, substitutionRules) {
-		$(inputSelector).css('background-color', ''); // disable possible previously highlighted changes
-		$(inputSelector).each((_index, input) => {
-			let value = input.value;
-			if (!value)
-				return; // skip empty inputs
-			substitutionRules.forEach(([searchValue, newValue]) => {
-				value = value.replace(searchValue, newValue);
+		const highlightProperty = 'background-color';
+		$(inputSelector)
+			.css(highlightProperty, '') // disable possible previously highlighted changes
+			.each((_index, input) => {
+				let value = input.value;
+				if (!value) {
+					return; // skip empty inputs
+				}
+				substitutionRules.forEach(([searchValue, newValue]) => {
+					value = value.replace(searchValue, newValue);
+				});
+				if (value != input.value) { // update and highlight changed values
+					$(input).val(value)
+						.trigger('change')
+						.css(highlightProperty, 'yellow');
+				}
 			});
-			if (value != input.value) { // update and highlight changed values
-				$(input).val(value)
-					.trigger('change')
-					.css('background-color', 'yellow');
-			}
-		});
 	}
 
 	const transformationRules = [

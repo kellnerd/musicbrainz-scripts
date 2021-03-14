@@ -10,11 +10,13 @@ export function enumerateTrackTitles(prefix = '', flags = {}) {
 
 	/* setup padding of numbers to the same length */
 	const maxTrackDigits = $trackTitles.length.toString().length;
-	const numberFormat = new Intl.NumberFormat('en', { minimumIntegerDigits: maxTrackDigits });
+	const paddedNumberFormat = new Intl.NumberFormat('en', { minimumIntegerDigits: maxTrackDigits });
 
 	$trackTitles.each((index, input) => {
 		let trackNumber = index + 1;
-		if (flags.padNumbers) trackNumber = numberFormat.format(trackNumber);
+		if (flags.padNumbers) {
+			trackNumber = paddedNumberFormat.format(trackNumber);
+		}
 		let newTitle = prefix + trackNumber;
 		if (flags.append) {
 			// append the "prefix" and the track number to the old title as a suffix
