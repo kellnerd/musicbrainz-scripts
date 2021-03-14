@@ -87,32 +87,60 @@
 
 	var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAHYgAAB2IBOHqZ2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFpSURBVDiNpZOxjwFBGMV/e5FspZeoFETlL9Bug0RDL5FolVpRUqxCr1iNUelUEhmFZqlEVAolFRuxsswVl9uzWVfceeX73nvzfTPzaUIIxRuIAJTL5X+ZR6MRH++cDrwOOBwOdLtdbrdbqDafzxmPx78H2LZNtVplt9txPp993vM8TNOk1WoFeIQQ6htSSmUYhur3++rxePi853mq0WioUqmkttutzwshVOS57U6nQy6Xo1KpBLoaDAYsl0t6vR6pVOr1HViWheM4IfPlcmE4HJLNZkPmQMBqtSIajbJYLFiv175gs9lwvV653+/MZjOOx2MgwB/BdV1OpxPtdhuAYrFIvV73X0JKiZQSXdcxTZN0Oh3sIBaLBZInkwlKqRDvui7T6TQ8gmEYAWE8HkfTNBKJBMlkMlQLjVAoFHAcB9u20XWdWq3mi5rNJpZlsd/vyWQy5PP5n7Tnf/BXCCHU27sQga+t+i8+AYUS9lO02Bg3AAAAAElFTkSuQmCC";
 
-	const pageEntityType = window.location.pathname.split('/')[1];
+	const buttonTemplate = {
+		standard: '<button type="button">Guess punctuation</button>',
+		global: '<button type="button" title="Guess punctuation for all supported input fields">Guess punctuation</button>',
+		icon: '<button class="icon" type="button" title="Guess punctuation"></button>',
+	};
 
-	// insert a "Guess punctuation" button on all entity edit and creation pages
-	if (pageEntityType == 'release') {
-		$('<button type="button">Guess punctuation</button>')
-			.on('click', () => {
-				guessUnicodePunctuation([
-					'input#name', // release title
-					'input#comment', // release title
-					'input.track-name', // all track titles
-					'input[id^=disc-title]', // all medium titles
-				]);
-			})
-			.appendTo('.guesscase .buttons'); // insert button after the guess case button in the tracklist tab
-	} else { // all other entity types (except url): artist, event, label, place, recording, release group, series, work
-		const button = $('<button class="icon" type="button" title="Guess punctuation"></button>')
-			.on('click', () => {
-				guessUnicodePunctuation([
-					'input[name$=\\.name]', // entity name
-					'input[name$=\\.comment]', // entity disambiguation comment
-				]);
-			})
+	/**
+	 * Inserts a "Guess punctuation" icon button to the right of the given input field.
+	 * @param {string} targetInput CSS selector of the input field.
+	 * @returns {JQuery<HTMLElement>} jQuery button element.
+	 */
+	function insertIconButtonAfter(targetInput) {
+		const button = $(buttonTemplate.icon)
 			.css('background-image', `url(${img})`); // icon button with a custom image
-		$('input[name$=\\.comment]')
+		$(targetInput)
 			.addClass('with-guesscase') // make input smaller to create space for up to two icon buttons
-			.after(' ', button); // insert white space and button to the right of the disambiguation comment input field
+			.after(' ', button); // insert white space and button to the right of the input field
+		return button;
+	}
+
+	// parse the path of the current page
+	const path = window.location.pathname.split('/');
+	const entityType = path[1];
+
+	// insert "Guess punctuation" buttons on all entity edit and creation pages
+	if (entityType == 'release') { // release editor
+		const releaseInputs = [
+			'input#name', // release title
+			'input#comment', // release disambiguation comment
+		];
+		const tracklistInputs = [
+			'input.track-name', // all track titles
+			'input[id^=disc-title]', // all medium titles
+		];
+		// button for the release information tab (after disambiguation comment input field)
+		insertIconButtonAfter('input#comment')
+			.on('click', () => guessUnicodePunctuation(releaseInputs));
+		// button for the tracklist tab (after the guess case button)
+		$(buttonTemplate.standard)
+			.on('click', () => guessUnicodePunctuation(tracklistInputs))
+			.appendTo('.guesscase .buttons');
+		// global button (next to the release editor navigation buttons)
+		$(buttonTemplate.global)
+			.on('click', () => guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]))
+			.appendTo('#release-editor > .buttons');
+	} else { // edit pages for all other entity types (except url)
+		const entityInputs = [
+			'input[name$=\\.name]', // entity name
+			'input[name$=\\.comment]', // entity disambiguation comment
+		];
+		// button after the disambiguation comment input field
+		// tested for: artist, event, label, place, recording, release group, series, work
+		insertIconButtonAfter('input[name$=\\.comment]')
+			.on('click', () => guessUnicodePunctuation(entityInputs));
 	}
 
 }());
