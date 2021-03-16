@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.3.15
+// @version      2021.3.16
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -116,7 +116,7 @@
 	if (pageType == 'edit_annotation') { // annotation edit page
 		// insert button for entity annotations after the "Preview" button
 		$(buttonTemplate.standard)
-			.on('click', () => transformInputValues('#id-edit-annotation\\.text', transformationRulesToPreserveMarkup))
+			.on('click', () => transformInputValues('textarea[name$=text]', transformationRulesToPreserveMarkup))
 			.appendTo('.buttons');
 	} else if (entityType == 'release') { // release editor
 		const releaseInputs = [
@@ -147,12 +147,12 @@
 			.appendTo('#release-editor > .buttons');
 	} else { // edit pages for all other entity types (except url)
 		const entityInputs = [
-			'input[name$=\\.name]', // entity name
-			'input[name$=\\.comment]', // entity disambiguation comment
+			'input[name$=name]', // entity name
+			'input[name$=comment]', // entity disambiguation comment
 		];
 		// button after the disambiguation comment input field
 		// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
-		insertIconButtonAfter('input[name$=\\.comment]')
+		insertIconButtonAfter('input[name$=comment]')
 			.on('click', () => guessUnicodePunctuation(entityInputs));
 		// global button after the "Enter edit" button
 		$(buttonTemplate.global)

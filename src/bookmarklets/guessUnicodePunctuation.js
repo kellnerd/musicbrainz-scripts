@@ -18,14 +18,14 @@ const titleInputSelectors = [
 	'input#comment', // release disambiguation comment (release editor)
 	'input.track-name', // all track titles (release editor)
 	'input[id^=disc-title]', // all medium titles (release editor)
-	'input[name$=\\.name]', // entity name (edit pages)
-	'input[name$=\\.comment]', // entity disambiguation comment (edit pages)
+	'input[name$=name]', // entity name (edit pages)
+	'input[name$=comment]', // entity disambiguation comment (edit pages)
 ];
 
 const textareaSelectors = [
 	'#annotation', // release annotation (release editor)
 	'#edit-note-text', // edit note (release editor)
-	'#id-edit-annotation\\.text', // annotation (edit annotation pages)
+	'textarea[name$=text]', // annotation (edit annotation pages)
 	'.edit-note', // edit note (edit pages)
 ];
 
