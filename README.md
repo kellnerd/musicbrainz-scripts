@@ -10,6 +10,16 @@ While bookmarklets are good for trying things out because they do not require ad
 
 Running `node build.js` compiles [all userscripts](src/userscripts/) and [all bookmarklets](src/bookmarklets/) before it generates an updated version of `README.md`. Before you can run this command you have to ensure that you have setup *Node.js* and have installed the dependencies of the build script via `npm install`.
 
+## [Annotation Converter](src/annotationConverter.js)
+
+```js
+javascript:(function(){function e(a){return async function(a,n){const t=[];a.replace(n,(a,...n)=>{n=((a,n,t)=>async function(a,n=null){if(a.includes('musicbrainz.org')){const r=new URL(a);var[t,e,c]=r.pathname.match(/^\/(.+?)\/([0-9a-f-]{36})$/)||[];if(t)return n=n||await async function(a){a.pathname=`/ws/2${a.pathname}`,a.search='?fmt=json';let n=await fetch(a);return n=await n.json(),n.name||n.title}(r),`[${e}:${c}|${n}]`}return function(a,n=null){return n?`[${a}|${n}]`:`[${a}]`}(a,n)}(n,t))(a,...n),t.push(n)});const e=await Promise.all(t);return a.replace(n,()=>e.shift())}(a,/\[(.+?)(?:\|(.+?))?\]/g)}var a='textarea[name$=text]',c=[[/\*{2}(.+?)\*{2}/g,"'''$1'''"],[/\_{2}(.+?)\_{2}/g,"'''$1'''"],[/\*(.+?)\*/g,"''$1''"],[/\_(.+?)\_/g,"''$1''"],[/^\# +(.+?)( +\#*)?$/gm,'= $1 ='],[/^\#{2} +(.+?)( +\#*)?$/gm,'== $1 =='],[/^\#{3} +(.+?)( +\#*)?$/gm,'=== $1 ==='],[/\[(.+?)\]\((.+?)\)/g,'[$2|$1]'],[/(?<!\[)(https?:\/\/\S+)/g,'[$1]'],[/^([0-9]+)\. +/gm,'    $1. '],[/^[-+*] +/gm,'    * ']],r='background-color';$(a).css(r,'').each((a,n)=>{let t=n.value;t&&(c.forEach(([a,n])=>{t=t.replace(a,n)}),t!=n.value&&$(n).val(t).trigger('change').css(r,'yellow'))}),$(a).each(async(a,n)=>{var t=await e(n.value);t!=n.value&&$(n).val(t)})})();
+```
+
+- Allows annotations to be partly written in basic Markdown and converts them into valid annotation markup.
+- Shortens absolute URLs to MusicBrainz entities to `[entity-type:mbid|label]` links.
+- Automatically fetches and uses the name of the linked entity as label if none was given.
+
 ## [Change All Release Dates](src/changeAllReleaseDates.js)
 
 ```js
