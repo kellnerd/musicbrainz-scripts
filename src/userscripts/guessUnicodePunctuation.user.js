@@ -62,14 +62,14 @@ if (pageType == 'edit_annotation') { // annotation edit page
 			// exclude annotations from the global action as the changes are hard to verify
 		})
 		.appendTo('#release-editor > .buttons');
-} else { // edit pages for all other entity types (except url)
+} else { // edit pages for all other entity types
 	const entityInputs = [
 		'input[name$=name]', // entity name
 		'input[name$=comment]', // entity disambiguation comment
 	];
 	// button after the disambiguation comment input field
 	// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
-	insertIconButtonAfter('input[name$=comment]')
+	insertIconButtonAfter('input[name$=comment]') // skipped for url entities as there is no disambiguation input
 		.on('click', () => guessUnicodePunctuation(entityInputs));
 	// global button after the "Enter edit" button
 	$(buttonTemplate.global)
