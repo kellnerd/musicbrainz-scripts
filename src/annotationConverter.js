@@ -3,10 +3,8 @@
  */
 export const markdownToAnnotation = [
 	// inline markup
-	[/\*{2}(.+?)\*{2}/g, "'''$1'''"], // bold
-	[/\_{2}(.+?)\_{2}/g, "'''$1'''"], // bold
-	[/\*(.+?)\*/g, "''$1''"], // italic
-	[/\_(.+?)\_/g, "''$1''"], // italic
+	[/(__|\*\*)(?=\S)(.+?)(?<=\S)\1/g, "'''$2'''"], // bold
+	[/(_|\*)(?=\S)(.+?)(?<=\S)\1/g, "''$2''"], // italic
 	[/\[(.+?)\]\((.+?)\)/g, '[$2|$1]'], // labeled link
 	[/(?<!\[)(https?:\/\/\S+)/g, '[$1]'], // plain text HTTP(S) link
 	// block markup (match start/end of lines in multiline mode)
