@@ -1,14 +1,19 @@
+/**
+ * Rules to convert basic Markdown syntax into MusicBrainz annotation markup.
+ */
 export const markdownToAnnotation = [
+	// inline markup
 	[/\*{2}(.+?)\*{2}/g, "'''$1'''"], // bold
 	[/\_{2}(.+?)\_{2}/g, "'''$1'''"], // bold
 	[/\*(.+?)\*/g, "''$1''"], // italic
 	[/\_(.+?)\_/g, "''$1''"], // italic
+	[/\[(.+?)\]\((.+?)\)/g, '[$2|$1]'], // labeled link
+	[/(?<!\[)(https?:\/\/\S+)/g, '[$1]'], // plain text HTTP(S) link
+	// block markup (match start/end of lines in multiline mode)
 	[/^\# +(.+?)( +\#*)?$/gm, '= $1 ='], // atx heading, level 1
 	[/^\#{2} +(.+?)( +\#*)?$/gm, '== $1 =='], // atx heading, level 2
 	[/^\#{3} +(.+?)( +\#*)?$/gm, '=== $1 ==='], // atx heading, level 3
-	[/\[(.+?)\]\((.+?)\)/g, '[$2|$1]'], // labeled link
-	[/(?<!\[)(https?:\/\/\S+)/g, '[$1]'], // plain text HTTP(S) link
-	[/^([0-9]+)\. +/gm, '    $1. '], // ordered list items
+	[/^(\d+)\. +/gm, '    $1. '], // ordered list items
 	[/^[-+*] +/gm, '    * '], // unordered list items
 ];
 
@@ -24,7 +29,7 @@ export function convertEntityLinks(annotationText) {
 /**
  * Creates an entity link for use in annotations. Its label will be the name of the entity if it is not given.
  * @param {string} urlString URL to a MusicBrainz entity.
- * @param {string?} label Text label that should be rendered for the link (optional)
+ * @param {string?} label Text label that should be rendered for the link (optional).
  * @returns {Promise<string>} `[entity-type:mbid|label]`
  */
 async function createEntityLink(urlString, label = null) {
@@ -73,6 +78,12 @@ async function replaceAsync(string, regex, asyncFunction) {
 	return string.replace(regex, () => data.shift());
 }
 
+/**
+ * Creates a bracketed link for use in annotations.
+ * @param {string} urlString 
+ * @param {*} label Text label that should be rendered for the link (optional).
+ * @returns {string}
+ */
 function createLink(urlString, label = null) {
 	if (label) {
 		return `[${urlString}|${label}]`;
