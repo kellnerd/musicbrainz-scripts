@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.3.16
+// @version      2021.3.26
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -125,7 +125,8 @@
 		];
 		const tracklistInputs = [
 			'input.track-name', // all track titles
-			'input[id^=disc-title]', // all medium titles
+			'input[id^=disc-title]', // all medium titles (MBS-10726 deprecates this, TODO: remove after the next MBS release)
+			'input[id^=medium-title]', // all medium titles (MBS-10726, in beta testing)
 		];
 		// button for the release information tab (after disambiguation comment input field)
 		insertIconButtonAfter('input#comment')

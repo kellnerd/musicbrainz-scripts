@@ -42,7 +42,8 @@ if (pageType == 'edit_annotation') { // annotation edit page
 	];
 	const tracklistInputs = [
 		'input.track-name', // all track titles
-		'input[id^=disc-title]', // all medium titles
+		'input[id^=disc-title]', // all medium titles (MBS-10726 deprecates this, TODO: remove after the next MBS release)
+		'input[id^=medium-title]', // all medium titles (MBS-10726, in beta testing)
 	];
 	// button for the release information tab (after disambiguation comment input field)
 	insertIconButtonAfter('input#comment')

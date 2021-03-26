@@ -17,7 +17,7 @@ const titleInputSelectors = [
 	'input#name', // release title (release editor)
 	'input#comment', // release disambiguation comment (release editor)
 	'input.track-name', // all track titles (release editor)
-	'input[id^=disc-title]', // all medium titles (release editor)
+	'input[id^=medium-title]', // all medium titles (release editor)
 	'input[name$=name]', // entity name (edit pages)
 	'input[name$=comment]', // entity disambiguation comment (edit pages)
 ];

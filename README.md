@@ -46,7 +46,7 @@ javascript:(function(){const e=prompt('Numbering prefix, preceded by flags:\n+ a
 ## [Expand Collapsed Mediums](src/expandCollapsedMediums.js)
 
 ```js
-javascript:void $('.expand-disc').trigger('click');
+javascript:void $('.expand-medium').trigger('click');
 ```
 
 - Expands all collapsed mediums in the release editor, useful for large releases.
@@ -57,7 +57,7 @@ javascript:void $('.expand-disc').trigger('click');
 [![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/guessUnicodePunctuation.user.js?raw=1)
 
 ```js
-javascript:(function(){function n(n,a){var g='background-color';$(n).css(g,'').each((n,t)=>{let e=t.value;e&&(a.forEach(([n,t])=>{e=e.replace(n,t)}),e!=t.value&&$(t).val(e).trigger('change').css(g,'yellow'))})}var t=[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'n'(?=\W|$)/g,'\u2019n\u2019'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']],e=[[/'''/g,'<b>'],[/''/g,'<i>'],[/\[(.+?)(\|.+?)?\]/g,(n,t,e='')=>`[${btoa(t)}${e}]`],...t,[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g,(n,t,e='')=>`[${atob(t)}${e}]`],[/<b>/g,"'''"],[/<i>/g,"''"]];n(['input#name','input#comment','input.track-name','input[id^=disc-title]','input[name$=name]','input[name$=comment]'].join(),t),n(['#annotation','#edit-note-text','textarea[name$=text]','.edit-note'].join(),e)})();
+javascript:(function(){function n(n,a){var g='background-color';$(n).css(g,'').each((n,t)=>{let e=t.value;e&&(a.forEach(([n,t])=>{e=e.replace(n,t)}),e!=t.value&&$(t).val(e).trigger('change').css(g,'yellow'))})}var t=[[/(?<=\W|^)"(.+?)"(?=\W|$)/g,'\u201c$1\u201d'],[/(?<=\W|^)'n'(?=\W|$)/g,'\u2019n\u2019'],[/(?<=\W|^)'(.+?)'(?=\W|$)/g,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']],e=[[/'''/g,'<b>'],[/''/g,'<i>'],[/\[(.+?)(\|.+?)?\]/g,(n,t,e='')=>`[${btoa(t)}${e}]`],...t,[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g,(n,t,e='')=>`[${atob(t)}${e}]`],[/<b>/g,"'''"],[/<i>/g,"''"]];n(['input#name','input#comment','input.track-name','input[id^=medium-title]','input[name$=name]','input[name$=comment]'].join(),t),n(['#annotation','#edit-note-text','textarea[name$=text]','.edit-note'].join(),e)})();
 ```
 
 - Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
