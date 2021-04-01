@@ -23,7 +23,7 @@ javascript:(function(){function e(a){return async function(a,t){const n=[];a.rep
 ## [Change All Release Dates](src/changeAllReleaseDates.js)
 
 ```js
-javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger('change')}var a=prompt('Date for all release events (YYYY-MM-DD):'),[,t,n,a]=/(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(a)||[],n=n,a=a;e('year',t),e('month',n),e('day',a)})();
+javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger('change')}var a,t,n=prompt('Date for all release events (YYYY-MM-DD):');null!==n&&([,a,t,n]=/(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(n)||[],t=t,n=n,e('year',a),e('month',t),e('day',n))})();
 ```
 
 - Changes the date for all release events of a release according to the user's input.

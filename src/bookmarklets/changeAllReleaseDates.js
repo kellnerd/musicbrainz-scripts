@@ -7,6 +7,9 @@
 import { changeAllReleaseDates } from '../changeAllReleaseDates';
 
 const input = prompt('Date for all release events (YYYY-MM-DD):');
-const [, year, month, day] = /(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(input) // missing parts will be `undefined`
-	|| []; // input does not match a date, set all values to `undefined`
-changeAllReleaseDates(year, month, day);
+
+if (input !== null) {
+	const [, year, month, day] = /(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(input) // missing parts will be `undefined`
+		|| []; // input does not match a date, set all values to `undefined`
+	changeAllReleaseDates(year, month, day);
+}
