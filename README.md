@@ -33,10 +33,10 @@ javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger
 ## [Enumerate Track Titles](src/enumerateTrackTitles.js)
 
 ```js
-javascript:(function(){const e=prompt('Numbering prefix, preceded by flags:\n+ append to current titles\n_ pad numbers','Part ');let[,n,t]=e.match(/^([+_]*)(.+)/);n={append:n.includes('+'),padNumbers:n.includes('_')},function(a='',p={}){let e=$('input.track-name');var n=e.length.toString().length;const i=new Intl.NumberFormat('en',{minimumIntegerDigits:n});e.each((e,n)=>{let t=e+1;p.padNumbers&&(t=i.format(t));let r=a+t;p.append&&(r=(n.value+r).replace(/([.!?]),/,'$1')),$(n).val(r)}).trigger('change')}(t,n)})();
+javascript:(function(){const t=prompt('Numbering prefix, preceded by flags:\n+ append to current titles\n_ pad numbers','Part ');if(null!==t){let[,e,n]=t.match(/^([+_]*)(.*)/);e={append:e.includes('+'),padNumbers:e.includes('_')},function(a='',l={}){let e=$('input.track-name');var n=e.length.toString().length;const i=new Intl.NumberFormat('en',{minimumIntegerDigits:n});e.each((e,n)=>{let t=e+1;l.padNumbers&&(t=i.format(t));let r=a+t;l.append&&(r=(n.value+r).replace(/([.!?]),/,'$1')),$(n).val(r)}).trigger('change')}(n,e)}})();
 ```
 
-- Renames all tracks using their absolute track number and a customizable prefix.
+- Renames all tracks using their absolute track number and a customizable prefix (which can be empty).
 - Useful to number the parts of an audiobook without chapters and other releases with untitled tracks.
 - Asks the user to input a numbering prefix which can optionally be preceded by flags:
   - Append the number (including the given prefix) to the current titles: `+`
