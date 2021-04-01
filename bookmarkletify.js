@@ -13,6 +13,7 @@ try {
 		compress: {
 			expression: true, // preserve completion values from terminal statements without return, e.g. in bookmarklets
 			drop_console: true,
+			passes: 2,
 		},
 		output: {
 			ascii_only: true,
