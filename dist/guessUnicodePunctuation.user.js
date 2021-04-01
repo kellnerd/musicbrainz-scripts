@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.3.26
+// @version      2021.4.1
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -68,13 +68,13 @@
 	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
 	 */
 	const transformationRulesToPreserveMarkup = [
+		[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // Base64 encode URLs
 		[/'''/g, '<b>'], // bold text
 		[/''/g, '<i>'], // italic text
-		[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // Base64 encode URLs
 		...transformationRules,
-		[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // decode Base64 URLs
 		[/<b>/g, "'''"],
 		[/<i>/g, "''"],
+		[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // decode Base64 URLs
 	];
 
 	/**
