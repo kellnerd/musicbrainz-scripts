@@ -2,17 +2,21 @@
  * Rules to convert basic Markdown syntax into MusicBrainz annotation markup.
  */
 export const markdownToAnnotation = [
+	// convert links & preserve URLs from being altered
+	[/\[(.+?)\]\((.+?)\)/g, '[$2|$1]'], // labeled link
+	[/(?<!\[)(https?:\/\/\S+)/g, '[$1]'], // plain text HTTP(S) link
+	[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // Base64 encode URLs
 	// inline markup
 	[/(__|\*\*)(?=\S)(.+?)(?<=\S)\1/g, "'''$2'''"], // bold
 	[/(_|\*)(?=\S)(.+?)(?<=\S)\1/g, "''$2''"], // italic
-	[/\[(.+?)\]\((.+?)\)/g, '[$2|$1]'], // labeled link
-	[/(?<!\[)(https?:\/\/\S+)/g, '[$1]'], // plain text HTTP(S) link
 	// block markup (match start/end of lines in multiline mode)
 	[/^\# +(.+?)( +\#*)?$/gm, '= $1 ='], // atx heading, level 1
 	[/^\#{2} +(.+?)( +\#*)?$/gm, '== $1 =='], // atx heading, level 2
 	[/^\#{3} +(.+?)( +\#*)?$/gm, '=== $1 ==='], // atx heading, level 3
 	[/^(\d+)\. +/gm, '    $1. '], // ordered list items
 	[/^[-+*] +/gm, '    * '], // unordered list items
+	// restore URLs (decode Base64)
+	[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`],
 ];
 
 /**
