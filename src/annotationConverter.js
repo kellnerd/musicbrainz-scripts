@@ -13,8 +13,8 @@ export const markdownToAnnotation = [
 	[/^\# +(.+?)( +\#*)?$/gm, '= $1 ='], // atx heading, level 1
 	[/^\#{2} +(.+?)( +\#*)?$/gm, '== $1 =='], // atx heading, level 2
 	[/^\#{3} +(.+?)( +\#*)?$/gm, '=== $1 ==='], // atx heading, level 3
-	[/^(\d+)\. +/gm, '    $1. '], // ordered list items
-	[/^[-+*] +/gm, '    * '], // unordered list items
+	[/^(\d+)\. +/gm, '    $1. '], // ordered list items, level 1
+	[/^[-+*] +/gm, '    * '], // unordered list items, level 1
 	// restore URLs (decode Base64)
 	[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`],
 ];
@@ -55,7 +55,7 @@ async function createEntityLink(urlString, label = null) {
  * @returns {Promise<string>}
  */
 async function fetchEntityName(url) {
-	url.pathname = `/ws/2${url.pathname}`;
+	url.pathname = '/ws/2' + url.pathname;
 	url.search = '?fmt=json';
 	let response = await fetch(url);
 	response = await response.json();
