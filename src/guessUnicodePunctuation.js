@@ -26,14 +26,14 @@ export const transformationRules = [
 export const transformationRulesToPreserveMarkup = [
 	// Base64 encode URLs
 	[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // labeled link
-	[/(?<=\w:\/\/)(\S+)/g, (_match, path) => btoa(path)], // plain text URLs
+	[/(?<=\/\/)(\S+)/g, (_match, path) => btoa(path)], // plain text URLs
 	[/'''/g, '<b>'], // bold text
 	[/''/g, '<i>'], // italic text
 	...transformationRules,
 	[/<b>/g, "'''"],
 	[/<i>/g, "''"],
 	// decode Base64 URLs
-	[/(?<=\w:\/\/)([A-Za-z0-9+/=]+)/g, (_match, path) => atob(path)], // plain text URLs
+	[/(?<=\/\/)([A-Za-z0-9+/=]+)/g, (_match, path) => atob(path)], // plain text URLs
 	[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // labeled link
 ];
 
