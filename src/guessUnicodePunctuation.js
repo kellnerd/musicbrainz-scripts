@@ -24,13 +24,17 @@ export const transformationRules = [
  * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
  */
 export const transformationRulesToPreserveMarkup = [
-	[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // Base64 encode URLs
+	// Base64 encode URLs
+	[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // labeled link
+	[/(?<=\w:\/\/)(\S+)/g, (_match, path) => btoa(path)], // plain text URLs
 	[/'''/g, '<b>'], // bold text
 	[/''/g, '<i>'], // italic text
 	...transformationRules,
 	[/<b>/g, "'''"],
 	[/<i>/g, "''"],
-	[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // decode Base64 URLs
+	// decode Base64 URLs
+	[/(?<=\w:\/\/)([A-Za-z0-9+/=]+)/g, (_match, path) => atob(path)], // plain text URLs
+	[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // labeled link
 ];
 
 /**
