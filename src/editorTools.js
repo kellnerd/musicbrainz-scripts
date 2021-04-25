@@ -46,13 +46,17 @@ export async function editReleaseGroup(mbid, editData) {
 export function replaceNamesByIds(editData) {
 	for (let property in editData) {
 		let value = editData[property];
-		if (typeof value === 'object') { // recursively scan the edit data object
-			value = replaceNamesByIds(value);
-		} else if (property in RG_EDIT_FIELDS) { // known property
+		if (property in RG_EDIT_FIELDS) { // known property
 			const nameToId = RG_EDIT_FIELDS[property];
 			if (typeof nameToId === 'object' && nameToId !== null) { // mapping exists for this property
-				value = nameToId[value] || value; // fallback: use the (possibly numerical) value as-is
+				if (Array.isArray(value)) {
+					value = value.map((value) => (nameToId[value] || value));
+				} else {
+					value = nameToId[value] || value; // fallback: use the (possibly numerical) value as-is
+				}
 			}
+		} else if (typeof value === 'object' && value !== null) { // recursively scan the edit data object
+			value = replaceNamesByIds(value);
 		}
 		editData[property] = value;
 	}
