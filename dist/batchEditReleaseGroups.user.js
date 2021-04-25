@@ -9,7 +9,7 @@
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/batchEditReleaseGroups.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        GM_info
-// @include      /^https?:\/\/(\w+\.)?musicbrainz\.org\/artist\/[a-f0-9-]{36}$/
+// @include      /^https?:\/\/(\w+\.)?musicbrainz\.org\/artist\/[a-f0-9-]{36}(\?page=\d+)?$/
 // ==/UserScript==
 
 (function () {
