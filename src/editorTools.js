@@ -2,7 +2,10 @@ import {
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
 } from './MBS.js';
-import { flatten } from './formTools.js';
+import {
+	flatten,
+	multiUrlSearchParams,
+} from './formTools.js';
 
 /**
  * Sends an edit request for the given release group to MBS.
@@ -28,7 +31,7 @@ export async function editReleaseGroup(mbid, editData) {
 	// submit edit request
 	const response = await fetch(editUrl, {
 		method: 'POST',
-		body: new URLSearchParams(editBody),
+		body: multiUrlSearchParams(editBody),
 	});
 	if (response.redirected) {
 		return true;

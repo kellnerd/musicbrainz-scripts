@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.4.25.2
+// @version      2021.4.26
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -84,6 +84,25 @@
 	}
 
 	/**
+	 * Creates a custom `URLSearchParams` object where each array is serialized into multiple parameters with the same name
+	 * instead of a single parameter with concatenated values (e.g. `{ a: [1, 2] }` becomes `a=1&a=2` instead of `a=1,2`).
+	 * @param {Object} params Dictionary of parameters.
+	 * @returns {URLSearchParams}
+	 */
+	function multiUrlSearchParams(params) {
+		const searchParams = new URLSearchParams();
+		for (let name in params) {
+			const value = params[name];
+			if (Array.isArray(value)) {
+				value.forEach((value) => searchParams.append(name, value));
+			} else {
+				searchParams.append(name, value);
+			}
+		}
+		return searchParams;
+	}
+
+	/**
 	 * Sends an edit request for the given release group to MBS.
 	 * @param {string} mbid MBID of the release group.
 	 * @param {Object} editData Properties of the release group and their new values.
@@ -106,7 +125,7 @@
 		// submit edit request
 		const response = await fetch(editUrl, {
 			method: 'POST',
-			body: new URLSearchParams(editBody),
+			body: multiUrlSearchParams(editBody),
 		});
 		if (response.redirected) {
 			return true;
@@ -124,13 +143,17 @@
 	function replaceNamesByIds(editData) {
 		for (let property in editData) {
 			let value = editData[property];
-			if (typeof value === 'object') { // recursively scan the edit data object
-				value = replaceNamesByIds(value);
-			} else if (property in RG_EDIT_FIELDS) { // known property
+			if (property in RG_EDIT_FIELDS) { // known property
 				const nameToId = RG_EDIT_FIELDS[property];
 				if (typeof nameToId === 'object' && nameToId !== null) { // mapping exists for this property
-					value = nameToId[value] || value; // fallback: use the (possibly numerical) value as-is
+					if (Array.isArray(value)) {
+						value = value.map((value) => (nameToId[value] || value));
+					} else {
+						value = nameToId[value] || value; // fallback: use the (possibly numerical) value as-is
+					}
 				}
+			} else if (typeof value === 'object' && value !== null) { // recursively scan the edit data object
+				value = replaceNamesByIds(value);
 			}
 			editData[property] = value;
 		}
