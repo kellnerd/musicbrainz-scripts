@@ -30,3 +30,15 @@ export const RG_EDIT_FIELDS = {
 	edit_note: 'string | null',
 	make_votable: 'number(boolean) | null',
 };
+
+/**
+ * Maps edit data properties of release groups to the corresponding source data properties.
+ */
+export const RG_SOURCE_DATA = {
+	name: 'name',
+	// artist_credit: null,
+	comment: 'comment',
+	primary_type_id: 'typeID',
+	secondary_type_ids: 'secondaryTypeIDs',
+	// rel: null,
+};

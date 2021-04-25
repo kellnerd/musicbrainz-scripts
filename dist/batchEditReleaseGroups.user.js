@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.4.25
+// @version      2021.4.25.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -49,20 +49,34 @@
 	};
 
 	/**
-	 * Flattens the given object.
+	 * Maps edit data properties of release groups to the corresponding source data properties.
+	 */
+	const RG_SOURCE_DATA = {
+		name: 'name',
+		// artist_credit: null,
+		comment: 'comment',
+		primary_type_id: 'typeID',
+		secondary_type_ids: 'secondaryTypeIDs',
+		// rel: null,
+	};
+
+	/**
+	 * Flattens the given (deep) object to a single level hierarchy.
+	 * Concatenates the keys in a nested structure which lead to a value with dots.
 	 * @param {Object} object 
+	 * @param {string[]} preservedKeys Keys whose values will be preserved.
 	 * @returns {Object}
 	 */
-	function flatten(object) {
+	function flatten(object, preservedKeys = []) {
 		let flatObject = {};
 		for (let key in object) {
 			let value = object[key];
-			if (typeof value === 'object') { // also matches arrays
-				value = flatten(value);
+			if (typeof value === 'object' && value !== null && !preservedKeys.includes(key)) { // also matches arrays
+				value = flatten(value, preservedKeys);
 				for (let childKey in value) {
 					flatObject[key + '.' + childKey] = value[childKey]; // concatenate keys
 				}
-			} else { // value is already flat, e.g. a string
+			} else { // value is already flat (e.g. a string) or should be preserved
 				flatObject[key] = value; // keep the key
 			}
 		}
@@ -72,31 +86,32 @@
 	/**
 	 * Sends an edit request for the given release group to MBS.
 	 * @param {string} mbid MBID of the release group.
-	 * @param {Object} editData Fields of the release group and their new values.
+	 * @param {Object} editData Properties of the release group and their new values.
 	 * @returns {Promise<boolean>}
 	 */
 	async function editReleaseGroup(mbid, editData) {
-		let response;
-		// build body of the edit request and pre-fill with the required (unchanged) values
-		response = await fetch(`/ws/2/release-group/${mbid}?fmt=json`);
-		const rg = await response.json();
+		const editUrl = buildEditUrl('release-group', mbid);
+
+		// build body of the edit request and preserve values of unaffected properties
+		const sourceData = await fetchEditSourceData(editUrl);
 		const editBody = flatten({
 			'edit-release-group': {
-				name: rg.title, // required to submit the form
-				// TODO: preserve values for primary & secondary type IDs...
+				...parseSourceData(sourceData), // preserve old values (MBS discards some of them if they are missing)
 				make_votable: 1,
 				edit_note: buildEditNote(),
 				...editData, // can also be used to overwrite the above defaults
 			}
-		});
-		response = await fetch(`/release-group/${mbid}/edit`, {
+		}, ['secondary_type_ids']);
+
+		// submit edit request
+		const response = await fetch(editUrl, {
 			method: 'POST',
 			body: new URLSearchParams(editBody),
 		});
 		if (response.redirected) {
 			return true;
 		} else {
-			console.error(`Failed to edit '${rg.title}' (MBS did not redirect)`);
+			console.error(`Failed to edit '${sourceData.name}' (MBS did not redirect)`);
 			return false;
 		}
 	}
@@ -113,7 +128,7 @@
 				value = replaceNamesByIds(value);
 			} else if (property in RG_EDIT_FIELDS) { // known property
 				const nameToId = RG_EDIT_FIELDS[property];
-				if (typeof nameToId === 'object') { // mapping exists for this property
+				if (typeof nameToId === 'object' && nameToId !== null) { // mapping exists for this property
 					value = nameToId[value] || value; // fallback: use the (possibly numerical) value as-is
 				}
 			}
@@ -134,6 +149,43 @@
 		}
 		const lines = [message, scriptInfo];
 		return lines.filter((line) => line).join('\n—\n');
+	}
+
+	/**
+	 * Builds the URL to the MBS edit page of the given entity.
+	 * @param {string} entityType Type of the entity.
+	 * @param {string} mbid MBID of the entity.
+	 * @returns {string}
+	 */
+	function buildEditUrl(entityType, mbid) {
+		return `/${entityType}/${mbid}/edit`;
+	}
+
+	/**
+	 * Fetches the given edit page and extracts the JSON edit source data of the entity from it.
+	 * @param {string} editUrl URL of the entity edit page.
+	 * @returns {Promise<Object>} JSON edit source data.
+	 */
+	async function fetchEditSourceData(editUrl) {
+		const response = await fetch(editUrl);
+		const [, sourceData] = /sourceData: (.*),\n/.exec(await response.text());
+		return JSON.parse(sourceData);
+	}
+
+	/**
+	 * Parses edit source data of the entity and builds the relevant default edit data.
+	 * @param {Object} sourceData JSON edit source data.
+	 * @returns {Object} JSON edit data.
+	 */
+	function parseSourceData(sourceData) {
+		const editData = {};
+		for (let property in RG_SOURCE_DATA) {
+			const value = sourceData[RG_SOURCE_DATA[property]];
+			if (value) {
+				editData[property] = value;
+			}
+		}
+		return editData;
 	}
 
 	/**
