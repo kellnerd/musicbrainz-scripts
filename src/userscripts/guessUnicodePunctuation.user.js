@@ -1,8 +1,8 @@
 import {
 	guessUnicodePunctuation,
 	transformationRulesToPreserveMarkup,
-} from '../guessUnicodePunctuation';
-import { transformInputValues } from '../transformInputValues';
+} from '../guessUnicodePunctuation.js';
+import { transformInputValues } from '../transformInputValues.js';
 import guessPunctuationIcon from './icons/guessPunctuation.png';
 
 const buttonTemplate = {

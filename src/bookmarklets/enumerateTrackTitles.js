@@ -7,7 +7,7 @@
  *   - *Example*: `+_, Part ` renames track 27/143 "Title" to "Title, Part 027"
  */
 
-import { enumerateTrackTitles } from '../enumerateTrackTitles';
+import { enumerateTrackTitles } from '../enumerateTrackTitles.js';
 
 const userInput = prompt('Numbering prefix, preceded by flags:\n+ append to current titles\n_ pad numbers', 'Part ');
 

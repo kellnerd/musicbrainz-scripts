@@ -10,8 +10,8 @@
 import {
 	guessUnicodePunctuation,
 	transformationRulesToPreserveMarkup,
-} from '../guessUnicodePunctuation';
-import { transformInputValues } from '../transformInputValues';
+} from '../guessUnicodePunctuation.js';
+import { transformInputValues } from '../transformInputValues.js';
 
 const titleInputSelectors = [
 	'input#name', // release title (release editor)
