@@ -17,6 +17,7 @@ const punctuationTestCases = [
 	['\'39', '’39'], // before a number, at the beginning
 	['Atom Heart Mother (\'71 Hakone Aphrodite)', 'Atom Heart Mother (’71 Hakone Aphrodite)'], // after an opening bracket
 	['Rock \'n\' Roll', 'Rock ’n’ Roll'], // special case, no single quotes!
+	['Rock \'N\' Roll', 'Rock ’N’ Roll'], // case-insensitive, “Guess punctuation” used before “Guess case”
 	['Back to the 70\'s', 'Back to the 70’s'],
 	// multiple ASCII quotes and apostrophes with different meaning
 	['Little Billy (aka \'Little Billy\'s Doing Fine\')', 'Little Billy (aka ‘Little Billy’s Doing Fine’)'],

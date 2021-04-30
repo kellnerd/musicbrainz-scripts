@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.4.14.1
+// @version      2021.4.30
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -46,7 +46,7 @@
 
 	const transformationRules = [
 		[/(?<=\W|^)"(.+?)"(?=\W|$)/g, '“$1”'], // double quoted text
-		[/(?<=\W|^)'n'(?=\W|$)/g, '’n’'], // special case: 'n'
+		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
 		[/(?<=\W|^)'(.+?)'(?=\W|$)/g, '‘$1’'], // single quoted text
 		// ... which is enclosed by non-word characters or at the beginning/end of the title
 		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
