@@ -1,10 +1,11 @@
 import { transformInputValues } from './transformInputValues.js';
 
 export const transformationRules = [
-	[/(?<=\W|^)"(.+?)"(?=\W|$)/g, '“$1”'], // double quoted text
+	[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
 	[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
-	[/(?<=\W|^)'(.+?)'(?=\W|$)/g, '‘$1’'], // single quoted text
+	[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
 	// ... which is enclosed by non-word characters or at the beginning/end of the title
+	// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
 	[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
 	[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
 	[/'/g, '’'], // ... and finally the apostrophes should be remaining

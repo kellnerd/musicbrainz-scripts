@@ -40,6 +40,8 @@ const punctuationTestCases = [
 	['...Baby One More Time', '…Baby One More Time'], // at the beginning
 	['The Gold It\'s in The...', 'The Gold It’s in The…'], // at the end
 	['Is This the World We Created...?', 'Is This the World We Created…?'], // before another punctuation symbol
+	// non-Latin scripts
+	['Όσο Και Να Σ\' Αγαπάω (Υπ\' Ευθύνη Μου)',	'Όσο Και Να Σ’ Αγαπάω (Υπ’ Ευθύνη Μου)'],
 	// ignored cases
 	['Death on Two Legs (Dedicated to......', 'Death on Two Legs (Dedicated to......'],
 ];
