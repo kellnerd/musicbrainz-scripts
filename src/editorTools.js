@@ -9,6 +9,17 @@ import {
 } from './formTools.js';
 
 /**
+ * Gets the default edit data for the given release group.
+ * @param {string} mbid MBID of the release group.
+ * @returns {Promise<Object>}
+ */
+ export async function getReleaseGroupEditData(mbid) {
+	const editUrl = buildEditUrl('release-group', mbid);
+	const sourceData = await fetchEditSourceData(editUrl);
+	return parseSourceData(sourceData);
+}
+
+/**
  * Sends an edit request for the given release group to MBS.
  * @param {string} mbid MBID of the release group.
  * @param {Object} editData Properties of the release group and their new values.

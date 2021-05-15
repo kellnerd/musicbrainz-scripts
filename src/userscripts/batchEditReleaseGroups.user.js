@@ -4,17 +4,13 @@ import {
 	extractMbids,
 	replaceNamesByIds,
 	buildEditNote,
+	getReleaseGroupEditData,
 } from '../editorTools.js';
 
 /**
  * Enters edits for all selected entities using the form values for edit data, edit note and the "make votable" checkbox.
  */
 function editSelectedEntities() {
-	// get MBIDs of all selected entities
-	const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
-	const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-	const mbids = extractMbids(entityUrls, 'release-group');
-
 	// parse edit data form input
 	let editData;
 	try {
@@ -31,7 +27,23 @@ function editSelectedEntities() {
 	editData.make_votable = Number($('#make-votable').is(':checked'));
 
 	console.debug(editData);
-	mbids.forEach((mbid) => editReleaseGroup(mbid, editData));
+	getSelectedMbids().forEach((mbid) => editReleaseGroup(mbid, editData));
+}
+
+/**
+ * Loads the original edit data of the first selected entity into the form.
+ */
+async function loadFirstSelectedEntity() {
+	const mbid = getSelectedMbids()[0];
+	if (mbid) {
+		loadEditData(await getReleaseGroupEditData(mbid));
+	}
+}
+
+function getSelectedMbids() {
+	const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
+	const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
+	return extractMbids(entityUrls, 'release-group');
 }
 
 /**
@@ -89,6 +101,9 @@ function buildUI() {
 	// add buttons and attach click handlers
 	$('<button type="button" class="positive">Edit selected entities</button>')
 		.on('click', editSelectedEntities)
+		.appendTo('#batch-edit-tools .buttons');
+	$('<button type="button" title="Load JSON of the first selected entity">Load first entity</button>')
+		.on('click', loadFirstSelectedEntity)
 		.appendTo('#batch-edit-tools .buttons');
 	addEditDataTemplateButton('Audiobook', 'Change types to Other + Audiobook', {
 		primary_type_id: "Other",

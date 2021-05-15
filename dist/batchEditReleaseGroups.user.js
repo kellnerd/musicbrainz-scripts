@@ -105,6 +105,17 @@
 	}
 
 	/**
+	 * Gets the default edit data for the given release group.
+	 * @param {string} mbid MBID of the release group.
+	 * @returns {Promise<Object>}
+	 */
+	 async function getReleaseGroupEditData(mbid) {
+		const editUrl = buildEditUrl('release-group', mbid);
+		const sourceData = await fetchEditSourceData(editUrl);
+		return parseSourceData(sourceData);
+	}
+
+	/**
 	 * Sends an edit request for the given release group to MBS.
 	 * @param {string} mbid MBID of the release group.
 	 * @param {Object} editData Properties of the release group and their new values.
@@ -236,11 +247,6 @@
 	 * Enters edits for all selected entities using the form values for edit data, edit note and the "make votable" checkbox.
 	 */
 	function editSelectedEntities() {
-		// get MBIDs of all selected entities
-		const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
-		const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-		const mbids = extractMbids(entityUrls, 'release-group');
-
 		// parse edit data form input
 		let editData;
 		try {
@@ -255,7 +261,23 @@
 		editData = replaceNamesByIds(editData);
 		editData.edit_note = buildEditNote($('#edit-note').val());
 		editData.make_votable = Number($('#make-votable').is(':checked'));
-		mbids.forEach((mbid) => editReleaseGroup(mbid, editData));
+		getSelectedMbids().forEach((mbid) => editReleaseGroup(mbid, editData));
+	}
+
+	/**
+	 * Loads the original edit data of the first selected entity into the form.
+	 */
+	async function loadFirstSelectedEntity() {
+		const mbid = getSelectedMbids()[0];
+		if (mbid) {
+			loadEditData(await getReleaseGroupEditData(mbid));
+		}
+	}
+
+	function getSelectedMbids() {
+		const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
+		const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
+		return extractMbids(entityUrls, 'release-group');
 	}
 
 	/**
@@ -313,6 +335,9 @@ summary > h2 {
 		// add buttons and attach click handlers
 		$('<button type="button" class="positive">Edit selected entities</button>')
 			.on('click', editSelectedEntities)
+			.appendTo('#batch-edit-tools .buttons');
+		$('<button type="button" title="Load JSON of the first selected entity">Load first entity</button>')
+			.on('click', loadFirstSelectedEntity)
 			.appendTo('#batch-edit-tools .buttons');
 		addEditDataTemplateButton('Audiobook', 'Change types to Other + Audiobook', {
 			primary_type_id: "Other",
