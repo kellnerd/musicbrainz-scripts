@@ -1,4 +1,5 @@
 import {
+	MBID_REGEX,
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
 } from './MBS.js';
@@ -140,5 +141,24 @@ async function fetchWithRetry(input, init, retries = 5) {
 		}
 		console.warn('Retrying fetch:', error);
 		return await fetchWithRetry(input, init, retries - 1);
+	}
+}
+
+/**
+ * Extracts MBIDs from the given URLs.
+ * @param  {string[]} urls
+ * @param  {string} entityType Filter URLs by entity type (optional).
+ * @param {boolean} unique Removes duplicate MBIDs from the results (optional).
+ * @returns {string[]} Array of valid MBIDs.
+ */
+export function extractMbids(urls, entityType = '', unique = false) {
+	const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})`);
+	const mbids = urls
+		.map((url) => (url.match(pattern) || [])[1]) // returns first capture group or `undefined`
+		.filter((mbid) => mbid); // remove undefined MBIDs
+	if (unique) {
+		return [...new Set(mbids)];
+	} else {
+		return mbids;
 	}
 }

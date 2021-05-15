@@ -15,6 +15,8 @@
 (function () {
 	'use strict';
 
+	const MBID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+
 	/**
 	 * Dictionary of supported edit data properties for release groups.
 	 * Contains their types or mappings of their possible named values to internal IDs.
@@ -212,12 +214,32 @@
 	}
 
 	/**
+	 * Extracts MBIDs from the given URLs.
+	 * @param  {string[]} urls
+	 * @param  {string} entityType Filter URLs by entity type (optional).
+	 * @param {boolean} unique Removes duplicate MBIDs from the results (optional).
+	 * @returns {string[]} Array of valid MBIDs.
+	 */
+	function extractMbids(urls, entityType = '', unique = false) {
+		const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})`);
+		const mbids = urls
+			.map((url) => (url.match(pattern) || [])[1]) // returns first capture group or `undefined`
+			.filter((mbid) => mbid); // remove undefined MBIDs
+		if (unique) {
+			return [...new Set(mbids)];
+		} else {
+			return mbids;
+		}
+	}
+
+	/**
 	 * Enters edits for all selected entities using the form values for edit data, edit note and the "make votable" checkbox.
 	 */
 	function editSelectedEntities() {
 		// get MBIDs of all selected entities
 		const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
-		const mbids = checkedItems.map((_, tr) => tr.id).get(); // relies on a script by @jesus2099
+		const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
+		const mbids = extractMbids(entityUrls, 'release-group');
 
 		// parse edit data form input
 		let editData;

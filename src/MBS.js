@@ -1,3 +1,5 @@
+export const MBID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+
 /**
  * Dictionary of supported edit data properties for release groups.
  * Contains their types or mappings of their possible named values to internal IDs.

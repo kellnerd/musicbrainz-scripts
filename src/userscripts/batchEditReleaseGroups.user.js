@@ -1,6 +1,7 @@
 import { RG_EDIT_FIELDS } from '../MBS.js';
 import {
 	editReleaseGroup,
+	extractMbids,
 	replaceNamesByIds,
 	buildEditNote,
 } from '../editorTools.js';
@@ -11,7 +12,8 @@ import {
 function editSelectedEntities() {
 	// get MBIDs of all selected entities
 	const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
-	const mbids = checkedItems.map((_, tr) => tr.id).get(); // relies on a script by @jesus2099
+	const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
+	const mbids = extractMbids(entityUrls, 'release-group');
 
 	// parse edit data form input
 	let editData;
