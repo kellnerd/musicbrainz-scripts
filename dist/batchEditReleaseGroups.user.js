@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.4.26
+// @version      2021.5.15
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -261,7 +261,7 @@
 	<div class="row no-label">
 		<div class="auto-editor">
 			<input id="make-votable" name="make_votable" type="checkbox" value="1">
-			<label class="inline" for="make-votable">Make all edits votable.</label>        
+			<label class="inline" for="make-votable">Make all edits votable.</label>
 		</div>
 	</div>
 	<div class="row no-label buttons"></div>
@@ -276,6 +276,12 @@ summary > h2 {
 	display: inline;
 }`	;
 
+	function addEditDataTemplateButton(label, description, editData) {
+		$(`<button type="button" title="Load JSON for “${description}”">${label}</button>`)
+			.on('click', () => loadEditData(editData))
+			.appendTo('#batch-edit-tools .buttons');
+	}
+
 	function buildUI() {
 		$(UI).appendTo('#content');
 		$('<style type="text/css" id="batch-edit-styles">')
@@ -286,18 +292,14 @@ summary > h2 {
 		$('<button type="button" class="positive">Edit selected entities</button>')
 			.on('click', editSelectedEntities)
 			.appendTo('#batch-edit-tools .buttons');
-		$('<button type="button" title="Load JSON for “Change types to Other + Audiobook”">Audiobook</button>')
-			.on('click', () => loadEditData({
-				primary_type_id: "Other",
-				secondary_type_ids: "Audiobook",
-			}))
-			.appendTo('#batch-edit-tools .buttons');
-		$('<button type="button" title="Load JSON for “Change types to Other + Audio drama”">Audio drama</button>')
-			.on('click', () => loadEditData({
-				primary_type_id: "Other",
-				secondary_type_ids: "Audio drama",
-			}))
-			.appendTo('#batch-edit-tools .buttons');
+		addEditDataTemplateButton('Audiobook', 'Change types to Other + Audiobook', {
+			primary_type_id: "Other",
+			secondary_type_ids: "Audiobook",
+		});
+		addEditDataTemplateButton('Audio drama', 'Change types to Other + Audio drama', {
+			primary_type_id: "Other",
+			secondary_type_ids: "Audio drama",
+		});
 
 		// show supported properties and their types or value mappings as a tooltip
 		$('#edit-data').attr('title', `Property types/mappings: ${JSON.stringify(RG_EDIT_FIELDS, null, 2)}`);
