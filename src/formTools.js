@@ -27,7 +27,7 @@ export function flatten(object, preservedKeys = []) {
  * @param {Object} params Dictionary of parameters.
  * @returns {URLSearchParams}
  */
-export function multiUrlSearchParams(params) {
+export function urlSearchMultiParams(params) {
 	const searchParams = new URLSearchParams();
 	for (let name in params) {
 		const value = params[name];

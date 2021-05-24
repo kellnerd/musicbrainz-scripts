@@ -5,7 +5,7 @@ import {
 } from './MBS.js';
 import {
 	flatten,
-	multiUrlSearchParams,
+	urlSearchMultiParams,
 } from './formTools.js';
 
 /**
@@ -43,7 +43,7 @@ export async function editReleaseGroup(mbid, editData) {
 	// submit edit request
 	const response = await fetch(editUrl, {
 		method: 'POST',
-		body: multiUrlSearchParams(editBody),
+		body: urlSearchMultiParams(editBody),
 	});
 	if (response.redirected) {
 		return true;

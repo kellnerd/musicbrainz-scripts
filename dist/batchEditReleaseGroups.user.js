@@ -91,7 +91,7 @@
 	 * @param {Object} params Dictionary of parameters.
 	 * @returns {URLSearchParams}
 	 */
-	function multiUrlSearchParams(params) {
+	function urlSearchMultiParams(params) {
 		const searchParams = new URLSearchParams();
 		for (let name in params) {
 			const value = params[name];
@@ -138,7 +138,7 @@
 		// submit edit request
 		const response = await fetch(editUrl, {
 			method: 'POST',
-			body: multiUrlSearchParams(editBody),
+			body: urlSearchMultiParams(editBody),
 		});
 		if (response.redirected) {
 			return true;
