@@ -109,7 +109,7 @@ function buildEditUrl(entityType, mbid) {
  */
 async function fetchEditSourceData(editUrl) {
 	const response = await fetch(editUrl);
-	const [, sourceData] = /sourceData: (.*),\n/.exec(await response.text());
+	const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
 	console.debug(sourceData);
 	return JSON.parse(sourceData);
 }
@@ -165,7 +165,7 @@ async function fetchWithRetry(input, init, retries = 5) {
 export function extractMbids(urls, entityType = '', unique = false) {
 	const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})`);
 	const mbids = urls
-		.map((url) => (url.match(pattern) || [])[1]) // returns first capture group or `undefined`
+		.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
 		.filter((mbid) => mbid); // remove undefined MBIDs
 	if (unique) {
 		return [...new Set(mbids)];

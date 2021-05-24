@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.5.15
+// @version      2021.5.24
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -204,7 +204,7 @@
 	 */
 	async function fetchEditSourceData(editUrl) {
 		const response = await fetch(editUrl);
-		const [, sourceData] = /sourceData: (.*),\n/.exec(await response.text());
+		const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
 		return JSON.parse(sourceData);
 	}
 
@@ -234,7 +234,7 @@
 	function extractMbids(urls, entityType = '', unique = false) {
 		const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})`);
 		const mbids = urls
-			.map((url) => (url.match(pattern) || [])[1]) // returns first capture group or `undefined`
+			.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
 			.filter((mbid) => mbid); // remove undefined MBIDs
 		if (unique) {
 			return [...new Set(mbids)];
