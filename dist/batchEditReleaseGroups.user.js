@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.5.29
+// @version      2021.5.30
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -109,7 +109,7 @@
 	 * @param {string} mbid MBID of the release group.
 	 * @returns {Promise<Object>}
 	 */
-	 async function getReleaseGroupEditData(mbid) {
+	async function getReleaseGroupEditData(mbid) {
 		const editUrl = buildEditUrl('release-group', mbid);
 		const sourceData = await fetchEditSourceData(editUrl);
 		return parseSourceData(sourceData);
@@ -210,14 +210,35 @@
 	 * @returns {Object} JSON edit data.
 	 */
 	function parseSourceData(sourceData) {
-		const editData = {};
+		const editData = {
+			artist_credit: parseArtistCreditSourceData(sourceData),
+		};
 		for (let property in RG_SOURCE_DATA) {
-			const value = sourceData[RG_SOURCE_DATA[property]];
+			const sourceKey = RG_SOURCE_DATA[property];
+			const value = sourceData[sourceKey];
 			if (value) {
 				editData[property] = value;
 			}
 		}
 		return editData;
+	}
+
+	/**
+	 * Parses edit source data for the artist credit and builds the relevant default edit data of the artist credit.
+	 * @param {Object} sourceData JSON edit source data.
+	 * @returns {{names:[]}} JSON artist credit edit data.
+	 */
+	function parseArtistCreditSourceData(sourceData) {
+		return {
+			names: sourceData.artistCredit.names.map((name) => ({
+				name: name.name, // name as credited
+				join_phrase: name.joinPhrase,
+				artist: {
+					id: name.artist.id, // internal ID
+					name: name.artist.name, // redundant, has no effect
+				}
+			}))
+		};
 	}
 
 	/**
