@@ -23,7 +23,6 @@ import {
  * Sends an edit request for the given release group to MBS.
  * @param {string} mbid MBID of the release group.
  * @param {Object} editData Properties of the release group and their new values.
- * @returns {Promise<boolean>}
  */
 export async function editReleaseGroup(mbid, editData) {
 	const editUrl = buildEditUrl('release-group', mbid);
@@ -45,11 +44,8 @@ export async function editReleaseGroup(mbid, editData) {
 		method: 'POST',
 		body: urlSearchMultiParams(editBody),
 	});
-	if (response.redirected) {
-		return true;
-	} else {
-		console.error(`Failed to edit '${sourceData.name}' (MBS did not redirect)`);
-		return false;
+	if (!response.redirected) {
+		throw new Error(`Failed to edit “${sourceData.name}” (MBS did not redirect).`);
 	}
 }
 

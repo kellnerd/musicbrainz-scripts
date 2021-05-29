@@ -10,7 +10,7 @@ import {
 /**
  * Enters edits for all selected entities using the form values for edit data, edit note and the "make votable" checkbox.
  */
-function editSelectedEntities() {
+async function editSelectedEntities() {
 	// parse edit data form input
 	let editData;
 	try {
@@ -25,9 +25,19 @@ function editSelectedEntities() {
 	editData = replaceNamesByIds(editData);
 	editData.edit_note = buildEditNote($('#edit-note').val());
 	editData.make_votable = Number($('#make-votable').is(':checked'));
-
 	console.debug(editData);
-	getSelectedMbids().forEach((mbid) => editReleaseGroup(mbid, editData));
+
+	const mbids = getSelectedMbids();
+	displayStatus(`Submitting edits for ${mbids.length} release group(s)...`, true);
+	clearErrorMessages();
+	for (const mbid of mbids) {
+		try {
+			await editReleaseGroup(mbid, editData);
+		} catch (error) {
+			displayErrorMessage(error.message);
+		}
+	};
+	displayStatus(`Submitted edits for ${mbids.length} release group(s).`);
 }
 
 /**
@@ -36,7 +46,10 @@ function editSelectedEntities() {
 async function loadFirstSelectedEntity() {
 	const mbid = getSelectedMbids()[0];
 	if (mbid) {
-		loadEditData(await getReleaseGroupEditData(mbid));
+		displayStatus(`Loading edit data of ${mbid}...`, true);
+		const editData = await getReleaseGroupEditData(mbid);
+		loadEditData(editData);
+		displayStatus(`Loaded edit data of “${editData.name}”.`);
 	}
 }
 
@@ -52,6 +65,21 @@ function getSelectedMbids() {
  */
 function loadEditData(object = {}) {
 	$('#edit-data').val(JSON.stringify(object, null, 2));
+}
+
+function displayStatus(message, loading = false) {
+	$('#userscript-status')
+		.text(message)
+		.toggleClass('loading-message', loading);
+}
+
+function displayErrorMessage(message) {
+	$('#userscript-errors')
+		.append(`<p>${message}</p>`);
+}
+
+function clearErrorMessages() {
+	$('#userscript-errors').empty();
 }
 
 const UI =
@@ -75,6 +103,11 @@ const UI =
 		</div>
 	</div>
 	<div class="row no-label buttons"></div>
+	<div id="userscript-status" class="row no-label"></div>
+	<div id="userscript-errors" class="row no-label error">
+		<p>Warning: This tool does not validate properties and values of the entered edit data and might lose existing values or submit unwanted changes as a side effect. Use at your own risk!</p>
+		<p>Please work with small batches and make all edits votable to play it safe.</p>
+	</div>
 </form>
 </details>`;
 
@@ -88,7 +121,10 @@ summary > h2 {
 
 function addEditDataTemplateButton(label, description, editData) {
 	$(`<button type="button" title="Load JSON for “${description}”">${label}</button>`)
-		.on('click', () => loadEditData(editData))
+		.on('click', () => {
+			loadEditData(editData);
+			displayStatus(`Loaded edit data for “${description}”.`);
+		})
 		.appendTo('#batch-edit-tools .buttons');
 }
 
