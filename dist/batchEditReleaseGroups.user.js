@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.5.30.1
+// @version      2021.5.31
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -305,10 +305,11 @@
 	async function editSelectedEntities() {
 		// parse edit data form input
 		let editData;
+		clearErrorMessages();
 		try {
 			editData = JSON.parse($('#edit-data').val());
 		} catch (error) {
-			alert(error.message);
+			displayErrorMessage(error.message);
 			return;
 		}
 		loadEditData(editData); // re-format JSON of the form input
@@ -319,15 +320,16 @@
 		editData.make_votable = Number($('#make-votable').is(':checked'));
 
 		const mbids = getSelectedMbids();
-		displayStatus(`Submitting edits for ${mbids.length} release group(s)...`, true);
-		clearErrorMessages();
-		for (const mbid of mbids) {
+		const totalRequests = mbids.length;
+		for (let i = 0; i < totalRequests; i++) {
+			displayStatus(`Submitting edits (${i} of ${totalRequests}) ...`, true);
 			try {
-				await editReleaseGroup(mbid, editData);
+				await editReleaseGroup(mbids[i], editData);
 			} catch (error) {
 				displayErrorMessage(error.message);
 			}
-		}	displayStatus(`Submitted edits for ${mbids.length} release group(s).`);
+		}
+		displayStatus(`Submitted edits for ${totalRequests} release group${totalRequests != 1 ? 's' : ''}.`);
 	}
 
 	/**
@@ -336,7 +338,7 @@
 	async function loadFirstSelectedEntity() {
 		const mbid = getSelectedMbids()[0];
 		if (mbid) {
-			displayStatus(`Loading edit data of ${mbid}...`, true);
+			displayStatus(`Loading edit data of ${mbid} ...`, true);
 			const editData = await getReleaseGroupEditData(mbid);
 			loadEditData(editData);
 			displayStatus(`Loaded edit data of “${editData.name}”.`);
