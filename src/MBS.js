@@ -29,6 +29,7 @@ export const RG_EDIT_FIELDS = {
 		'Spokenword': 3,
 	},
 	rel: 'array',
+	url: 'array',
 	edit_note: 'string | null',
 	make_votable: 'number(boolean) | null',
 };
@@ -38,9 +39,10 @@ export const RG_EDIT_FIELDS = {
  */
 export const RG_SOURCE_DATA = {
 	name: 'name',
-	// artist_credit: null,
+	// artist_credit: separate parser
 	comment: 'comment',
 	primary_type_id: 'typeID',
 	secondary_type_ids: 'secondaryTypeIDs',
-	// rel: null,
+	// rel: separate parser
+	// url: separate parser (same as for rel)
 };

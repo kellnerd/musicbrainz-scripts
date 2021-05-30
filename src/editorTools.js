@@ -16,7 +16,7 @@ import {
 export async function getReleaseGroupEditData(mbid) {
 	const editUrl = buildEditUrl('release-group', mbid);
 	const sourceData = await fetchEditSourceData(editUrl);
-	return parseSourceData(sourceData);
+	return parseSourceData(sourceData, true);
 }
 
 /**
@@ -113,18 +113,24 @@ async function fetchEditSourceData(editUrl) {
 /**
  * Parses edit source data of the entity and builds the relevant default edit data.
  * @param {Object} sourceData JSON edit source data.
+ * @param {boolean} parseOptionalProps Enables parsing of artist credits, relationships and URLs.
  * @returns {Object} JSON edit data.
  */
-function parseSourceData(sourceData) {
-	const editData = {
-		artist_credit: parseArtistCreditSourceData(sourceData),
-	};
+function parseSourceData(sourceData, parseOptionalProps = false) {
+	let editData = {};
 	for (let property in RG_SOURCE_DATA) {
 		const sourceKey = RG_SOURCE_DATA[property];
 		const value = sourceData[sourceKey];
 		if (value) {
 			editData[property] = value;
 		}
+	}
+	if (parseOptionalProps) {
+		editData = {
+			...editData,
+			artist_credit: parseArtistCreditSourceData(sourceData),
+			...parseRelationshipSourceData(sourceData),
+		};
 	}
 	console.debug(editData);
 	return editData;
@@ -146,6 +152,37 @@ function parseArtistCreditSourceData(sourceData) {
 			}
 		}))
 	};
+}
+
+/**
+ * Parses edit source data for relationships/URLs and builds their relevant default edit data.
+ * @param {Object} sourceData JSON edit source data.
+ * @returns {{url:Array,rel:Array}} JSON edit data.
+ */
+function parseRelationshipSourceData(sourceData) {
+	// these are optional edit data properties, empty arrays will be removed during flattening
+	const editData = {
+		rel: [],
+		url: [],
+	};
+	sourceData.relationships.forEach((rel) => {
+		const relData = {
+			relationship_id: rel.id, // internal ID, left out for new relationships
+			link_type_id: rel.linkTypeID, // internal ID of the rel type
+		};
+		if (rel.target_type === 'url') {
+			relData.text = rel.target.name; // URL itself
+			editData.url.push(relData); // TODO: URL array index does not start with 0 in MBS requests!?
+		} else {
+			relData.target = rel.target.gid; // MBID of the target entity
+			relData.attributes = rel.attributes.map((attribute) => ({ // optional property (array)
+				type: attribute.type, // contains a `gid` property (MBID of the attribute)
+				text_value: attribute.text_value,
+			}));
+			editData.rel.push(relData);
+		}
+	});
+	return editData;
 }
 
 /**
