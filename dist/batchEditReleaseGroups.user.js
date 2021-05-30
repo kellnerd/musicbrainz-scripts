@@ -174,14 +174,15 @@
 	/**
 	 * Builds an edit note for the given message, including information about the active userscript.
 	 * @param {string} message Edit note message (optional).
+	 * @param {*} debugData Additional debug data which should be included as JSON (optional).
 	 * @returns {string}
 	 */
-	function buildEditNote(message = '') {
+	function buildEditNote(message = '', debugData) {
 		let scriptInfo = '';
 		if (typeof GM_info !== 'undefined') {
 			scriptInfo = `${GM_info.script.name} (${GM_info.script.version})`;
 		}
-		const lines = [message, scriptInfo];
+		const lines = [message, JSON.stringify(debugData), scriptInfo];
 		return lines.filter((line) => line).join('\n—\n');
 	}
 
@@ -316,7 +317,7 @@
 
 		// prepare raw edit data as it is expected by MBS
 		editData = replaceNamesByIds(editData);
-		editData.edit_note = buildEditNote($('#edit-note').val());
+		editData.edit_note = buildEditNote($('#edit-note').val(), editData);
 		editData.make_votable = Number($('#make-votable').is(':checked'));
 
 		const mbids = getSelectedMbids();

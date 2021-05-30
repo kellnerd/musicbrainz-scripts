@@ -77,14 +77,15 @@ export function replaceNamesByIds(editData) {
 /**
  * Builds an edit note for the given message, including information about the active userscript.
  * @param {string} message Edit note message (optional).
+ * @param {*} debugData Additional debug data which should be included as JSON (optional).
  * @returns {string}
  */
-export function buildEditNote(message = '') {
+export function buildEditNote(message = '', debugData) {
 	let scriptInfo = '';
 	if (typeof GM_info !== 'undefined') {
 		scriptInfo = `${GM_info.script.name} (${GM_info.script.version})`;
 	}
-	const lines = [message, scriptInfo];
+	const lines = [message, JSON.stringify(debugData), scriptInfo];
 	return lines.filter((line) => line).join('\n—\n');
 }
 

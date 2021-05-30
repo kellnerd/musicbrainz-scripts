@@ -24,7 +24,7 @@ async function editSelectedEntities() {
 
 	// prepare raw edit data as it is expected by MBS
 	editData = replaceNamesByIds(editData);
-	editData.edit_note = buildEditNote($('#edit-note').val());
+	editData.edit_note = buildEditNote($('#edit-note').val(), editData);
 	editData.make_votable = Number($('#make-votable').is(':checked'));
 	console.debug(editData);
 
