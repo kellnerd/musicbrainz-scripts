@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.5.31
+// @version      2021.6.4
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
 // @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#batch-edit-release-groups
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/batchEditReleaseGroups.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/batchEditReleaseGroups.user.js
+// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/batch-edit/dist/batchEditReleaseGroups.user.js
+// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/batch-edit/dist/batchEditReleaseGroups.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        GM_info
 // @include      /^https?:\/\/(\w+\.)?musicbrainz\.org\/artist\/[a-f0-9-]{36}(\?page=\d+)?$/
@@ -349,7 +349,7 @@
 	function getSelectedMbids() {
 		const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
 		const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-		return extractMbids(entityUrls, 'release-group');
+		return extractMbids(entityUrls, 'release-group', true);
 	}
 
 	/**

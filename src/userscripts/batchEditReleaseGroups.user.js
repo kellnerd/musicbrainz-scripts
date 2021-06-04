@@ -57,7 +57,7 @@ async function loadFirstSelectedEntity() {
 function getSelectedMbids() {
 	const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
 	const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-	return extractMbids(entityUrls, 'release-group');
+	return extractMbids(entityUrls, 'release-group', true);
 }
 
 /**
