@@ -66,3 +66,14 @@ javascript:(function(){function t(t,e){var g='background-color';$(t).css(g,'').e
 - Works for release/medium/track titles and release disambiguation comments (in the release editor)
   and for entity names and disambiguation comments (on their respective edit and creation pages).
 - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
+
+## [Voice Actor Credits](src/voiceActorCredits.js)
+
+[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/voiceActorCredits.user.js)
+[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/voiceActorCredits.user.js?raw=1)
+
+```js
+javascript:void function(e={}){var t=MB.releaseRelationshipEditor,e=new MB.entity.Artist(e);const i=new MB.relationshipEditor.UI.AddDialog({source:t.source,target:e,viewModel:t}),n=i.relationship();return n.linkTypeID(60),n.setAttributes([{type:{gid:'d3a36e62-a7c4-4eb9-839f-adfebe87ac12'},credited_as:""}]),i}().open(document.createEvent('MouseEvent'));
+```
+
+- Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.

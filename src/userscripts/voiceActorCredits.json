@@ -1,0 +1,6 @@
+{
+	"name": "MusicBrainz: Voice actor credits",
+	"author": "kellnerd",
+	"description": "Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.",
+	"match": "*://*.musicbrainz.org/release/*/edit-relationships"
+}
