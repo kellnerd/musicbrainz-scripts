@@ -24,7 +24,7 @@ async function editSelectedEntities() {
 
 	// prepare raw edit data as it is expected by MBS
 	editData = replaceNamesByIds(editData);
-	const debugData = (window.location.hostname === 'test.musicbrainz.org') ? editData : undefined;
+	const debugData = $('#debug-mode').is(':checked') ? editData : undefined;
 	editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
 	editData.make_votable = Number($('#make-votable').is(':checked'));
 	console.debug(editData);
@@ -84,8 +84,10 @@ function clearErrorMessages() {
 	$('#userscript-errors').empty();
 }
 
+const isProductionServer = ['musicbrainz.org', 'beta.musicbrainz.org'].includes(window.location.hostname);
+
 const UI =
-`<details id="batch-edit-tools" open>
+`<details id="batch-edit-tools" ${isProductionServer ? '' : 'open'}>
 <summary>
 	<h2>Batch‐edit release groups</h2>
 </summary>
@@ -97,6 +99,10 @@ const UI =
 	<div class="row">
 		<label for="edit-note">Edit note:</label>
 		<textarea id="edit-note" name="edit_note" cols="80" rows="2" class="edit-note"></textarea>
+	</div>
+	<div class="row no-label">
+		<input id="debug-mode" name="debug_mode" type="checkbox" value="1" ${isProductionServer ? '' : 'checked'}>
+		<label class="inline" for="debug-mode">Include edit data (minified JSON) in edit notes.</label>
 	</div>
 	<div class="row no-label">
 		<div class="auto-editor">
@@ -116,6 +122,7 @@ const UI =
 const styles =
 `summary {
 	color: #EB743B;
+	cursor: pointer;
 }
 summary > h2 {
 	display: inline;
