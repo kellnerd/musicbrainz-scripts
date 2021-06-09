@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.6.4
+// @version      2021.6.9
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -317,7 +317,8 @@
 
 		// prepare raw edit data as it is expected by MBS
 		editData = replaceNamesByIds(editData);
-		editData.edit_note = buildEditNote($('#edit-note').val(), editData);
+		const debugData = (window.location.hostname === 'test.musicbrainz.org') ? editData : undefined;
+		editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
 		editData.make_votable = Number($('#make-votable').is(':checked'));
 
 		const mbids = getSelectedMbids();

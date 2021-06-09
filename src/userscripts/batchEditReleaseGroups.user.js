@@ -24,7 +24,8 @@ async function editSelectedEntities() {
 
 	// prepare raw edit data as it is expected by MBS
 	editData = replaceNamesByIds(editData);
-	editData.edit_note = buildEditNote($('#edit-note').val(), editData);
+	const debugData = (window.location.hostname === 'test.musicbrainz.org') ? editData : undefined;
+	editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
 	editData.make_votable = Number($('#make-votable').is(':checked'));
 	console.debug(editData);
 
