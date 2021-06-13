@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.6.9.1
+// @version      2021.6.13
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -9,7 +9,7 @@
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/batch-edit/dist/batchEditReleaseGroups.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        GM_info
-// @include      /^https?:\/\/(\w+\.)?musicbrainz\.org\/artist\/[a-f0-9-]{36}(\?page=\d+)?$/
+// @include      /^https?:\/\/(\w+\.)?musicbrainz\.org\/artist\/[a-f0-9-]{36}(\?.*)?$/
 // ==/UserScript==
 
 (function () {

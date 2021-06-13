@@ -4,6 +4,6 @@
 	"description": "Batch‐edit selected release groups from artist’s overview pages.",
 	"grant": "GM_info",
 	"include": [
-		"/^https?:\\/\\/(\\w+\\.)?musicbrainz\\.org\\/artist\\/[a-f0-9-]{36}(\\?page=\\d+)?$/"
+		"/^https?:\\/\\/(\\w+\\.)?musicbrainz\\.org\\/artist\\/[a-f0-9-]{36}(\\?.*)?$/"
 	]
 }
