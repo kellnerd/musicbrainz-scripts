@@ -1,4 +1,7 @@
-import { createVoiceActorDialog } from '../voiceActorCredits.js';
+import {
+	createVoiceActorDialog,
+	importVoiceActorsFromDiscogs,
+} from '../voiceActorCredits.js';
 
 const button =
 `<span class="add-rel btn" id="add-voice-actor-credit">
@@ -8,7 +11,14 @@ const button =
 
 function insertVoiceActorButton() {
 	$(button)
-		.on('click', (event) => createVoiceActorDialog().open(event))
+		.on('click', (event) => {
+			const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
+			if (input) {
+				importVoiceActorsFromDiscogs(input, event);
+			} else {
+				createVoiceActorDialog().open(event);
+			}
+		})
 		.appendTo('#release-rels');
 }
 
