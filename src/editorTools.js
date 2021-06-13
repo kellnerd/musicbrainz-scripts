@@ -2,6 +2,7 @@ import {
 	MBID_REGEX,
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
+	ATTRIBUTE_DATA,
 } from './MBS.js';
 import {
 	flatten,
@@ -169,21 +170,53 @@ function parseRelationshipSourceData(sourceData) {
 	sourceData.relationships.forEach((rel) => {
 		const relData = {
 			relationship_id: rel.id, // internal ID, left out for new relationships
-			link_type_id: rel.linkTypeID, // internal ID of the rel type
+			link_type_id: rel.linkTypeID, // internal ID of the rel type, always required
+			verbosePhrase: rel.verbosePhrase, // redundant (ignored by MBS), just for convenience (TODO: replace by a UI "translation")
 		};
 		if (rel.target_type === 'url') {
 			relData.text = rel.target.name; // URL itself
 			editData.url.push(relData); // TODO: URL array index does not start with 0 in MBS requests!?
 		} else {
 			relData.target = rel.target.gid; // MBID of the target entity
-			relData.attributes = rel.attributes.map((attribute) => ({ // optional property (array)
-				type: attribute.type, // contains a `gid` property (MBID of the attribute)
-				text_value: attribute.text_value,
-			}));
+			relData.backward = Number(rel.direction === 'backward'); // defaults to 0, requires `target` on change
+			// all of the following relationship properties are optional (TODO: leave out if empty?)
+			relData.attributes = rel.attributes.map(parseAttributeSourceData);
+			relData.period = buildDatePeriod(rel.begin_date, rel.end_date, rel.ended);
+			relData.entity0_credit = rel.entity0_credit;
+			relData.entity1_credit = rel.entity1_credit;
 			editData.rel.push(relData);
 		}
 	});
 	return editData;
+}
+
+function parseAttributeSourceData(attribute) {
+	const result = {};
+	// copy relevant properties if they exist
+	ATTRIBUTE_DATA.forEach((property) => {
+		const value = attribute[property];
+		if (value) {
+			result[property] = value;
+		}
+	});
+	return result;
+}
+
+function buildDatePeriod(begin_date = null, end_date = null, ended = false) {
+	if (begin_date || end_date || ended) {
+		[begin_date, end_date].filter((x) => x !== null).forEach((date) => {
+			['year', 'month', 'day'].forEach((property) => {
+				date[property] ??= ''; // MBS expects an empty string instead of null
+			});
+		});
+		return {
+			begin_date,
+			end_date,
+			ended: Number(Boolean(ended)),
+		};
+	} else {
+		return {}; // empty objects will be removed during flattening
+	}
 }
 
 /**
