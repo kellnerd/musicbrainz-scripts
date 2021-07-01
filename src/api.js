@@ -9,26 +9,27 @@ const callAPI = rateLimit(fetch, 1000);
 /**
  * Returns the entity of the desired type which is associated to the given ressource URL.
  * @param {string} entityType Desired type of the entity.
- * @param {*} resourceURL 
+ * @param {string} resourceURL 
  * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
  */
 export async function getEntityForResourceURL(entityType, resourceURL) {
-	const url = await fetchFromAPI('url', new URLSearchParams({ resource: resourceURL }), [`${entityType}-rels`]);
+	const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
 	return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
+	// TODO: 404 => TypeError: url.relations is undefined
 }
 
 /**
  * Makes a request to the MusicBrainz API of the currently used server and returns the results as JSON.
  * @param {string} endpoint Endpoint (e.g. the entity type) which should be queried.
- * @param {URLSearchParams} query Query parameters.
- * @param {string[]} inc Include parameters which will should be added to the query parameters.
+ * @param {Record<string,string>} query Query parameters.
+ * @param {string[]} inc Include parameters which should be added to the query parameters.
  */
-export async function fetchFromAPI(endpoint, query = new URLSearchParams(), inc = []) {
+export async function fetchFromAPI(endpoint, query = {}, inc = []) {
 	if (inc.length) {
-		query.append('inc', inc.join(' ')); // spaces will be encoded as `+`
+		query.inc = inc.join(' '); // spaces will be encoded as `+`
 	}
-	query.append('fmt', 'json');
-	const result = await callAPI(`/ws/2/${endpoint}?${query}`);
+	query.fmt = 'json';
+	const result = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`);
 	return result.json();
 }
 
