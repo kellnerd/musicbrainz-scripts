@@ -1,3 +1,11 @@
+import { rateLimit } from './rateLimit';
+
+/**
+ * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
+ * https://www.discogs.com/developers/
+ */
+const callAPI = rateLimit(fetch, 60 * 1000, 25);
+
 /**
  * Extracts the entity type and ID from a Discogs URL.
  * @param {string} url URL of a Discogs entity page.
@@ -13,7 +21,7 @@ export function buildEntityURL(entityType, entityId) {
 
 async function fetchEntityFromAPI(entityType, entityId) {
 	const url = `https://api.discogs.com/${entityType}s/${entityId}`;
-	const response = await fetch(url);
+	const response = await callAPI(url);
 	return response.json();
 }
 

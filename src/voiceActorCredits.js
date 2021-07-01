@@ -3,7 +3,6 @@ import {
 	fetchVoiceActors,
 } from './discogs.js';
 import {
-	delay,
 	fetchEntityJS,
 	getEntityForResourceURL,
 } from './api.js'
@@ -57,6 +56,5 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 			// createVoiceActorDialog({ name: actor.name }, roleName).open(event);
 			// TODO: wait for the dialog to be closed
 		}
-		//await delay(1000);
 	}
 }

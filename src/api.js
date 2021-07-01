@@ -1,3 +1,11 @@
+import { rateLimit } from './rateLimit';
+
+/**
+ * Calls to the MusicBrainz API are limited to one request per second.
+ * https://musicbrainz.org/doc/MusicBrainz_API
+ */
+const callAPI = rateLimit(fetch, 1000);
+
 /**
  * Returns the entity of the desired type which is associated to the given ressource URL.
  * @param {string} entityType Desired type of the entity.
@@ -20,7 +28,7 @@ export async function fetchFromAPI(endpoint, query = new URLSearchParams(), inc 
 		query.append('inc', inc.join(' ')); // spaces will be encoded as `+`
 	}
 	query.append('fmt', 'json');
-	const result = await fetch(`/ws/2/${endpoint}?${query}`);
+	const result = await callAPI(`/ws/2/${endpoint}?${query}`);
 	return result.json();
 }
 
@@ -32,7 +40,3 @@ export async function fetchEntityJS(gid) {
 	const result = await fetch(`/ws/js/entity/${gid}?inc=rels`);
 	return result.json();
 }
-
-export const delay = (millis) => new Promise((resolve, reject) => {
-	setTimeout(resolve, millis);
-});
