@@ -12,7 +12,8 @@ const button =
 function insertVoiceActorButton() {
 	$(button)
 		.on('click', (event) => {
-			const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
+			// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
+			const input = 'https://www.discogs.com/release/605682';
 			if (input) {
 				importVoiceActorsFromDiscogs(input, event);
 			} else {

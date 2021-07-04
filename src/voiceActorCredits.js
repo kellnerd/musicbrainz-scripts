@@ -1,20 +1,21 @@
 import {
-	buildEntityURL,
-	fetchVoiceActors,
+	buildEntityURL as buildDiscogsURL,
+	fetchVoiceActors as fetchVoiceActorsFromDiscogs,
 } from './discogs.js';
 import {
-	fetchEntityJS,
+	searchEntity,
 	getEntityForResourceURL,
-} from './api.js'
+} from './api.js';
 
 /**
  * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
  * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
  * @param {Object} artistData Edit data of the performing artist (optional).
  * @param {string} roleName Credited name of the voice actor's role (optional).
+ * @param {string} artistCredit Credited name of the performing artist (optional).
  * @returns MusicBrainz "Add relationship" dialog.
  */
-export function createVoiceActorDialog(artistData = {}, roleName = '') {
+export function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 	const viewModel = MB.releaseRelationshipEditor;
 	// let target = MB.entity({ entityType: 'artist', ...artistData });
 	let target = new MB.entity.Artist(artistData);
@@ -36,6 +37,7 @@ export function createVoiceActorDialog(artistData = {}, roleName = '') {
 	});
 	const rel = dialog.relationship();
 	rel.linkTypeID(60); // set type: performance -> performer -> vocals
+	rel.entity0_credit(artistCredit);
 	rel.setAttributes([{
 		type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
 		credited_as: roleName,
@@ -45,14 +47,23 @@ export function createVoiceActorDialog(artistData = {}, roleName = '') {
 
 export async function importVoiceActorsFromDiscogs(releaseURL, event = document.createEvent('MouseEvent')) {
 	/** @type {[{name:string,anv:string,role:string,id:number,join:string,resource_url:string,tracks:string}]} */
-	const actors = await fetchVoiceActors(releaseURL);
+	const actors = await fetchVoiceActorsFromDiscogs(releaseURL);
 	for (const actor of actors) {
 		console.info(actor);
 		const roleName = actor.role.match(/\[(.+)\]/)?.[1] || '';
-		try {
-			const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
-			createVoiceActorDialog({ name: actor.name, gid: mbArtist.id }, roleName).accept();
-		} catch (error) {
+		const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
+		const mbArtist = await getEntityForResourceURL('artist', buildDiscogsURL('artist', actor.id));
+		if (mbArtist) {
+			createVoiceActorDialog({
+				gid: mbArtist.id,
+				name: mbArtist.name,
+				sort_name: mbArtist['sort-name'],
+			}, roleName, artistCredit).accept();
+		} else {
+			console.warn(`Failed to add credit '${roleName}' for '${actor.name} => Guessing...'`);
+			const mbArtistGuess = searchEntity('artist', actor.name)[0]; // first result
+			// TODO: does not work yet, nothing happens
+			createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
 			// createVoiceActorDialog({ name: actor.name }, roleName).open(event);
 			// TODO: wait for the dialog to be closed
 		}

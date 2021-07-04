@@ -75,7 +75,11 @@
 	async function fetchEntityFromAPI(entityType, entityId) {
 		const url = `https://api.discogs.com/${entityType}s/${entityId}`;
 		const response = await callAPI$1(url);
-		return response.json();
+		if (response.ok) {
+			return response.json();
+		} else {
+			throw response;
+		}
 	}
 
 	async function fetchVoiceActors(releaseURL) {
@@ -99,9 +103,12 @@
 	 * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
 	 */
 	async function getEntityForResourceURL(entityType, resourceURL) {
-		const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
-		return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
-		// TODO: 404 => TypeError: url.relations is undefined
+		try {
+			const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
+			return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
+		} catch (error) {
+			return null;
+		}
 	}
 
 	/**
@@ -115,7 +122,20 @@
 			query.inc = inc.join(' '); // spaces will be encoded as `+`
 		}
 		query.fmt = 'json';
-		const result = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`);
+		const headers = {
+			'Accept': 'application/json',
+			// 'User-Agent': 'Application name/<version> ( contact-url )',
+		};
+		const response = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+		if (response.ok) {
+			return response.json();
+		} else {
+			throw response;
+		}
+	}
+
+	async function searchEntity(entityType, query) {
+		const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
 		return result.json();
 	}
 
@@ -124,9 +144,10 @@
 	 * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
 	 * @param {Object} artistData Edit data of the performing artist (optional).
 	 * @param {string} roleName Credited name of the voice actor's role (optional).
+	 * @param {string} artistCredit Credited name of the performing artist (optional).
 	 * @returns MusicBrainz "Add relationship" dialog.
 	 */
-	function createVoiceActorDialog(artistData = {}, roleName = '') {
+	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 		const viewModel = MB.releaseRelationshipEditor;
 		// let target = MB.entity({ entityType: 'artist', ...artistData });
 		let target = new MB.entity.Artist(artistData);
@@ -148,6 +169,7 @@
 		});
 		const rel = dialog.relationship();
 		rel.linkTypeID(60); // set type: performance -> performer -> vocals
+		rel.entity0_credit(artistCredit);
 		rel.setAttributes([{
 			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
 			credited_as: roleName,
@@ -161,10 +183,19 @@
 		for (const actor of actors) {
 			console.info(actor);
 			const roleName = actor.role.match(/\[(.+)\]/)?.[1] || '';
-			try {
-				const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
-				createVoiceActorDialog({ name: actor.name, gid: mbArtist.id }, roleName).accept();
-			} catch (error) {
+			const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
+			const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
+			if (mbArtist) {
+				createVoiceActorDialog({
+					gid: mbArtist.id,
+					name: mbArtist.name,
+					sort_name: mbArtist['sort-name'],
+				}, roleName, artistCredit).accept();
+			} else {
+				console.warn(`Failed to add credit '${roleName}' for '${actor.name} => Guessing...'`);
+				const mbArtistGuess = searchEntity('artist', actor.name)[0]; // first result
+				// TODO: does not work yet, nothing happens
+				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
 				// createVoiceActorDialog({ name: actor.name }, roleName).open(event);
 				// TODO: wait for the dialog to be closed
 			}
@@ -180,11 +211,10 @@
 	function insertVoiceActorButton() {
 		$(button)
 			.on('click', (event) => {
-				const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
-				if (input) {
+				// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
+				const input = 'https://www.discogs.com/release/605682';
+				{
 					importVoiceActorsFromDiscogs(input, event);
-				} else {
-					createVoiceActorDialog().open(event);
 				}
 			})
 			.appendTo('#release-rels');

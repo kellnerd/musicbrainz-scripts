@@ -52,3 +52,8 @@ export async function fetchEntityJS(gid) {
 	const result = await fetch(`/ws/js/entity/${gid}?inc=rels`);
 	return result.json();
 }
+
+export async function searchEntity(entityType, query) {
+	const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
+	return result.json();
+}
