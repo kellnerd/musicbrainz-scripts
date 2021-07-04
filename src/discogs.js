@@ -22,7 +22,11 @@ export function buildEntityURL(entityType, entityId) {
 async function fetchEntityFromAPI(entityType, entityId) {
 	const url = `https://api.discogs.com/${entityType}s/${entityId}`;
 	const response = await callAPI(url);
-	return response.json();
+	if (response.ok) {
+		return response.json();
+	} else {
+		throw response;
+	}
 }
 
 export async function fetchVoiceActors(releaseURL) {

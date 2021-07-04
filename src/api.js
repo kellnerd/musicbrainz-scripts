@@ -13,9 +13,12 @@ const callAPI = rateLimit(fetch, 1000);
  * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
  */
 export async function getEntityForResourceURL(entityType, resourceURL) {
-	const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
-	return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
-	// TODO: 404 => TypeError: url.relations is undefined
+	try {
+		const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
+		return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
+	} catch (error) {
+		return null;
+	}
 }
 
 /**
@@ -29,8 +32,16 @@ export async function fetchFromAPI(endpoint, query = {}, inc = []) {
 		query.inc = inc.join(' '); // spaces will be encoded as `+`
 	}
 	query.fmt = 'json';
-	const result = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`);
-	return result.json();
+	const headers = {
+		'Accept': 'application/json',
+		// 'User-Agent': 'Application name/<version> ( contact-url )',
+	};
+	const response = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+	if (response.ok) {
+		return response.json();
+	} else {
+		throw response;
+	}
 }
 
 /**
