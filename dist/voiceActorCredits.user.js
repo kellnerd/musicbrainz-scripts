@@ -140,6 +140,42 @@
 	}
 
 	/**
+	 * Creates a function that maps entries of an input record to different property names of the output record according
+	 * to the given mapping. Only properties with an existing mapping will be copied.
+	 * @param {Record<string,string>} mapping Maps property names of the output record to those of the input record.
+	 * @returns {(input:Record<string,any>)=>Record<string,any>} Mapper function.
+	 */
+	function createRecordMapper(mapping) {
+		return function (input) {
+			/** @type {Record<string,any>} */
+			let output = {};
+			for (let outputProperty in mapping) {
+				const inputProperty = mapping[outputProperty];
+				const value = input[inputProperty];
+				if (value !== undefined) {
+					output[outputProperty] = value;
+				}
+			}
+			return output;
+		};
+	}
+
+	/**
+	 * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
+	 */
+	const ARTIST_INTERNAL_FIELDS = {
+		gid: 'id', // MBID
+		name: 'name',
+		sort_name: 'sort-name',
+		comment: 'disambiguation',
+	};
+
+	/**
+	 * Creates a ws/js compatible artist object from an API response.
+	 */
+	const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);
+
+	/**
 	 * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
 	 * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
 	 * @param {Object} artistData Edit data of the performing artist (optional).
@@ -186,12 +222,7 @@
 			const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
 			const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
 			if (mbArtist) {
-				createVoiceActorDialog({
-					gid: mbArtist.id,
-					name: mbArtist.name,
-					sort_name: mbArtist['sort-name'],
-					comment: mbArtist.disambiguation, // TODO: create a mapping between ws/2 and ws/js
-				}, roleName, artistCredit).accept();
+				createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
 			} else {
 				console.warn(`Failed to add credit '${roleName}' for '${actor.name} => Guessing...'`);
 				const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result

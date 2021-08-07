@@ -57,3 +57,39 @@ export async function searchEntity(entityType, query) {
 	const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
 	return result.json();
 }
+
+/**
+ * Creates a function that maps entries of an input record to different property names of the output record according
+ * to the given mapping. Only properties with an existing mapping will be copied.
+ * @param {Record<string,string>} mapping Maps property names of the output record to those of the input record.
+ * @returns {(input:Record<string,any>)=>Record<string,any>} Mapper function.
+ */
+function createRecordMapper(mapping) {
+	return function (input) {
+		/** @type {Record<string,any>} */
+		let output = {};
+		for (let outputProperty in mapping) {
+			const inputProperty = mapping[outputProperty];
+			const value = input[inputProperty];
+			if (value !== undefined) {
+				output[outputProperty] = value;
+			}
+		}
+		return output;
+	};
+}
+
+/**
+ * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
+ */
+const ARTIST_INTERNAL_FIELDS = {
+	gid: 'id', // MBID
+	name: 'name',
+	sort_name: 'sort-name',
+	comment: 'disambiguation',
+};
+
+/**
+ * Creates a ws/js compatible artist object from an API response.
+ */
+export const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);

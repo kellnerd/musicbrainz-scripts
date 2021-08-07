@@ -5,6 +5,7 @@ import {
 import {
 	searchEntity,
 	getEntityForResourceURL,
+	internalArtist,
 } from './api.js';
 
 /**
@@ -54,12 +55,7 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 		const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
 		const mbArtist = await getEntityForResourceURL('artist', buildDiscogsURL('artist', actor.id));
 		if (mbArtist) {
-			createVoiceActorDialog({
-				gid: mbArtist.id,
-				name: mbArtist.name,
-				sort_name: mbArtist['sort-name'],
-				comment: mbArtist.disambiguation, // TODO: create a mapping between ws/2 and ws/js
-			}, roleName, artistCredit).accept();
+			createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
 		} else {
 			console.warn(`Failed to add credit '${roleName}' for '${actor.name} => Guessing...'`);
 			const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
