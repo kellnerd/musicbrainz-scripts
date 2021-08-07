@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.7.1
+// @version      2021.8.7
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.
@@ -190,13 +190,13 @@
 					gid: mbArtist.id,
 					name: mbArtist.name,
 					sort_name: mbArtist['sort-name'],
+					comment: mbArtist.disambiguation, // TODO: create a mapping between ws/2 and ws/js
 				}, roleName, artistCredit).accept();
 			} else {
 				console.warn(`Failed to add credit '${roleName}' for '${actor.name} => Guessing...'`);
-				const mbArtistGuess = searchEntity('artist', actor.name)[0]; // first result
-				// TODO: does not work yet, nothing happens
+				const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
 				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
-				// createVoiceActorDialog({ name: actor.name }, roleName).open(event);
+				// .open(event);
 				// TODO: wait for the dialog to be closed
 			}
 		}
