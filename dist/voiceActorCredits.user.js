@@ -82,13 +82,54 @@
 		}
 	}
 
-	async function fetchVoiceActors(releaseURL) {
+	/**
+	 * Fetches the extra artists (credits) for the given release.
+	 * @param {string} releaseURL URL of a Discogs release page.
+	 * @returns {Promise<Artist[]>}
+	 */
+	async function fetchCredits(releaseURL) {
 		const entity = extractEntityFromURL(releaseURL);
 		if (entity && entity[0] === 'release') {
+			/** @type {Release} */
 			const release = await fetchEntityFromAPI(...entity);
-			return release.extraartists.filter((artist) => artist.role.startsWith('Voice Actor'));
+			return release.extraartists.map((artist) => {
+				// split roles with credited role names in square brackets (for convenience)
+				const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
+				if (roleWithCredit) {
+					artist.role = roleWithCredit[1];
+					artist.roleCredit = roleWithCredit[2];
+				}
+				return artist;
+			});
 		}
 	}
+
+	async function fetchVoiceActors(releaseURL) {
+		return (await fetchCredits(releaseURL)).filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role));
+	}
+
+
+	/* Type definitions for IntelliSense (WIP) */
+
+	/**
+	 * @typedef Release
+	 * @property {string} title
+	 * @property {number} id
+	 * @property {Artist[]} artists
+	 * @property {Artist[]} extraartists Extra artists (credits).
+	 */
+
+	/**
+	 * @typedef Artist
+	 * @property {string} name Main artist name.
+	 * @property {string} anv Artist name variation, empty if no name variation is used.
+	 * @property {string} join
+	 * @property {string} role Role of the artist, may contain the role as credited in square brackets.
+	 * @property {string} [roleCredit] Role name as credited (custom extension for convenience).
+	 * @property {string} tracks
+	 * @property {number} id
+	 * @property {string} resource_url API URL of the artist.
+	 */
 
 	/**
 	 * Calls to the MusicBrainz API are limited to one request per second.
@@ -214,18 +255,20 @@
 	}
 
 	async function importVoiceActorsFromDiscogs(releaseURL, event = document.createEvent('MouseEvent')) {
-		/** @type {[{name:string,anv:string,role:string,id:number,join:string,resource_url:string,tracks:string}]} */
 		const actors = await fetchVoiceActors(releaseURL);
 		for (const actor of actors) {
 			console.info(actor);
-			const roleName = actor.role.match(/\[(.+)\]/)?.[1] || '';
+			const roleName = actor.roleCredit;
 			const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
 			const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
+			// TODO: use a cache for the Discogs->MB artist mappings
 			if (mbArtist) {
 				createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
+				// TODO: catch exception which occurs for duplicate rels
 			} else {
-				console.warn(`Failed to add credit '${roleName}' for '${actor.name} => Guessing...'`);
+				console.warn(`Failed to add credit '${roleName}' for '${actor.name}' => Guessing...`);
 				const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
+				// TODO: check if artist name is identical/similar or just an unrelated result
 				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
 				// .open(event);
 				// TODO: wait for the dialog to be closed
