@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.8.7
+// @version      2021.8.8
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.
@@ -233,24 +233,31 @@
 		}
 	}
 
-	const button =
+	const addButton =
 `<span class="add-rel btn" id="add-voice-actor-credit">
 	<img class="bottom" src="https://staticbrainz.org/MB/add-384fe8d.png">
 	Add voice actor relationship
 </span>`	;
 
-	function insertVoiceActorButton() {
-		$(button)
+	const importButton =
+`<span class="add-rel btn" id="import-voice-actors">
+	<img class="bottom" src="https://staticbrainz.org/MB/add-384fe8d.png">
+	Import voice actors
+</span>`	;
+
+	function insertVoiceActorButtons() {
+		$(addButton)
+			.on('click', (event) => createVoiceActorDialog().open(event))
+			.appendTo('#release-rels');
+		$(importButton)
 			.on('click', (event) => {
 				// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
-				const input = 'https://www.discogs.com/release/605682';
-				{
-					importVoiceActorsFromDiscogs(input, event);
-				}
+				const releaseURL = 'https://www.discogs.com/release/605682';
+				importVoiceActorsFromDiscogs(releaseURL, event);
 			})
 			.appendTo('#release-rels');
 	}
 
-	insertVoiceActorButton();
+	insertVoiceActorButtons();
 
 }());
