@@ -6,11 +6,9 @@ In order to use one of the **bookmarklets** you have to save the compressed code
 
 While bookmarklets are good for trying things out because they do not require additional software to be installed, **userscripts** are more convenient if you need a snippet frequently. In case you have installed a userscript manager browser extension you can simply install userscripts from this page by clicking the *Install* button. Another benefit of them is that you will receive automatic updates if your userscript manager is configured accordingly.
 
-### Development
+## Bookmarklets & Userscripts
 
-Running `npm run build` compiles [all userscripts](src/userscripts/) and [all bookmarklets](src/bookmarklets/) before it generates an updated version of `README.md`. Before you can run this command you have to ensure that you have setup [Node.js](https://nodejs.org/) and have installed the dependencies of the build script via `npm install`.
-
-## [Annotation Converter](src/annotationConverter.js)
+### [Annotation Converter](src/annotationConverter.js)
 
 ```js
 javascript:(function(){var a=[[/\[(.+?)\]\((.+?)\)/g,'[$2|$1]'],[/(?<!\[)(https?:\/\/\S+)/g,'[$1]'],[/\[(.+?)(\|.+?)?\]/g,(a,t,n='')=>`[${btoa(t)}${n}]`],[/(__|\*\*)(?=\S)(.+?)(?<=\S)\1/g,"'''$2'''"],[/(_|\*)(?=\S)(.+?)(?<=\S)\1/g,"''$2''"],[/^\# +(.+?)( +\#*)?$/gm,'= $1 ='],[/^\#{2} +(.+?)( +\#*)?$/gm,'== $1 =='],[/^\#{3} +(.+?)( +\#*)?$/gm,'=== $1 ==='],[/^(\d+)\. +/gm,'    $1. '],[/^[-+*] +/gm,'    * '],[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g,(a,t,n='')=>`[${atob(t)}${n}]`]];function e(a){return async function(a,t){const n=[];a.replace(t,(a,...t)=>{t=((a,t,n)=>async function(a,t=null){if(a.includes('musicbrainz.org')){const c=new URL(a);var[n,e,r]=c.pathname.match(/^\/(.+?)\/([0-9a-f-]{36})$/)||[];if(n)return t=t||await async function(a){a.pathname='/ws/2'+a.pathname,a.search='?fmt=json';let t=await fetch(a);return t=await t.json(),t.name||t.title}(c),`[${e}:${r}|${t}]`}return function(a,t=null){return t?`[${a}|${t}]`:`[${a}]`}(a,t)}(t,n))(a,...t),n.push(t)});const e=await Promise.all(n);return a.replace(t,()=>e.shift())}(a,/\[(.+?)(?:\|(.+?))?\]/g)}var t=['textarea[name$=text]','textarea[name$=description]','textarea[name$=biography]'].join();!function(e){const r='background-color';$(t).css(r,'').each((a,t)=>{let n=t.value;n&&(e.forEach(([a,t])=>{n=n.replace(a,t)}),n!=t.value&&$(t).val(n).trigger('change').css(r,'yellow'))})}(a),$(t).each(async(a,t)=>{var n=await e(t.value);n!=t.value&&$(t).val(n)})})();
@@ -21,7 +19,7 @@ javascript:(function(){var a=[[/\[(.+?)\]\((.+?)\)/g,'[$2|$1]'],[/(?<!\[)(https?
 - Automatically fetches and uses the name of the linked entity as label if none was given.
 - Also supports collection descriptions and user profile biographies.
 
-## [Change All Release Dates](src/changeAllReleaseDates.js)
+### [Change All Release Dates](src/changeAllReleaseDates.js)
 
 ```js
 javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger('change')}var a,t,n=prompt('Date for all release events (YYYY-MM-DD):');null!==n&&([,a,t,n]=/(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?/.exec(n)||[],t=t,n=n,e('year',a),e('month',t),e('day',n))})();
@@ -31,7 +29,7 @@ javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger
 - Useful to correct the dates for digital media releases with lots of release events which are using the wrong first
   release date of the release group.
 
-## [Enumerate Track Titles](src/enumerateTrackTitles.js)
+### [Enumerate Track Titles](src/enumerateTrackTitles.js)
 
 ```js
 javascript:(function(){const t=prompt('Numbering prefix, preceded by flags:\n+ append to current titles\n_ pad numbers','Part ');if(null!==t){let[,e,n]=t.match(/^([+_]*)(.*)/);e={append:e.includes('+'),padNumbers:e.includes('_')},function(a='',l={}){let e=$('input.track-name');var n=e.length.toString().length;const i=new Intl.NumberFormat('en',{minimumIntegerDigits:n});e.each((e,n)=>{let t=e+1;l.padNumbers&&(t=i.format(t));let r=a+t;l.append&&(r=(n.value+r).replace(/([.!?]),/,'$1')),$(n).val(r)}).trigger('change')}(n,e)}})();
@@ -44,7 +42,7 @@ javascript:(function(){const t=prompt('Numbering prefix, preceded by flags:\n+ a
   - Pad numbers with leading zeros to the same length: `_`
   - *Example*: `+_, Part ` renames track 27/143 "Title" to "Title, Part 027"
 
-## [Expand Collapsed Mediums](src/expandCollapsedMediums.js)
+### [Expand Collapsed Mediums](src/expandCollapsedMediums.js)
 
 ```js
 javascript:void $('.expand-medium').trigger('click');
@@ -52,7 +50,7 @@ javascript:void $('.expand-medium').trigger('click');
 
 - Expands all collapsed mediums in the release editor, useful for large releases.
 
-## [Guess Unicode Punctuation](src/guessUnicodePunctuation.js)
+### [Guess Unicode Punctuation](src/guessUnicodePunctuation.js)
 
 [![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/guessUnicodePunctuation.user.js)
 [![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/guessUnicodePunctuation.user.js?raw=1)
@@ -68,7 +66,7 @@ javascript:(function(){function t(t,a){const g='background-color';$(t).css(g,'')
   and for entity names and disambiguation comments (on their respective edit and creation pages).
 - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
 
-## [Voice Actor Credits](src/voiceActorCredits.js)
+### [Voice Actor Credits](src/voiceActorCredits.js)
 
 [![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/voiceActorCredits.user.js)
 [![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/voiceActorCredits.user.js?raw=1)
@@ -78,3 +76,7 @@ javascript:void function(e={}){var t=MB.releaseRelationshipEditor,e=new MB.entit
 ```
 
 - Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.
+
+## Development
+
+Running `npm run build` compiles [all userscripts](src/userscripts/) and [all bookmarklets](src/bookmarklets/) before it generates an updated version of `README.md`. Before you can run this command you have to ensure that you have setup [Node.js](https://nodejs.org/) and have installed the dependencies of the build script via `npm install`.

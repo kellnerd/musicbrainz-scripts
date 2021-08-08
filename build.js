@@ -22,7 +22,7 @@ async function build(debug = false) {
 	for (let fileName in bookmarklets) {
 		const baseName = path.basename(fileName, '.js');
 		const bookmarkletPath = path.join(bookmarkletBasePath, fileName);
-		readme.write(`\n## [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
+		readme.write(`\n### [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
 		// insert an install button if there is a userscript of the same name
 		if (userscriptNames.includes(baseName)) {
 			readme.write(sourceAndInstallButton(baseName));
@@ -30,6 +30,13 @@ async function build(debug = false) {
 		readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
 		readme.write(extractDocumentation(bookmarkletPath) + '\n');
 	}
+	// append all additional documentation files to the README
+	const docBasePath = 'doc';
+	const docs = await getMarkdownFiles(docBasePath);
+	docs.map((file) => path.join(docBasePath, file)).forEach((filePath) => {
+		const content = fs.readFileSync(filePath, { encoding: 'utf-8' });
+		readme.write('\n' + content);
+	});
 	readme.close();
 }
 
@@ -221,6 +228,24 @@ async function getScriptFiles(directory) {
 		}
 	}
 	return scriptFiles;
+}
+
+
+/**
+ * Returns the names of all Markdown files inside the given directory.
+ * Excludes files whose names start with an underscore.
+ * @param {string} directory Path to a directory.
+ * @returns {Promise<string[]>} Array of file names including the extension.
+ */
+async function getMarkdownFiles(directory) {
+	const dir = await fs.promises.opendir(directory);
+	let mdFiles = [];
+	for await (const entry of dir) {
+		if (entry.isFile() && !entry.name.startsWith('_') && path.extname(entry.name) === '.md') {
+			mdFiles.push(entry.name);
+		}
+	}
+	return mdFiles;
 }
 
 
