@@ -2,6 +2,7 @@ import {
 	guessUnicodePunctuation,
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
+import { detectReleaseLanguage } from '../languages.js';
 import { transformInputValues } from '../transformInputValues.js';
 import guessPunctuationIcon from './icons/guessPunctuation.png';
 
@@ -47,17 +48,17 @@ if (pageType == 'edit_annotation') { // annotation edit page
 	// button for the release information tab (after disambiguation comment input field)
 	insertIconButtonAfter('input#comment')
 		.on('click', () => {
-			guessUnicodePunctuation(releaseInputs);
+			guessUnicodePunctuation(releaseInputs, detectReleaseLanguage());
 			transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 		});
 	// button for the tracklist tab (after the guess case button)
 	$(buttonTemplate.standard)
-		.on('click', () => guessUnicodePunctuation(tracklistInputs))
+		.on('click', () => guessUnicodePunctuation(tracklistInputs, detectReleaseLanguage()))
 		.appendTo('.guesscase .buttons');
 	// global button (next to the release editor navigation buttons)
 	$(buttonTemplate.global)
 		.on('click', () => {
-			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]); // both release info and tracklist data
+			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], detectReleaseLanguage()); // both release info and tracklist data
 			transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 			// exclude annotations from the global action as the changes are hard to verify
 		})
@@ -69,6 +70,7 @@ if (pageType == 'edit_annotation') { // annotation edit page
 	];
 	// button after the disambiguation comment input field
 	// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
+	// TODO: use lyrics language to localize quotes?
 	insertIconButtonAfter('input[name$=comment]') // skipped for url entities as there is no disambiguation input
 		.on('click', () => guessUnicodePunctuation(entityInputs));
 	// global button after the "Enter edit" button

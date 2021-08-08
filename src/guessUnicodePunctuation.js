@@ -16,7 +16,6 @@ export const transformationRules = [
 	[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 	[/-/g, '‐'], // ... and finally the hyphens should be remaining
 	// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
-	// TODO: localize quotes using release/lyrics language
 ];
 
 /**
@@ -39,10 +38,41 @@ export const transformationRulesToPreserveMarkup = [
 ];
 
 /**
+ * Language-specific double and single quotes (RegEx replace values).
+ * @type {Record<string,string[]>}
+ */
+const languageSpecificQuotes = {
+	de: ['„$1“', '‚$1‘'], // German
+	en: ['“$1”', '‘$1’'], // English
+	fr: ['« $1 »', '‹ $1 ›'], // French
+};
+
+/**
+ * Indices of the quotation rules (double and single quotes) in `transformationRules`.
+ */
+const quotationRuleIndices = [0, 2];
+
+/**
+ * Creates language-specific punctuation guessing transformation rules.
+ * @param {string} language ISO 639-1 two letter language code.
+ */
+function transformationRulesForLanguage(language = undefined) {
+	const replaceValueIndex = 1;
+	let rules = transformationRules;
+	// overwrite replace values for quotation rules with language-specific values (if they are existing)
+	languageSpecificQuotes[language]?.forEach((value, index) => {
+		const ruleIndex = quotationRuleIndices[index];
+		rules[ruleIndex][replaceValueIndex] = value;
+	});
+	return rules;
+}
+
+/**
  * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string[]} inputSelectors CSS selectors of the input fields.
+ * @param {string} language Language of the input fields' text (ISO 639-1 two letter code, optional).
  */
-export function guessUnicodePunctuation(inputSelectors) {
-	transformInputValues(inputSelectors.join(), transformationRules);
+export function guessUnicodePunctuation(inputSelectors, language = undefined) {
+	transformInputValues(inputSelectors.join(), transformationRulesForLanguage(language));
 }

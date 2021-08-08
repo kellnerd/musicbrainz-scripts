@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.5.1
+// @version      2021.8.8
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -29,12 +29,13 @@
 		$(inputSelector)
 			.css(highlightProperty, '') // disable possible previously highlighted changes
 			.each((_index, input) => {
+				/** @type {string} */
 				let value = input.value;
 				if (!value) {
 					return; // skip empty inputs
 				}
-				substitutionRules.forEach(([searchValue, newValue]) => {
-					value = value.replace(searchValue, newValue);
+				substitutionRules.forEach(([searchValue, replaceValue]) => {
+					value = value.replace(searchValue, replaceValue);
 				});
 				if (value != input.value) { // update and highlight changed values
 					$(input).val(value)
@@ -60,7 +61,6 @@
 		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 		[/-/g, '‐'], // ... and finally the hyphens should be remaining
 		// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
-		// TODO: localize quotes using release/lyrics language
 	];
 
 	/**
@@ -83,12 +83,120 @@
 	];
 
 	/**
+	 * Language-specific double and single quotes (RegEx replace values).
+	 * @type {Record<string,string[]>}
+	 */
+	const languageSpecificQuotes = {
+		de: ['„$1“', '‚$1‘'], // German
+		en: ['“$1”', '‘$1’'], // English
+		fr: ['« $1 »', '‹ $1 ›'], // French
+	};
+
+	/**
+	 * Indices of the quotation rules (double and single quotes) in `transformationRules`.
+	 */
+	const quotationRuleIndices = [0, 2];
+
+	/**
+	 * Creates language-specific punctuation guessing transformation rules.
+	 * @param {string} language ISO 639-1 two letter language code.
+	 */
+	function transformationRulesForLanguage(language = undefined) {
+		const replaceValueIndex = 1;
+		let rules = transformationRules;
+		// overwrite replace values for quotation rules with language-specific values (if they are existing)
+		languageSpecificQuotes[language]?.forEach((value, index) => {
+			const ruleIndex = quotationRuleIndices[index];
+			rules[ruleIndex][replaceValueIndex] = value;
+		});
+		return rules;
+	}
+
+	/**
 	 * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
+	 * @param {string} language Language of the input fields' text (ISO 639-1 two letter code, optional).
 	 */
-	function guessUnicodePunctuation(inputSelectors) {
-		transformInputValues(inputSelectors.join(), transformationRules);
+	function guessUnicodePunctuation(inputSelectors, language = undefined) {
+		transformInputValues(inputSelectors.join(), transformationRulesForLanguage(language));
+	}
+
+	// taken from https://github.com/loujine/musicbrainz-scripts/blob/master/mbz-loujine-common.js
+	const languageCodes = {
+		'Afrikaans': 'af',
+		'Azerbaijani': 'az',
+		'Albanian': 'sq',
+		'Arabic': 'ar',
+		'Armenian': 'hy',
+		'Bengali/Bangla': 'bn',
+		'Basque': 'eu',
+		'Belorussian': 'be',
+		'Bosnian': 'bs',
+		'Bulgarian': 'bg',
+		'Cantonese': 'zh_yue',
+		'Catalan': 'ca',
+		'Chinese': 'zh',
+		'Croatian': 'hr',
+		'Czech': 'cs',
+		'Danish': 'da',
+		'Dutch': 'nl',
+		'English': 'en',
+		'Esperanto': 'eo',
+		'Estonian': 'et',
+		'Finnish': 'fi',
+		'French': 'fr',
+		'German': 'de',
+		'Greek': 'el',
+		'Hebrew': 'he',
+		'Hindi': 'hi',
+		'Hungarian': 'hu',
+		'Icelandic': 'is',
+		'Indonesian': 'id',
+		'Irish': 'ga',
+		'Italian': 'it',
+		'Japanese': 'ja',
+		'Javanese': 'jv',
+		'Kazakh': 'kk',
+		'Khmer (Central)': 'km',
+		'Korean': 'ko',
+		'Latvian': 'lv',
+		'Lithuanian': 'lt',
+		'Macedonian': 'mk',
+		'Malay': 'ms',
+		'Malayam': 'ml',
+		'Nepali': 'ne',
+		'Norwegian Bokmål': 'nb',
+		'Norwegian Nynorsk': 'nn',
+		'Persian (Farsi)': 'fa',
+		'Polish': 'pl',
+		'Portuguese': 'pt',
+		'Punjabi': 'pa',
+		'Romanian': 'ro',
+		'Russian': 'ru',
+		'Serbian': 'sr',
+		'Serbo-Croatian': 'sh',
+		'Slovakian': 'sk',
+		'Slovenian': 'sl',
+		'Spanish': 'es',
+		'Swahili': 'sw',
+		'Swedish': 'sv',
+		'Thai': 'th',
+		'Turkish': 'tr',
+		'Urdu': 'ur',
+		'Ukrainian': 'uk',
+		'Uzbek': 'uz',
+		'Vietnamese': 'vi',
+		'Welsh (Cymric)': 'cy',
+	};
+
+	/**
+	 * Detects the selected language in the release editor.
+	 * @returns {string} Language as ISO 639-1 two letter code.
+	 */
+	function detectReleaseLanguage() {
+		const languageName = $('#language option:selected').text();
+		return languageCodes[languageName];
 	}
 
 	var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAHYgAAB2IBOHqZ2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFpSURBVDiNpZOxjwFBGMV/e5FspZeoFETlL9Bug0RDL5FolVpRUqxCr1iNUelUEhmFZqlEVAolFRuxsswVl9uzWVfceeX73nvzfTPzaUIIxRuIAJTL5X+ZR6MRH++cDrwOOBwOdLtdbrdbqDafzxmPx78H2LZNtVplt9txPp993vM8TNOk1WoFeIQQ6htSSmUYhur3++rxePi853mq0WioUqmkttutzwshVOS57U6nQy6Xo1KpBLoaDAYsl0t6vR6pVOr1HViWheM4IfPlcmE4HJLNZkPmQMBqtSIajbJYLFiv175gs9lwvV653+/MZjOOx2MgwB/BdV1OpxPtdhuAYrFIvV73X0JKiZQSXdcxTZN0Oh3sIBaLBZInkwlKqRDvui7T6TQ8gmEYAWE8HkfTNBKJBMlkMlQLjVAoFHAcB9u20XWdWq3mi5rNJpZlsd/vyWQy5PP5n7Tnf/BXCCHU27sQga+t+i8+AYUS9lO02Bg3AAAAAElFTkSuQmCC";
@@ -135,17 +243,17 @@
 		// button for the release information tab (after disambiguation comment input field)
 		insertIconButtonAfter('input#comment')
 			.on('click', () => {
-				guessUnicodePunctuation(releaseInputs);
+				guessUnicodePunctuation(releaseInputs, detectReleaseLanguage());
 				transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 			});
 		// button for the tracklist tab (after the guess case button)
 		$(buttonTemplate.standard)
-			.on('click', () => guessUnicodePunctuation(tracklistInputs))
+			.on('click', () => guessUnicodePunctuation(tracklistInputs, detectReleaseLanguage()))
 			.appendTo('.guesscase .buttons');
 		// global button (next to the release editor navigation buttons)
 		$(buttonTemplate.global)
 			.on('click', () => {
-				guessUnicodePunctuation([...releaseInputs, ...tracklistInputs]); // both release info and tracklist data
+				guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], detectReleaseLanguage()); // both release info and tracklist data
 				transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 				// exclude annotations from the global action as the changes are hard to verify
 			})
@@ -157,6 +265,7 @@
 		];
 		// button after the disambiguation comment input field
 		// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
+		// TODO: use lyrics language to localize quotes?
 		insertIconButtonAfter('input[name$=comment]') // skipped for url entities as there is no disambiguation input
 			.on('click', () => guessUnicodePunctuation(entityInputs));
 		// global button after the "Enter edit" button

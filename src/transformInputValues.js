@@ -9,12 +9,13 @@ export function transformInputValues(inputSelector, substitutionRules) {
 	$(inputSelector)
 		.css(highlightProperty, '') // disable possible previously highlighted changes
 		.each((_index, input) => {
+			/** @type {string} */
 			let value = input.value;
 			if (!value) {
 				return; // skip empty inputs
 			}
-			substitutionRules.forEach(([searchValue, newValue]) => {
-				value = value.replace(searchValue, newValue);
+			substitutionRules.forEach(([searchValue, replaceValue]) => {
+				value = value.replace(searchValue, replaceValue);
 				console.debug(value);
 			});
 			if (value != input.value) { // update and highlight changed values
@@ -34,8 +35,8 @@ export function transformInputValues(inputSelector, substitutionRules) {
  * @returns {string}
  */
 export function transform(value, substitutionRules) {
-	substitutionRules.forEach(([searchValue, newValue]) => {
-		value = value.replace(searchValue, newValue);
+	substitutionRules.forEach(([searchValue, replaceValue]) => {
+		value = value.replace(searchValue, replaceValue);
 	});
 	return value;
 }
