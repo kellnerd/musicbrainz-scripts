@@ -12,7 +12,6 @@ const punctuationTestCases = [
 	['I\'m Free', 'I’m Free'], // contraction
 	['Lovin\' You', 'Lovin’ You'], // omitted last letter
 	['Talkin\' \'Bout You', 'Talkin’ ’Bout You'], // omitted last letter followed by omitted first letter
-	// failing: ['Here \'Tis (version for \'Ready, Steady, Go!\')', 'Here ’Tis (version for ‘Ready, Steady, Go!’)'],
 	['Summer \'68', 'Summer ’68'], // before a number
 	['\'39', '’39'], // before a number, at the beginning
 	['Atom Heart Mother (\'71 Hakone Aphrodite)', 'Atom Heart Mother (’71 Hakone Aphrodite)'], // after an opening bracket
