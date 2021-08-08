@@ -99,9 +99,9 @@
 
 	/**
 	 * Creates language-specific punctuation guessing transformation rules.
-	 * @param {string} language ISO 639-1 two letter language code.
+	 * @param {string} [language] ISO 639-1 two letter language code.
 	 */
-	function transformationRulesForLanguage(language = undefined) {
+	function transformationRulesForLanguage(language) {
 		const replaceValueIndex = 1;
 		let rules = transformationRules;
 		// overwrite replace values for quotation rules with language-specific values (if they are existing)
@@ -116,9 +116,9 @@
 	 * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
-	 * @param {string} language Language of the input fields' text (ISO 639-1 two letter code, optional).
+	 * @param {string} [language] Language of the input fields' text (ISO 639-1 two letter code, optional).
 	 */
-	function guessUnicodePunctuation(inputSelectors, language = undefined) {
+	function guessUnicodePunctuation(inputSelectors, language) {
 		transformInputValues(inputSelectors.join(), transformationRulesForLanguage(language));
 	}
 
