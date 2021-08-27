@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.8.8
+// @version      2021.8.27
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -204,7 +204,7 @@
 	const buttonTemplate = {
 		standard: '<button type="button">Guess punctuation</button>',
 		global: '<button type="button" title="Guess punctuation for all supported input fields">Guess punctuation</button>',
-		icon: '<button class="icon" type="button" title="Guess punctuation"></button>',
+		icon: '<button class="icon guess-punctuation" type="button" title="Guess punctuation"></button>',
 	};
 
 	/**

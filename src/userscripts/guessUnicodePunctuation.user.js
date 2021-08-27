@@ -9,7 +9,7 @@ import guessPunctuationIcon from './icons/guessPunctuation.png';
 const buttonTemplate = {
 	standard: '<button type="button">Guess punctuation</button>',
 	global: '<button type="button" title="Guess punctuation for all supported input fields">Guess punctuation</button>',
-	icon: '<button class="icon" type="button" title="Guess punctuation"></button>',
+	icon: '<button class="icon guess-punctuation" type="button" title="Guess punctuation"></button>',
 };
 
 /**
