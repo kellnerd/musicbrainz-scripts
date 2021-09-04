@@ -21,6 +21,15 @@ javascript:(function(){var a=[[/\[(.+?)\]\((.+?)\)/g,'[$2|$1]'],[/(?<!\[)(https?
 - Automatically fetches and uses the name of the linked entity as label if none was given.
 - Also supports collection descriptions and user profile biographies.
 
+## [Batch Add Parts Of Series](src/bookmarklets/batchAddPartsOfSeries.js)
+
+```js
+javascript:(function(){const t=prompt('Enter MBIDs of entities which should be added as parts of the series:');void 0!==t&&async function(e){for(var t of e){const n=new MB.entity(await async function(){const e=await fetch(`/ws/js/entity/${t}`);return e.json()}()),i=(o=n,t=void 0,t=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:t,source:t.source,target:o}));(o=n.name.match(/\d+/))&&i.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:o[0]}]),i.accept()}var o}(Array.from(t.matchAll(/[0-9a-f-]{36}/gm),e=>e[0]))})();
+```
+
+- Batch-adds entities as parts of the currently edited series.
+- Automatically extracts numbers from titles and uses them as relationship attributes.
+
 ## [Change All Release Dates](src/changeAllReleaseDates.js)
 
 ```js

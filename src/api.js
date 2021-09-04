@@ -7,6 +7,19 @@ import { rateLimit } from './rateLimit';
 const callAPI = rateLimit(fetch, 1000);
 
 /**
+ * Extracts the entity type and ID from a MusicBrainz URL.
+ * @param {string} url URL of a MusicBrainz entity page.
+ * @returns {{type:string,mbid:string}|undefined} Type and ID.
+ */
+export function extractEntityFromURL(url) {
+	const entity = url.match(/(area|artist|event|genre|instrument|label|place|release|release-group|series|url|work)\/([0-9a-f-]{36})$/);
+	return entity ? {
+		type: entity[1],
+		mbid: entity[2],
+	} : undefined;
+}
+
+/**
  * Returns the entity of the desired type which is associated to the given ressource URL.
  * @param {string} entityType Desired type of the entity.
  * @param {string} resourceURL 
@@ -49,7 +62,7 @@ export async function fetchFromAPI(endpoint, query = {}, inc = []) {
  * @param {string} gid MBID of the entity.
  */
 export async function fetchEntityJS(gid) {
-	const result = await fetch(`/ws/js/entity/${gid}?inc=rels`);
+	const result = await fetch(`/ws/js/entity/${gid}`);
 	return result.json();
 }
 
