@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.8.8
+// @version      2021.9.5
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.
@@ -226,19 +226,7 @@
 	 */
 	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 		const viewModel = MB.releaseRelationshipEditor;
-		// let target = MB.entity({ entityType: 'artist', ...artistData });
-		let target = new MB.entity.Artist(artistData);
-		artistData.gid;
-		// TODO: target.gid selects the correct artist but the name has to filled manually and is not highlighted green
-		/* if (gid) {
-			// probably the display issue is related to the caching of entities, code below does not help
-			MB.entityCache[gid] = target = await fetchEntityJS(gid);
-			// https://github.com/loujine/musicbrainz-scripts/blob/333a5f7c0a55454080c730b0eb7a22446d48d371/mb-reledit-guess_works.user.js#L54-L56
-			target.relationships.forEach((rel) => {
-				// apparently necessary to fill MB.entityCache with rels
-				MB.getRelationship(rel, target);
-			});
-		} */
+		let target = new MB.entity(artistData, 'artist'); // automatically caches entities (unlike `MB.entity.Artist`)
 		const dialog = new MB.relationshipEditor.UI.AddDialog({
 			source: viewModel.source,
 			target,
@@ -295,6 +283,7 @@
 		$(importButton)
 			.on('click', (event) => {
 				// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
+				// TODO: detect Discogs link (and RG type?) of the MB release
 				const releaseURL = 'https://www.discogs.com/release/605682';
 				importVoiceActorsFromDiscogs(releaseURL, event);
 			})

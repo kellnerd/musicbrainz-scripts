@@ -22,6 +22,7 @@ function insertVoiceActorButtons() {
 	$(importButton)
 		.on('click', (event) => {
 			// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
+			// TODO: detect Discogs link (and RG type?) of the MB release
 			const releaseURL = 'https://www.discogs.com/release/605682';
 			importVoiceActorsFromDiscogs(releaseURL, event);
 		})
