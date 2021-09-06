@@ -24,7 +24,7 @@ javascript:(function(){var a=[[/\[(.+?)\]\((.+?)\)/g,'[$2|$1]'],[/(?<!\[)(https?
 ## [Batch Add Parts Of Series](src/bookmarklets/batchAddPartsOfSeries.js)
 
 ```js
-javascript:(function(){const t=prompt('MBIDs of entities which should be added as parts of the series:');void 0!==t&&async function(e){for(var t of e){const i=new MB.entity(await async function(){const e=await fetch(`/ws/js/entity/${t}`);return e.json()}()),n=(o=i,t=void 0,t=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:t,source:t.source,target:o}));(o=i.name.match(/\d+/))&&n.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:o[0]}]),n.accept()}var o}(Array.from(t.matchAll(/[0-9a-f-]{36}/gm),e=>e[0]))})();
+javascript:(function(){const t=prompt('MBIDs of entities which should be added as parts of the series:');t&&async function(e){for(var t of e){const n=new MB.entity(await async function(){const e=await fetch(`/ws/js/entity/${t}`);return e.json()}()),a=(o=n,t=void 0,t=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:t,source:t.source,target:o}));(o=n.name.match(/\d+/))&&a.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:o[0]}]),a.accept()}var o}(Array.from(t.matchAll(/[0-9a-f-]{36}/gm),e=>e[0]))})();
 ```
 
 - Batch-adds entities as parts of the currently edited series.
@@ -80,7 +80,7 @@ javascript:(function(){function t(t,e){var g='background-color';$(t).css(g,'').e
 ## [Relate This Entity To Multiple MBIDs](src/bookmarklets/relateThisEntityToMultipleMBIDs.js)
 
 ```js
-javascript:(function(){const e=prompt('MBIDs of entities which should be related to this entity:');void 0!==e&&async function(t){for(var e of t){var o=new MB.entity(await async function(){const t=await fetch(`/ws/js/entity/${e}`);return t.json()}());const n=(e=o,o=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:o,source:o.source,target:e}));n.accept()}}(Array.from(e.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]))})();
+javascript:(function(){const e=prompt('MBIDs of entities which should be related to this entity:');e&&async function(t){for(var e of t){var n=new MB.entity(await async function(){const t=await fetch(`/ws/js/entity/${e}`);return t.json()}());const o=(e=n,n=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:n,source:n.source,target:e}));o.accept()}}(Array.from(e.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]))})();
 ```
 
 - Relates the currently edited entity to multiple entities given by their MBIDs.

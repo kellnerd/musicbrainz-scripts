@@ -28,7 +28,7 @@ async function relateThisSeriesToParts(mbids) {
 
 const input = prompt('MBIDs of entities which should be added as parts of the series:');
 
-if (input !== undefined) {
+if (input) {
 	const mbids = Array.from(input.matchAll(/[0-9a-f-]{36}/gm), (match) => match[0]);
 	relateThisSeriesToParts(mbids);
 }
