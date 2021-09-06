@@ -8,9 +8,10 @@ import { fetchEntityJS } from '../api.js';
 
 /**
  * Adds the default relationships between the currently edited source entity and the given target entities.
+ * The source entity is assumed to be a series, the target entities should have the correct type to be added as parts.
  * @param {string[]} mbids MBIDs of the target entities.
  */
-async function relateEntityToAll(mbids) {
+async function relateThisSeriesToParts(mbids) {
 	for (let mbid of mbids) {
 		const targetEntity = new MB.entity(await fetchEntityJS(mbid));
 		const dialog = createAddRelationshipDialog(targetEntity);
@@ -25,9 +26,9 @@ async function relateEntityToAll(mbids) {
 	}
 }
 
-const input = prompt('Enter MBIDs of entities which should be added as parts of the series:');
+const input = prompt('MBIDs of entities which should be added as parts of the series:');
 
 if (input !== undefined) {
 	const mbids = Array.from(input.matchAll(/[0-9a-f-]{36}/gm), (match) => match[0]);
-	relateEntityToAll(mbids);
+	relateThisSeriesToParts(mbids);
 }
