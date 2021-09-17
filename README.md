@@ -61,6 +61,15 @@ javascript:void $('.expand-medium').trigger('click');
 
 - Expands all collapsed mediums in the release editor, useful for large releases.
 
+## [Guess Series Relationship](src/bookmarklets/guessSeriesRelationship.js)
+
+```js
+javascript:(function(){(async function(e){var t=e.match(/(.+?)(?: (\d+))?:/);if(t){var n=await async function(e){const t=await fetch(`/ws/js/series?q=${encodeURIComponent(e)}`);return t.json()}(t[1]);const o=(e=new MB.entity(n[0]),n=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:n,source:n.source,target:e}));(t=t[2])&&o.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:t}]),o.accept()}}(document.querySelector('h1 bdi').textContent))})();
+```
+
+- Guesses the series name from the name of the currently edited entity and adds a relationship.
+- Tries to extract the series number from the entity name to use it as relationship attribute.
+
 ## [Guess Unicode Punctuation](src/guessUnicodePunctuation.js)
 
 [![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/guessUnicodePunctuation.user.js)
