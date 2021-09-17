@@ -3,15 +3,17 @@ import {
 	importVoiceActorsFromDiscogs,
 } from '../voiceActorCredits.js';
 
+const addIcon = $('img', '.add-rel.btn').attr('src');
+
 const addButton =
 `<span class="add-rel btn" id="add-voice-actor-credit">
-	<img class="bottom" src="https://staticbrainz.org/MB/add-384fe8d.png">
+	<img class="bottom" src="${addIcon}">
 	Add voice actor relationship
 </span>`;
 
 const importButton =
 `<span class="add-rel btn" id="import-voice-actors">
-	<img class="bottom" src="https://staticbrainz.org/MB/add-384fe8d.png">
+	<img class="bottom" src="${addIcon}">
 	Import voice actors
 </span>`;
 

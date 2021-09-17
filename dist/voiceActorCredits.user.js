@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.9.5
+// @version      2021.9.17
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.
@@ -9,6 +9,7 @@
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/voiceActorCredits.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        none
+// @run-at       document-idle
 // @match        *://*.musicbrainz.org/release/*/edit-relationships
 // ==/UserScript==
 
@@ -264,15 +265,17 @@
 		}
 	}
 
+	const addIcon = $('img', '.add-rel.btn').attr('src');
+
 	const addButton =
 `<span class="add-rel btn" id="add-voice-actor-credit">
-	<img class="bottom" src="https://staticbrainz.org/MB/add-384fe8d.png">
+	<img class="bottom" src="${addIcon}">
 	Add voice actor relationship
 </span>`	;
 
 	const importButton =
 `<span class="add-rel btn" id="import-voice-actors">
-	<img class="bottom" src="https://staticbrainz.org/MB/add-384fe8d.png">
+	<img class="bottom" src="${addIcon}">
 	Import voice actors
 </span>`	;
 
