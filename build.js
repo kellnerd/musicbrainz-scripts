@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import extractComments from 'extract-comments';
 import { rollup } from 'rollup';
+import rollupIgnore from 'rollup-plugin-ignore';
 import rollupImage from '@rollup/plugin-image';
 import rollupStrip from '@rollup/plugin-strip';
 import UglifyJS from 'uglify-js';
@@ -65,6 +66,7 @@ async function buildUserscript(modulePath, debug = false) {
 			banner: generateMetadataBlock(modulePath),
 		},
 		plugins: [
+			rollupIgnore(['cross-fetch/dist/node-polyfill.js']),
 			rollupImage(),
 			rollupStrip({
 				functions: ['console.debug'],
@@ -112,6 +114,9 @@ async function buildBookmarklet(modulePath, debug = false) {
 			format: 'iife',
 			strict: false,
 		},
+		plugins: [
+			rollupIgnore(['cross-fetch/dist/node-polyfill.js'])
+		],
 	};
 	const bundle = await rollup(rollupOptions);
 	if (debug) {
