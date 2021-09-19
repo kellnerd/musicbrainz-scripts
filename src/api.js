@@ -1,4 +1,4 @@
-import { rateLimit } from './rateLimit';
+import { rateLimit } from './rateLimit.js';
 
 /**
  * Calls to the MusicBrainz API are limited to one request per second.

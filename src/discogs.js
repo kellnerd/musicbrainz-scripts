@@ -1,4 +1,4 @@
-import { rateLimit } from './rateLimit';
+import { rateLimit } from './rateLimit.js';
 
 /**
  * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
