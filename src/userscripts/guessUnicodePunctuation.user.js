@@ -91,4 +91,10 @@ if (pageType == 'edit_annotation') { // annotation edit page
 		transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 	});
 	DOM.qs('button.submit').parentNode.append(button);
+	// on artist edit pages we need a different event to trigger the artist credit renamer on name changes
+	if (entityType === 'artist') {
+		DOM.qs(entityInputs[0]).addEventListener('change', (event) => {
+			event.target.dispatchEvent(new Event('input', { bubbles: true }));
+		});
+	}
 }
