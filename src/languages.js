@@ -1,3 +1,5 @@
+import { dom } from './dom.js';
+
 // MB languages as of 2021-10-04, extracted from the HTML source code of the release editor's language select menu
 export const frequentLanguageIDs = {
 	284: '[Multiple languages]',
@@ -535,7 +537,7 @@ export const languageCodes = {
  */
 export function detectReleaseLanguage() {
 	// get the ID of the selected language, the name (text value) is localization-dependent
-	const languageID = document.getElementById('language')?.selectedOptions[0].value;
+	const languageID = dom('language')?.selectedOptions[0].value;
 	if (languageID) {
 		// check only frequent languages (for most of the others we have no language code mapping anyway; also reduces bundle size)
 		const languageName = frequentLanguageIDs[languageID];
