@@ -35,11 +35,40 @@ function insertIconButtonAfter(targetInput) {
 	return button;
 }
 
+/**
+ * Inserts a "Guess punctuation" button into the artist credit bubble of the edit page.
+ * Only works if the bubble is already present in the DOM (it can be hidden, but must have been open at least once).
+ * Therefore this function should be used as callback of an event listener.
+ * @param {Event} event
+ */
+function insertACButton(event) {
+	// remove this function from the event listeners after the first event to avoid duplicate buttons
+	if (event) {
+		DOM.qsa('.open-ac').forEach((button) => button.removeEventListener(event.type, insertACButton));
+	}
+	const acBubbleButtons = DOM.qs('#artist-credit-bubble .buttons');
+	if (!acBubbleButtons) {
+		setTimeout(insertACButton, 50); // wait for the AC bubble to appear in the DOM
+		return;
+	}
+	const button = DOM.el(buttonTemplate.standard);
+	button.addEventListener('click', () => guessUnicodePunctuation(acInputs, null, new Event('blur')));
+	acBubbleButtons.append(button);
+}
+
+const acInputs = [
+	'input[id*=credited-as]', // all artist names as credited (inside the artist credit bubble)
+];
+
+
 DOM.css(styles, 'guess-punctuation');
 
 // parse the path of the current page
 const path = window.location.pathname.split('/');
-const entityType = path[1], pageType = path[path.length - 1];
+let entityType = path[1], pageType = path[path.length - 1];
+if (entityType == 'artist' && path[3] == 'credit') {
+	entityType = 'artist-credit';
+}
 
 // insert "Guess punctuation" buttons on all entity edit and creation pages
 if (pageType == 'edit_annotation') { // annotation edit page
@@ -74,7 +103,7 @@ if (pageType == 'edit_annotation') { // annotation edit page
 		// exclude annotations from the global action as the changes are hard to verify
 	});
 	DOM.qs('#release-editor > .buttons').append(globalButton);
-} else { // edit pages for all other entity types
+} else if (entityType != 'artist-credit') { // edit pages for all other entity types (except ACs)
 	const entityInputs = [
 		'input[name$=name]', // entity name
 		'input[name$=comment]', // entity disambiguation comment
@@ -93,4 +122,19 @@ if (pageType == 'edit_annotation') { // annotation edit page
 		transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 	});
 	DOM.qs('button.submit').parentNode.append(button);
+}
+
+// handle edit pages with artist credit bubbles
+if (['artist-credit', 'release', 'release-group', 'recording'].includes(entityType)) {
+	// wait a moment until the button which opens the AC bubble is available
+	setTimeout(() => DOM.qsa('.open-ac').forEach((button) => {
+		// wait for the artist credit bubble to be opened before inserting the guess button
+		button.addEventListener('click', insertACButton);
+		if (entityType === 'release') {
+			// remove old highlights that might be from a different AC which has been edited previously
+			button.addEventListener('click', () => DOM.qsa(acInputs.join()).forEach(
+				(input) => input.classList.remove(defaultHighlightClass)
+			));
+		}
+	}), 100);
 }
