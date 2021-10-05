@@ -4,7 +4,7 @@ import {
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
 import { detectReleaseLanguage } from '../languages.js';
-import { transformInputValues } from '../transformInputValues.js';
+import { transformInputValues, defaultHighlightClass } from '../transformInputValues.js';
 import guessPunctuationIcon from './icons/guessPunctuation.png';
 
 const buttonTemplate = {
@@ -17,7 +17,7 @@ const styles =
 `button.icon.guess-punctuation {
 	background-image: url(${guessPunctuationIcon});
 }
-input.content-changed, textarea.content-changed {
+input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	background-color: yellow !important;
 }`;
 
@@ -79,22 +79,18 @@ if (pageType == 'edit_annotation') { // annotation edit page
 		'input[name$=name]', // entity name
 		'input[name$=comment]', // entity disambiguation comment
 	];
+	// on artist edit pages we need a different event to trigger the artist credit renamer on name changes
+	const event = (entityType === 'artist') ? new Event('input', { bubbles: true }) : undefined;
 	// button after the disambiguation comment input field
 	// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 	// TODO: use lyrics language to localize quotes?
 	insertIconButtonAfter(entityInputs[1]) // skipped for url entities as there is no disambiguation input
-		?.addEventListener('click', () => guessUnicodePunctuation(entityInputs));
+		?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, null, event));
 	// global button after the "Enter edit" button
 	const button = DOM.el(buttonTemplate.global)
 	button.addEventListener('click', () => {
-		guessUnicodePunctuation(entityInputs);
+		guessUnicodePunctuation(entityInputs, null, event);
 		transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 	});
 	DOM.qs('button.submit').parentNode.append(button);
-	// on artist edit pages we need a different event to trigger the artist credit renamer on name changes
-	if (entityType === 'artist') {
-		DOM.qs(entityInputs[0]).addEventListener('change', (event) => {
-			event.target.dispatchEvent(new Event('input', { bubbles: true }));
-		});
-	}
 }

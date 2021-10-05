@@ -72,7 +72,8 @@ function transformationRulesForLanguage(language) {
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string[]} inputSelectors CSS selectors of the input fields.
  * @param {string} [language] Language of the input fields' text (ISO 639-1 two letter code, optional).
+ * @param {Event} [event] Event which should be triggered for changed input fields (optional).
  */
-export function guessUnicodePunctuation(inputSelectors, language) {
-	transformInputValues(inputSelectors.join(), transformationRulesForLanguage(language));
+export function guessUnicodePunctuation(inputSelectors, language, event) {
+	transformInputValues(inputSelectors.join(), transformationRulesForLanguage(language), event);
 }

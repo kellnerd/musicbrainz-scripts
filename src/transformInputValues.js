@@ -1,13 +1,16 @@
 import { qsa } from './dom.js';
 
+export const defaultHighlightClass = 'content-changed';
+
 /**
  * Transforms the values of the selected input fields using the given substitution rules.
  * Highlights all updated input fields in order to allow the user to review the changes.
  * @param {string} inputSelector CSS selector of the input fields.
  * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+ * @param {Event} [event] Event which should be triggered for changed input fields (optional, defaults to 'change').
+ * @param {string} [highlightClass] CSS class which should be applied to changed input fields (optional, defaults to `defaultHighlightClass`).
  */
-export function transformInputValues(inputSelector, substitutionRules) {
-	const highlightClass = 'content-changed';
+export function transformInputValues(inputSelector, substitutionRules, event = new Event('change'), highlightClass = defaultHighlightClass) {
 	qsa(inputSelector).forEach((/** @type {HTMLInputElement} */ input) => {
 		input.classList.remove(highlightClass); // disable possible previously highlighted changes
 		let value = input.value;
@@ -17,7 +20,7 @@ export function transformInputValues(inputSelector, substitutionRules) {
 		value = transform(value, substitutionRules);
 		if (value != input.value) { // update and highlight changed values
 			input.value = value;
-			input.dispatchEvent(new Event('change'));
+			input.dispatchEvent(event);
 			input.classList.add(highlightClass);
 		}
 	});
