@@ -12,7 +12,7 @@ import {
 	transformationRules,
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
-import { transformInputValues } from '../transformInputValues.js';
+import { $transformInputValues } from '../transformInputValues.js';
 
 const titleInputSelectors = [
 	'input#name', // release title (release editor)
@@ -30,5 +30,5 @@ const textareaSelectors = [
 	'.edit-note', // edit note (edit pages)
 ];
 
-transformInputValues(titleInputSelectors.join(), transformationRules);
-transformInputValues(textareaSelectors.join(), transformationRulesToPreserveMarkup);
+$transformInputValues(titleInputSelectors.join(), transformationRules);
+$transformInputValues(textareaSelectors.join(), transformationRulesToPreserveMarkup);

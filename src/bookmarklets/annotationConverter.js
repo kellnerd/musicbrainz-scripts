@@ -9,7 +9,7 @@ import {
 	markdownToAnnotation,
 	convertEntityLinks,
 } from '../annotationConverter.js';
-import { transformInputValues } from '../transformInputValues.js';
+import { $transformInputValues } from '../transformInputValues.js';
 
 const annotationInput = [
 	'textarea[name$=text]', // entity annotation
@@ -17,7 +17,7 @@ const annotationInput = [
 	'textarea[name$=biography]', // user profile biography
 ].join();
 
-transformInputValues(annotationInput, markdownToAnnotation);
+$transformInputValues(annotationInput, markdownToAnnotation);
 
 $(annotationInput).each(async (_index, input) => {
 	let newValue = await convertEntityLinks(input.value);
