@@ -31,10 +31,10 @@ export function convertEntityLinks(annotationText) {
 /**
  * Creates an entity link for use in annotations. Its label will be the name of the entity if it is not given.
  * @param {string} urlString URL to a MusicBrainz entity.
- * @param {string?} label Text label that should be rendered for the link (optional).
+ * @param {string} [label] Text label that should be rendered for the link (optional).
  * @returns {Promise<string>} `[entity-type:mbid|label]`
  */
-async function createEntityLink(urlString, label = null) {
+async function createEntityLink(urlString, label) {
 	const baseUrl = 'musicbrainz.org';
 	if (urlString.includes(baseUrl)) {
 		const url = new URL(urlString);
@@ -83,10 +83,10 @@ async function replaceAsync(string, regex, asyncFunction) {
 /**
  * Creates a bracketed link for use in annotations.
  * @param {string} urlString 
- * @param {*} label Text label that should be rendered for the link (optional).
+ * @param {string} [label] Text label that should be rendered for the link (optional).
  * @returns {string}
  */
-function createLink(urlString, label = null) {
+function createLink(urlString, label) {
 	if (label) {
 		return `[${urlString}|${label}]`;
 	} else {
