@@ -300,10 +300,10 @@ function slugify(string) {
  * @param {string} baseName Name of the userscript file (without extension).
  */
 function sourceAndInstallButton(baseName) {
-	const sourceButtonLink = 'https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png';
-	const installButtonLink = 'https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png';
-	return `\n[![Source](${sourceButtonLink})](${GitHubUserJS.path(baseName)})\n` +
-		`[![Install](${installButtonLink})](${GitHubUserJS.path(baseName)}?raw=1)\n`;
+	const sourceButtonLink = 'https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github';
+	const installButtonLink = 'https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey';
+	return `\n[![Install](${installButtonLink})](${GitHubUserJS.path(baseName)}?raw=1)\n` +
+		`[![Source](${sourceButtonLink})](${GitHubUserJS.path(baseName)})\n`;
 }
 
 

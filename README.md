@@ -52,8 +52,8 @@ javascript:void $('.expand-medium').trigger('click');
 
 ### [Guess Unicode Punctuation](src/guessUnicodePunctuation.js)
 
-[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/guessUnicodePunctuation.user.js)
-[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/guessUnicodePunctuation.user.js?raw=1)
+[![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/guessUnicodePunctuation.user.js?raw=1)
+[![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/guessUnicodePunctuation.user.js)
 
 ```js
 javascript:(function(){function t(t,a){const g='background-color';$(t).css(g,'').each((t,n)=>{let e=n.value;e&&(a.forEach(([t,n])=>{e=e.replace(t,n)}),e!=n.value&&$(n).val(e).trigger('change').css(g,'yellow'))})}var n=[[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/gu,'\u201c$1\u201d'],[/(?<=\W|^)'(n)'(?=\W|$)/gi,'\u2019$1\u2019'],[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/gu,'\u2018$1\u2019'],[/(\d+)"/g,'$1\u2033'],[/(\d+)'(\d+)/g,'$1\u2032$2'],[/'/g,'\u2019'],[/(?<!\.)\.{3}(?!\.)/g,'\u2026'],[/ - /g,' \u2013 '],[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g,'$1\u2010$2\u2010$3'],[/(\d{4})-(\d{2})(?=\W|$)/g,'$1\u2010$2'],[/(\d+)-(\d+)/g,'$1\u2013$2'],[/-/g,'\u2010']],e=[[/\[(.+?)(\|.+?)?\]/g,(t,n,e='')=>`[${btoa(n)}${e}]`],[/(?<=\/\/)(\S+)/g,(t,n)=>btoa(n)],[/'''/g,'<b>'],[/''/g,'<i>'],...n,[/<b>/g,"'''"],[/<i>/g,"''"],[/(?<=\/\/)([A-Za-z0-9+/=]+)/g,(t,n)=>atob(n)],[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g,(t,n,e='')=>`[${atob(n)}${e}]`]];t(['input#name','input#comment','input.track-name','input[id^=medium-title]','input[name$=name]','input[name$=comment]'].join(),n),t(['#annotation','#edit-note-text','textarea[name$=text]','.edit-note'].join(),e)})();
@@ -69,8 +69,8 @@ javascript:(function(){function t(t,a){const g='background-color';$(t).css(g,'')
 
 ### [Voice Actor Credits](src/voiceActorCredits.js)
 
-[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/voiceActorCredits.user.js)
-[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/voiceActorCredits.user.js?raw=1)
+[![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
+[![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/voiceActorCredits.user.js)
 
 ```js
 javascript:void function(e={}){var t=MB.releaseRelationshipEditor,e=new MB.entity.Artist(e);const i=new MB.relationshipEditor.UI.AddDialog({source:t.source,target:e,viewModel:t}),n=i.relationship();return n.linkTypeID(60),n.setAttributes([{type:{gid:'d3a36e62-a7c4-4eb9-839f-adfebe87ac12'},credited_as:""}]),i}().open(document.createEvent('MouseEvent'));
