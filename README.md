@@ -67,6 +67,14 @@ javascript:(function(){function t(t,a){const g='background-color';$(t).css(g,'')
 - Detects the selected language (in the release editor) and uses localized quotes (userscript only).
 - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
 
+### [Load Release With Magic ISRC](src/bookmarklets/loadReleaseWithMagicISRC.js)
+
+```js
+javascript:(function(){var a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];a&&open('https://magicisrc.kepstin.ca?mbid='+a)})();
+```
+
+- Opens [kepstin’s MagicISRC](https://magicisrc.kepstin.ca) and loads the currently visited MusicBrainz release.
+
 ### [Voice Actor Credits](src/voiceActorCredits.js)
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
