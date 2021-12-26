@@ -7,13 +7,22 @@ import { createAddRelationshipDialog } from '../relationshipEditor.js';
 import { fetchEntityJS } from '../api.js';
 
 /**
- * Adds the default relationships between the currently edited source entity and the given target entities.
+ * Adds relationships of the given type between the currently edited source entity and the given target entities.
  * @param {string[]} mbids MBIDs of the target entities.
+ * @param {number} [relTypeId] Internal ID of the relationship type (optional, omit to use the default relationship type).
+ * @param {boolean} [backward] Change the direction of the relationship.
  */
-async function relateThisEntityToMultiple(mbids) {
+async function relateThisEntityToMultiple(mbids, relTypeId, backward = false) {
 	for (let mbid of mbids) {
 		const targetEntity = new MB.entity(await fetchEntityJS(mbid));
 		const dialog = createAddRelationshipDialog(targetEntity);
+		if (relTypeId) {
+			const rel = dialog.relationship();
+			rel.linkTypeID(relTypeId);
+			if (backward) {
+				dialog.changeDirection();
+			}
+		}
 		dialog.accept();
 	}
 }
@@ -23,4 +32,5 @@ const input = prompt('MBIDs of entities which should be related to this entity:'
 if (input) {
 	const mbids = Array.from(input.matchAll(/[0-9a-f-]{36}/gm), (match) => match[0]);
 	relateThisEntityToMultiple(mbids);
+	// relateThisEntityToMultiple(mbids, 894, true); // RG "included in" RG
 }
