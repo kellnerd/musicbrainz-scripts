@@ -3,10 +3,12 @@ import {
 	fetchVoiceActors as fetchVoiceActorsFromDiscogs,
 } from './discogs.js';
 import {
-	searchEntity,
-	getEntityForResourceURL,
 	internalArtist,
-} from './api.js';
+	searchEntity,
+} from './internalAPI.js';
+import {
+	getEntityForResourceURL,
+} from './publicAPI.js';
 
 /**
  * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.

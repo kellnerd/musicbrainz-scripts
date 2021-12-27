@@ -1,7 +1,7 @@
 import {
 	extractEntityFromURL,
-	fetchEntityJS,
-} from './api.js';
+	fetchEntity,
+} from './internalAPI.js';
 
 /**
  * Creates a dialog to add a relationship to the currently edited source entity.
@@ -24,5 +24,5 @@ export function createAddRelationshipDialog(targetEntity) {
  */
 export async function targetEntityFromURL(url) {
 	const entity = extractEntityFromURL(url);
-	return new MB.entity(await fetchEntityJS(entity.mbid));
+	return new MB.entity(await fetchEntity(entity.mbid));
 }

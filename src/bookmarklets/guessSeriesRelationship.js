@@ -3,7 +3,7 @@
  * - Tries to extract the series number from the entity name to use it as relationship attribute.
  */
 
-import { searchEntity } from '../api.js';
+import { searchEntity } from '../internalAPI.js';
 import { createAddRelationshipDialog } from '../relationshipEditor.js';
 
 async function guessSeriesRelationship(entityName) {

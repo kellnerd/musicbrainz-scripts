@@ -4,7 +4,7 @@
  */
 
 import { createAddRelationshipDialog } from '../relationshipEditor.js';
-import { fetchEntityJS } from '../api.js';
+import { fetchEntity } from '../internalAPI.js';
 
 /**
  * Adds relationships of the given type between the currently edited source entity and the given target entities.
@@ -14,7 +14,7 @@ import { fetchEntityJS } from '../api.js';
  */
 async function relateThisEntityToMultiple(mbids, relTypeId, backward = false) {
 	for (let mbid of mbids) {
-		const targetEntity = new MB.entity(await fetchEntityJS(mbid));
+		const targetEntity = new MB.entity(await fetchEntity(mbid));
 		const dialog = createAddRelationshipDialog(targetEntity);
 		if (relTypeId) {
 			const rel = dialog.relationship();

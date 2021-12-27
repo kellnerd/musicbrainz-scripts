@@ -4,7 +4,7 @@
  */
 
 import { createAddRelationshipDialog } from '../relationshipEditor.js';
-import { fetchEntityJS } from '../api.js';
+import { fetchEntity } from '../internalAPI.js';
 
 /**
  * Adds the default relationships between the currently edited source entity and the given target entities.
@@ -13,7 +13,7 @@ import { fetchEntityJS } from '../api.js';
  */
 async function relateThisSeriesToParts(mbids) {
 	for (let mbid of mbids) {
-		const targetEntity = new MB.entity(await fetchEntityJS(mbid));
+		const targetEntity = new MB.entity(await fetchEntity(mbid));
 		const dialog = createAddRelationshipDialog(targetEntity);
 		const seriesNumberMatch = targetEntity.name.match(/\d+/);
 		if (seriesNumberMatch) {
