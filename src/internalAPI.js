@@ -15,19 +15,6 @@ export async function searchEntity(entityType, query) {
 }
 
 /**
- * Extracts the entity type and ID from a MusicBrainz URL.
- * @param {string} url URL of a MusicBrainz entity page.
- * @returns {{type:string,mbid:string}|undefined} Type and ID.
- */
-export function extractEntityFromURL(url) {
-	const entity = url.match(/(area|artist|event|genre|instrument|label|place|release|release-group|series|url|work)\/([0-9a-f-]{36})$/);
-	return entity ? {
-		type: entity[1],
-		mbid: entity[2],
-	} : undefined;
-}
-
-/**
  * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
  */
 const ARTIST_INTERNAL_FIELDS = {
