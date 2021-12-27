@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.9.17
+// @version      2021.12.27
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.
@@ -15,6 +15,73 @@
 
 (function () {
 	'use strict';
+
+	/**
+	 * Creates a function that maps entries of an input record to different property names of the output record according
+	 * to the given mapping. Only properties with an existing mapping will be copied.
+	 * @param {Record<string,string>} mapping Maps property names of the output record to those of the input record.
+	 * @returns {(input:Record<string,any>)=>Record<string,any>} Mapper function.
+	 */
+	function createRecordMapper(mapping) {
+		return function (input) {
+			/** @type {Record<string,any>} */
+			let output = {};
+			for (let outputProperty in mapping) {
+				const inputProperty = mapping[outputProperty];
+				const value = input[inputProperty];
+				if (value !== undefined) {
+					output[outputProperty] = value;
+				}
+			}
+			return output;
+		};
+	}
+
+	async function searchEntity(entityType, query) {
+		const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
+		return result.json();
+	}
+
+	/**
+	 * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
+	 */
+	const ARTIST_INTERNAL_FIELDS = {
+		gid: 'id', // MBID
+		name: 'name',
+		sort_name: 'sort-name',
+		comment: 'disambiguation',
+	};
+
+	/**
+	 * Creates a ws/js compatible artist object from an API response.
+	 */
+	const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);
+
+	/**
+	 * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
+	 * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
+	 * @param {Object} artistData Edit data of the performing artist (optional).
+	 * @param {string} roleName Credited name of the voice actor's role (optional).
+	 * @param {string} artistCredit Credited name of the performing artist (optional).
+	 * @returns MusicBrainz "Add relationship" dialog.
+	 */
+	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
+		const viewModel = MB.releaseRelationshipEditor;
+		let target = new MB.entity(artistData, 'artist'); // automatically caches entities (unlike `MB.entity.Artist`)
+		const dialog = new MB.relationshipEditor.UI.AddDialog({
+			source: viewModel.source,
+			target,
+			viewModel,
+		});
+		const rel = dialog.relationship();
+		rel.linkTypeID(60); // set type: performance -> performer -> vocals
+		rel.entity0_credit(artistCredit);
+		rel.setAttributes([{
+			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
+			credited_as: roleName,
+		}]);
+		return dialog;
+	}
 
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
@@ -174,73 +241,6 @@
 		} else {
 			throw response;
 		}
-	}
-
-	async function searchEntity(entityType, query) {
-		const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
-		return result.json();
-	}
-
-	/**
-	 * Creates a function that maps entries of an input record to different property names of the output record according
-	 * to the given mapping. Only properties with an existing mapping will be copied.
-	 * @param {Record<string,string>} mapping Maps property names of the output record to those of the input record.
-	 * @returns {(input:Record<string,any>)=>Record<string,any>} Mapper function.
-	 */
-	function createRecordMapper(mapping) {
-		return function (input) {
-			/** @type {Record<string,any>} */
-			let output = {};
-			for (let outputProperty in mapping) {
-				const inputProperty = mapping[outputProperty];
-				const value = input[inputProperty];
-				if (value !== undefined) {
-					output[outputProperty] = value;
-				}
-			}
-			return output;
-		};
-	}
-
-	/**
-	 * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
-	 */
-	const ARTIST_INTERNAL_FIELDS = {
-		gid: 'id', // MBID
-		name: 'name',
-		sort_name: 'sort-name',
-		comment: 'disambiguation',
-	};
-
-	/**
-	 * Creates a ws/js compatible artist object from an API response.
-	 */
-	const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);
-
-	/**
-	 * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
-	 * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
-	 * @param {Object} artistData Edit data of the performing artist (optional).
-	 * @param {string} roleName Credited name of the voice actor's role (optional).
-	 * @param {string} artistCredit Credited name of the performing artist (optional).
-	 * @returns MusicBrainz "Add relationship" dialog.
-	 */
-	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
-		const viewModel = MB.releaseRelationshipEditor;
-		let target = new MB.entity(artistData, 'artist'); // automatically caches entities (unlike `MB.entity.Artist`)
-		const dialog = new MB.relationshipEditor.UI.AddDialog({
-			source: viewModel.source,
-			target,
-			viewModel,
-		});
-		const rel = dialog.relationship();
-		rel.linkTypeID(60); // set type: performance -> performer -> vocals
-		rel.entity0_credit(artistCredit);
-		rel.setAttributes([{
-			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
-			credited_as: roleName,
-		}]);
-		return dialog;
 	}
 
 	async function importVoiceActorsFromDiscogs(releaseURL, event = document.createEvent('MouseEvent')) {

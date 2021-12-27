@@ -24,7 +24,7 @@ javascript:(function(){var a=[[/\[(.+?)\]\((.+?)\)/g,'[$2|$1]'],[/(?<!\[)(https?
 ## [Batch Add Parts Of Series](src/bookmarklets/batchAddPartsOfSeries.js)
 
 ```js
-javascript:(function(){const t=prompt('MBIDs of entities which should be added as parts of the series:');t&&async function(e){for(var t of e){const n=new MB.entity(await async function(){const e=await fetch(`/ws/js/entity/${t}`);return e.json()}()),a=(o=n,t=void 0,t=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:t,source:t.source,target:o}));(o=n.name.match(/\d+/))&&a.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:o[0]}]),a.accept()}var o}(Array.from(t.matchAll(/[0-9a-f-]{36}/gm),e=>e[0]))})();
+javascript:(function(){const t=prompt('MBIDs of entities which should be added as parts of the series:');t&&async function(t){for(var e of t){const o=new MB.entity(await async function(){const t=await fetch(`/ws/js/entity/${e}`);return t.json()}()),i=(a=o,e=void 0,e=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:e,source:e.source,target:a}));(a=o.name.match(/\d+/))&&i.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:a[0]}]),i.accept()}var a}(Array.from(t.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]))})();
 ```
 
 - Batch-adds entities as parts of the currently edited series.
@@ -64,7 +64,7 @@ javascript:void $('.expand-medium').trigger('click');
 ## [Guess Series Relationship](src/bookmarklets/guessSeriesRelationship.js)
 
 ```js
-javascript:(function(){(async function(e){var t=e.match(/(.+?)(?: (\d+))?:/);if(t){var n=await async function(e){const t=await fetch(`/ws/js/series?q=${encodeURIComponent(e)}`);return t.json()}(t[1]);const o=(e=new MB.entity(n[0]),n=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:n,source:n.source,target:e}));(t=t[2])&&o.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:t}]),o.accept()}}(document.querySelector('h1 bdi').textContent))})();
+javascript:void async function(e){var t=e.match(/(.+?)(?: (\d+))?:/);if(t){var n=await async function(e){const t=await fetch(`/ws/js/series?q=${encodeURIComponent(e)}`);return t.json()}(t[1]);const o=(e=new MB.entity(n[0]),n=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:n,source:n.source,target:e}));(t=t[2])&&o.relationship().setAttributes([{type:{gid:'a59c5830-5ec7-38fe-9a21-c7ea54f6650a'},text_value:t}]),o.accept()}}(document.querySelector('h1 bdi').textContent);
 ```
 
 - Guesses the series name from the name of the currently edited entity and adds a relationship.
@@ -89,7 +89,7 @@ javascript:(function(){function t(t,e){var g='background-color';$(t).css(g,'').e
 ## [Relate This Entity To Multiple MBIDs](src/bookmarklets/relateThisEntityToMultipleMBIDs.js)
 
 ```js
-javascript:(function(){const e=prompt('MBIDs of entities which should be related to this entity:');e&&async function(t){for(var e of t){var n=new MB.entity(await async function(){const t=await fetch(`/ws/js/entity/${e}`);return t.json()}());const o=(e=n,n=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:n,source:n.source,target:e}));o.accept()}}(Array.from(e.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]))})();
+javascript:(function(){const t=prompt('MBIDs of entities which should be related to this entity:');t&&async function(t){for(var o of t){var e=new MB.entity(await async function(){const t=await fetch(`/ws/js/entity/${o}`);return t.json()}());const n=(o=e,e=MB.sourceRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:e,source:e.source,target:o}));n.accept()}}(Array.from(t.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]))})();
 ```
 
 - Relates the currently edited entity to multiple entities given by their MBIDs.
@@ -101,7 +101,7 @@ javascript:(function(){const e=prompt('MBIDs of entities which should be related
 [![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/voiceActorCredits.user.js?raw=1)
 
 ```js
-javascript:void function(e={}){var t=MB.releaseRelationshipEditor,e=new MB.entity.Artist(e);const i=new MB.relationshipEditor.UI.AddDialog({source:t.source,target:e,viewModel:t}),n=i.relationship();return n.linkTypeID(60),n.setAttributes([{type:{gid:'d3a36e62-a7c4-4eb9-839f-adfebe87ac12'},credited_as:""}]),i}().open(document.createEvent('MouseEvent'));
+javascript:void function(e={}){var t=MB.releaseRelationshipEditor,e=new MB.entity(e,'artist');const i=new MB.relationshipEditor.UI.AddDialog({source:t.source,target:e,viewModel:t}),n=i.relationship();return n.linkTypeID(60),n.entity0_credit(""),n.setAttributes([{type:{gid:'d3a36e62-a7c4-4eb9-839f-adfebe87ac12'},credited_as:""}]),i}().open(document.createEvent('MouseEvent'));
 ```
 
 - Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.
