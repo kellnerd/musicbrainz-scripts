@@ -1,5 +1,7 @@
 import {
 	createVoiceActorDialog,
+} from '../relationshipEditor.js';
+import {
 	importVoiceActorsFromDiscogs,
 } from '../voiceActorCredits.js';
 
