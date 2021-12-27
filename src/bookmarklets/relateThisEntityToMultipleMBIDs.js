@@ -32,5 +32,5 @@ const input = prompt('MBIDs of entities which should be related to this entity:'
 if (input) {
 	const mbids = Array.from(input.matchAll(/[0-9a-f-]{36}/gm), (match) => match[0]);
 	relateThisEntityToMultiple(mbids);
-	// relateThisEntityToMultiple(mbids, 894, true); // RG "included in" RG
+	// relateThisEntityToMultiple(mbids, 894, true); // RGs "included in" this RG
 }
