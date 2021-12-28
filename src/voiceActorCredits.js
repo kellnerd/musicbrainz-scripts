@@ -12,9 +12,10 @@ import {
 import {
 	createVoiceActorDialog,
 	ensureNoActiveDialog,
+	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
 
-export async function importVoiceActorsFromDiscogs(releaseURL, event = document.createEvent('MouseEvent')) {
+export async function importVoiceActorsFromDiscogs(releaseURL, event) {
 	const actors = await fetchVoiceActorsFromDiscogs(releaseURL);
 	for (const actor of actors) {
 		console.debug(actor);
@@ -38,7 +39,8 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
 			} else {
 				// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
-				createVoiceActorDialog(actor, roleName, artistCredit).open(event);
+				const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
+				openDialogAndTriggerAutocomplete(dialog, event);
 			}
 		}
 	}
