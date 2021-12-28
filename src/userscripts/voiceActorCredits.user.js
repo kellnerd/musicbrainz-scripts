@@ -1,4 +1,7 @@
 import {
+	fetchEntity,
+} from '../publicAPI.js';
+import {
 	createVoiceActorDialog,
 } from '../relationshipEditor.js';
 import {
@@ -20,15 +23,22 @@ const importButton =
 </span>`;
 
 function insertVoiceActorButtons() {
+	// TODO: only show buttons for certain RG types (audiobook, audio drama, spoken word) of the MB release?
 	$(addButton)
 		.on('click', (event) => createVoiceActorDialog().open(event))
 		.appendTo('#release-rels');
 	$(importButton)
-		.on('click', (event) => {
-			// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
-			// TODO: detect Discogs link (and RG type?) of the MB release
-			const releaseURL = 'https://www.discogs.com/release/605682';
-			importVoiceActorsFromDiscogs(releaseURL, event);
+		.on('click', async (event) => {
+			const releaseData = await fetchEntity(window.location.href, ['release-groups', 'url-rels']);
+			let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
+
+			if (!discogsURL) {
+				discogsURL = prompt('Discogs release URL');
+			}
+
+			if (discogsURL) {
+				importVoiceActorsFromDiscogs(discogsURL, event);
+			}
 		})
 		.appendTo('#release-rels');
 }
