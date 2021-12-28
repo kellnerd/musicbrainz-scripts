@@ -49,6 +49,8 @@ export async function fetchCredits(releaseURL) {
 			}
 			return artist;
 		});
+	} else {
+		throw new Error('Invalid Discogs URL');
 	}
 }
 
