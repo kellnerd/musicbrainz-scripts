@@ -34,7 +34,8 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 			const dialog = createVoiceActorDialog(mbArtistGuess, roleName, artistCredit);
 
 			// check if artist name is identical or just an unrelated result
-			if (mbArtistGuess.name === actor.name) {
+			// TODO: retry failed search requests instead of skipping an undefined mbArtistGuess
+			if (mbArtistGuess && mbArtistGuess.name === actor.name) {
 				dialog.accept();
 			} else {
 				dialog.open(event);
