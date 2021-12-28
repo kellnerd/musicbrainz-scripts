@@ -1,3 +1,4 @@
+import { extractEntityFromURL } from './entity.js';
 import { rateLimit } from './rateLimit.js';
 import 'cross-fetch/dist/node-polyfill.js';
 
@@ -6,6 +7,19 @@ import 'cross-fetch/dist/node-polyfill.js';
  * https://musicbrainz.org/doc/MusicBrainz_API
  */
 const callAPI = rateLimit(fetch, 1000);
+
+/**
+ * Requests the given entity from the MusicBrainz API.
+ * @param {string} url (Partial) URL which contains the entity type and the entity's MBID.
+ * @param {string[]} inc Include parameters which should be added to the API request.
+ */
+export function fetchEntity(url, inc) {
+	const entity = extractEntityFromURL(url);
+	if (!entity) throw new Error('Invalid entity URL');
+
+	const endpoint = [entity.type, entity.mbid].join('/');
+	return fetchFromAPI(endpoint, {}, inc);
+}
 
 /**
  * Returns the entity of the desired type which is associated to the given ressource URL.
