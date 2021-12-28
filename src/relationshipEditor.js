@@ -75,7 +75,7 @@ export function ensureNoActiveDialog(editor = MB.releaseRelationshipEditor) {
  * @param {*} dialog 
  * @param {Event} event Affects the position of the opened dialog.
  */
- export function openDialogAndTriggerAutocomplete(dialog, event = document.createEvent('MouseEvent')) {
+export function openDialogAndTriggerAutocomplete(dialog, event = document.createEvent('MouseEvent')) {
 	dialog.open(event);
 	dialog.autocomplete.$input.focus();
 	dialog.autocomplete.search();

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.12.27
+// @version      2021.12.28
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides an additional button in the relationship editor which opens a pre-filled dialogue.
@@ -15,6 +15,147 @@
 
 (function () {
 	'use strict';
+
+	/**
+	 * Adds the given message and a footer for the active userscript to the edit note.
+	 * @param {string} message Edit note message.
+	 */
+	function addMessageToEditNote(message) {
+		/** @type {HTMLTextAreaElement} */
+		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
+		const previousContent = editNoteInput.value.split(separator);
+		editNoteInput.value = buildEditNote(...previousContent, message);
+		editNoteInput.dispatchEvent(new Event('change'));
+	}
+
+	/**
+	 * Builds an edit note for the given message sections and adds a footer section for the active userscript.
+	 * Automatically de-duplicates the sections to reduce auto-generated message and footer spam.
+	 * @param {...string} sections Edit note sections.
+	 * @returns {string} Complete edit note content.
+	 */
+	function buildEditNote(...sections) {
+		sections = sections.map((section) => section.trim());
+
+		if (typeof GM_info !== 'undefined') {
+			sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
+		}
+
+		// drop empty sections and keep only the last occurrence of duplicate sections
+		return sections
+			.filter((section, index) => section && sections.lastIndexOf(section) === index)
+			.join(separator);
+	}
+
+	const separator = '\n—\n';
+
+	/**
+	 * Extracts the entity type and ID from a MusicBrainz URL (can be incomplete and/or with additional path components and query parameters).
+	 * @param {string} url URL of a MusicBrainz entity page.
+	 * @returns {{type:string,mbid:string}|undefined} Type and ID.
+	 */
+	function extractEntityFromURL$1(url) {
+		const entity = url.match(/(area|artist|event|genre|instrument|label|place|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
+		return entity ? {
+			type: entity[1],
+			mbid: entity[2]
+		} : undefined;
+	}
+
+	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
+
+	/**
+	 * Returns a promise that resolves after the given delay.
+	 * @param {number} ms Delay in milliseconds.
+	 */
+	const delay = ms => new Promise((resolve, reject) => setTimeout(resolve, ms));
+
+	function rateLimit1(operation, interval) {
+		let queue = Promise.resolve(); // empty queue is ready
+		return (...args) => {
+			const result = queue.then(() => operation(...args)); // queue the next operation
+			queue = queue.then(() => delay(interval)); // start the next delay
+			return result;
+		};
+	}
+
+	/**
+	 * Limits the number of requests for the given operation within a time interval.
+	 * @template Params
+	 * @template Result
+	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
+	 * @param {number} interval Time interval (in ms).
+	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
+	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
+	 */
+	function rateLimit(operation, interval, requestsPerInterval = 1) {
+		if (requestsPerInterval == 1) {
+			return rateLimit1(operation, interval);
+		}
+		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
+		let queueIndex = 0;
+		return (...args) => {
+			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
+			return queues[queueIndex](...args); // return the rate-limited operation
+		};
+	}
+
+	/**
+	 * Calls to the MusicBrainz API are limited to one request per second.
+	 * https://musicbrainz.org/doc/MusicBrainz_API
+	 */
+	const callAPI$1 = rateLimit(fetch, 1000);
+
+	/**
+	 * Requests the given entity from the MusicBrainz API.
+	 * @param {string} url (Partial) URL which contains the entity type and the entity's MBID.
+	 * @param {string[]} inc Include parameters which should be added to the API request.
+	 */
+	function fetchEntity(url, inc) {
+		const entity = extractEntityFromURL$1(url);
+		if (!entity) throw new Error('Invalid entity URL');
+
+		const endpoint = [entity.type, entity.mbid].join('/');
+		return fetchFromAPI(endpoint, {}, inc);
+	}
+
+	/**
+	 * Returns the entity of the desired type which is associated to the given ressource URL.
+	 * @param {string} entityType Desired type of the entity.
+	 * @param {string} resourceURL 
+	 * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
+	 */
+	async function getEntityForResourceURL(entityType, resourceURL) {
+		try {
+			const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
+			return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
+		} catch (error) {
+			return null;
+		}
+	}
+
+	/**
+	 * Makes a request to the MusicBrainz API of the currently used server and returns the results as JSON.
+	 * @param {string} endpoint Endpoint (e.g. the entity type) which should be queried.
+	 * @param {Record<string,string>} query Query parameters.
+	 * @param {string[]} inc Include parameters which should be added to the query parameters.
+	 */
+	async function fetchFromAPI(endpoint, query = {}, inc = []) {
+		if (inc.length) {
+			query.inc = inc.join(' '); // spaces will be encoded as `+`
+		}
+		query.fmt = 'json';
+		const headers = {
+			'Accept': 'application/json',
+			// 'User-Agent': 'Application name/<version> ( contact-url )',
+		};
+		const response = await callAPI$1(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+		if (response.ok) {
+			return response.json();
+		} else {
+			throw response;
+		}
+	}
 
 	/**
 	 * Creates a function that maps entries of an input record to different property names of the output record according
@@ -35,11 +176,6 @@
 			}
 			return output;
 		};
-	}
-
-	async function searchEntity(entityType, query) {
-		const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
-		return result.json();
 	}
 
 	/**
@@ -83,49 +219,39 @@
 		return dialog;
 	}
 
-	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
-
 	/**
-	 * Returns a promise that resolves after the given delay.
-	 * @param {number} ms Delay in milliseconds.
+	 * Ensures that the given relationship editor has no active dialog.
 	 */
-	const delay = ms => new Promise((resolve, reject) => setTimeout(resolve, ms));
-
-	function rateLimit1(operation, interval) {
-		let queue = Promise.resolve(); // empty queue is ready
-		return (...args) => {
-			const result = queue.then(() => operation(...args)); // queue the next operation
-			queue = queue.then(() => delay(interval)); // start the next delay
-			return result;
-		};
+	function ensureNoActiveDialog(editor = MB.releaseRelationshipEditor) {
+		return new Promise((resolve) => {
+			const activeDialog = editor.activeDialog();
+			if (activeDialog) {
+				// wait until the jQuery UI dialog has been closed
+				activeDialog.$dialog.on('dialogclose', () => {
+					resolve();
+				});
+			} else {
+				resolve();
+			}
+		});
 	}
 
 	/**
-	 * Limits the number of requests for the given operation within a time interval.
-	 * @template Params
-	 * @template Result
-	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
-	 * @param {number} interval Time interval (in ms).
-	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
-	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
+	 * Opens the given dialog, focuses the autocomplete input and triggers the search.
+	 * @param {*} dialog 
+	 * @param {Event} event Affects the position of the opened dialog.
 	 */
-	function rateLimit(operation, interval, requestsPerInterval = 1) {
-		if (requestsPerInterval == 1) {
-			return rateLimit1(operation, interval);
-		}
-		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
-		let queueIndex = 0;
-		return (...args) => {
-			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
-			return queues[queueIndex](...args); // return the rate-limited operation
-		};
+	function openDialogAndTriggerAutocomplete(dialog, event = document.createEvent('MouseEvent')) {
+		dialog.open(event);
+		dialog.autocomplete.$input.focus();
+		dialog.autocomplete.search();
 	}
 
 	/**
 	 * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
 	 * https://www.discogs.com/developers/
 	 */
-	const callAPI$1 = rateLimit(fetch, 60 * 1000, 25);
+	const callAPI = rateLimit(fetch, 60 * 1000, 25);
 
 	/**
 	 * Extracts the entity type and ID from a Discogs URL.
@@ -142,7 +268,7 @@
 
 	async function fetchEntityFromAPI(entityType, entityId) {
 		const url = `https://api.discogs.com/${entityType}s/${entityId}`;
-		const response = await callAPI$1(url);
+		const response = await callAPI(url);
 		if (response.ok) {
 			return response.json();
 		} else {
@@ -169,6 +295,8 @@
 				}
 				return artist;
 			});
+		} else {
+			throw new Error('Invalid Discogs URL');
 		}
 	}
 
@@ -199,68 +327,31 @@
 	 * @property {string} resource_url API URL of the artist.
 	 */
 
-	/**
-	 * Calls to the MusicBrainz API are limited to one request per second.
-	 * https://musicbrainz.org/doc/MusicBrainz_API
-	 */
-	const callAPI = rateLimit(fetch, 1000);
-
-	/**
-	 * Returns the entity of the desired type which is associated to the given ressource URL.
-	 * @param {string} entityType Desired type of the entity.
-	 * @param {string} resourceURL 
-	 * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
-	 */
-	async function getEntityForResourceURL(entityType, resourceURL) {
-		try {
-			const url = await fetchFromAPI('url', { resource: resourceURL }, [`${entityType}-rels`]);
-			return url?.relations.filter((rel) => rel['target-type'] === entityType)?.[0][entityType];
-		} catch (error) {
-			return null;
-		}
-	}
-
-	/**
-	 * Makes a request to the MusicBrainz API of the currently used server and returns the results as JSON.
-	 * @param {string} endpoint Endpoint (e.g. the entity type) which should be queried.
-	 * @param {Record<string,string>} query Query parameters.
-	 * @param {string[]} inc Include parameters which should be added to the query parameters.
-	 */
-	async function fetchFromAPI(endpoint, query = {}, inc = []) {
-		if (inc.length) {
-			query.inc = inc.join(' '); // spaces will be encoded as `+`
-		}
-		query.fmt = 'json';
-		const headers = {
-			'Accept': 'application/json',
-			// 'User-Agent': 'Application name/<version> ( contact-url )',
-		};
-		const response = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
-		if (response.ok) {
-			return response.json();
-		} else {
-			throw response;
-		}
-	}
-
-	async function importVoiceActorsFromDiscogs(releaseURL, event = document.createEvent('MouseEvent')) {
+	async function importVoiceActorsFromDiscogs(releaseURL, event) {
 		const actors = await fetchVoiceActors(releaseURL);
 		for (const actor of actors) {
-			console.info(actor);
-			const roleName = actor.roleCredit;
+			let roleName = actor.roleCredit;
+
+			// always give Discogs narrators a role name,
+			// otherwise both "Narrator" and "Voice Actors" roles are mapped to MB's "spoken vocals" rels without distinction
+			if (!roleName && actor.role === 'Narrator') {
+				roleName = 'Narrator'; // TODO: localize according to release language?
+			}
+
 			const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
 			const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
 			// TODO: use a cache for the Discogs->MB artist mappings
+
+			await ensureNoActiveDialog();
+
 			if (mbArtist) {
 				createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
 				// TODO: catch exception which occurs for duplicate rels
 			} else {
-				console.warn(`Failed to add credit '${roleName}' for '${actor.name}' => Guessing...`);
-				const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
-				// TODO: check if artist name is identical/similar or just an unrelated result
-				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
-				// .open(event);
-				// TODO: wait for the dialog to be closed
+				console.info('Failed to find the linked MB artist for:', actor);
+				// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
+				const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
+				openDialogAndTriggerAutocomplete(dialog, event);
 			}
 		}
 	}
@@ -280,15 +371,23 @@
 </span>`	;
 
 	function insertVoiceActorButtons() {
+		// TODO: only show buttons for certain RG types (audiobook, audio drama, spoken word) of the MB release?
 		$(addButton)
 			.on('click', (event) => createVoiceActorDialog().open(event))
 			.appendTo('#release-rels');
 		$(importButton)
-			.on('click', (event) => {
-				// const input = prompt('Discogs release URL', 'https://www.discogs.com/release/605682');
-				// TODO: detect Discogs link (and RG type?) of the MB release
-				const releaseURL = 'https://www.discogs.com/release/605682';
-				importVoiceActorsFromDiscogs(releaseURL, event);
+			.on('click', async (event) => {
+				const releaseData = await fetchEntity(window.location.href, ['release-groups', 'url-rels']);
+				let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
+
+				if (!discogsURL) {
+					discogsURL = prompt('Discogs release URL');
+				}
+
+				if (discogsURL) {
+					importVoiceActorsFromDiscogs(discogsURL, event);
+					addMessageToEditNote(`Imported voice actor credits from ${discogsURL}`);
+				}
 			})
 			.appendTo('#release-rels');
 	}
