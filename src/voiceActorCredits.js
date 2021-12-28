@@ -4,7 +4,6 @@ import {
 } from './discogs.js';
 import {
 	internalArtist,
-	searchEntity,
 } from './internalAPI.js';
 import {
 	getEntityForResourceURL,
@@ -38,17 +37,9 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event) {
 			// TODO: catch exception which occurs for duplicate rels
 		} else {
 			console.info('Failed to find the linked MB artist for:', actor);
-			const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
-
-			// check if artist name is identical or just an unrelated result
-			// TODO: retry failed search requests instead of skipping an undefined mbArtistGuess
-			if (mbArtistGuess && mbArtistGuess.name === actor.name) {
-				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
-			} else {
-				// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
-				const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
-				openDialogAndTriggerAutocomplete(dialog, event);
-			}
+			// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
+			const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
+			openDialogAndTriggerAutocomplete(dialog, event);
 		}
 	}
 }
