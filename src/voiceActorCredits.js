@@ -19,7 +19,14 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event) {
 	const actors = await fetchVoiceActorsFromDiscogs(releaseURL);
 	for (const actor of actors) {
 		console.debug(actor);
-		const roleName = actor.roleCredit;
+		let roleName = actor.roleCredit;
+
+		// always give Discogs narrators a role name,
+		// otherwise both "Narrator" and "Voice Actors" roles are mapped to MB's "spoken vocals" rels without distinction
+		if (!roleName && actor.role === 'Narrator') {
+			roleName = 'Narrator'; // TODO: localize according to release language?
+		}
+
 		const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
 		const mbArtist = await getEntityForResourceURL('artist', buildDiscogsURL('artist', actor.id));
 		// TODO: use a cache for the Discogs->MB artist mappings
