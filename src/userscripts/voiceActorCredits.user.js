@@ -1,3 +1,4 @@
+import { addMessageToEditNote } from '../editNote.js';
 import {
 	fetchEntity,
 } from '../publicAPI.js';
@@ -38,6 +39,7 @@ function insertVoiceActorButtons() {
 
 			if (discogsURL) {
 				importVoiceActorsFromDiscogs(discogsURL, event);
+				addMessageToEditNote(`Imported voice actor credits from ${discogsURL}`);
 			}
 		})
 		.appendTo('#release-rels');
