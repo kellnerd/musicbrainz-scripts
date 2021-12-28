@@ -27,10 +27,15 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 		} else {
 			console.warn(`Failed to add credit '${roleName}' for '${actor.name}' => Guessing...`);
 			const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
-			// TODO: check if artist name is identical/similar or just an unrelated result
-			createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
-			// .open(event);
-			// TODO: wait for the dialog to be closed
+			const dialog = createVoiceActorDialog(mbArtistGuess, roleName, artistCredit);
+
+			// check if artist name is identical or just an unrelated result
+			if (mbArtistGuess.name === actor.name) {
+				dialog.accept();
+			} else {
+				// dialog.open(event);
+				// TODO: wait for the dialog to be closed (confirmed or rejected)
+			}
 		}
 	}
 }
