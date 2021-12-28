@@ -52,3 +52,20 @@ export async function targetEntityFromURL(url) {
 	const entity = extractEntityFromURL(url);
 	return new MB.entity(await fetchEntity(entity.mbid));
 }
+
+/**
+ * Ensures that the given relationship editor has no active dialog.
+ */
+export function ensureNoActiveDialog(editor = MB.releaseRelationshipEditor) {
+	return new Promise((resolve) => {
+		const activeDialog = editor.activeDialog();
+		if (activeDialog) {
+			// wait until the jQuery UI dialog has been closed
+			activeDialog.$dialog.on('dialogclose', () => {
+				resolve();
+			});
+		} else {
+			resolve();
+		}
+	});
+}

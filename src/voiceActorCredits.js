@@ -11,6 +11,7 @@ import {
 } from './publicAPI.js';
 import {
 	createVoiceActorDialog,
+	ensureNoActiveDialog,
 } from './relationshipEditor.js';
 
 export async function importVoiceActorsFromDiscogs(releaseURL, event = document.createEvent('MouseEvent')) {
@@ -21,6 +22,9 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 		const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
 		const mbArtist = await getEntityForResourceURL('artist', buildDiscogsURL('artist', actor.id));
 		// TODO: use a cache for the Discogs->MB artist mappings
+
+		await ensureNoActiveDialog();
+
 		if (mbArtist) {
 			createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
 			// TODO: catch exception which occurs for duplicate rels
@@ -33,8 +37,7 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 			if (mbArtistGuess.name === actor.name) {
 				dialog.accept();
 			} else {
-				// dialog.open(event);
-				// TODO: wait for the dialog to be closed (confirmed or rejected)
+				dialog.open(event);
 			}
 		}
 	}
