@@ -31,14 +31,14 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event = document.
 		} else {
 			console.info('Failed to find the linked MB artist for:', actor);
 			const mbArtistGuess = (await searchEntity('artist', actor.name))[0]; // first result
-			const dialog = createVoiceActorDialog(mbArtistGuess, roleName, artistCredit);
 
 			// check if artist name is identical or just an unrelated result
 			// TODO: retry failed search requests instead of skipping an undefined mbArtistGuess
 			if (mbArtistGuess && mbArtistGuess.name === actor.name) {
-				dialog.accept();
+				createVoiceActorDialog(mbArtistGuess, roleName, artistCredit).accept();
 			} else {
-				dialog.open(event);
+				// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
+				createVoiceActorDialog(actor, roleName, artistCredit).open(event);
 			}
 		}
 	}
