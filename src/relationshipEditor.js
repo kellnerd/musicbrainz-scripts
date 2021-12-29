@@ -5,7 +5,7 @@ import {
 
 /**
  * Creates a dialog to add a relationship to the currently edited source entity.
- * @param {TargetEntity} targetEntity Target entity of the relationship.
+ * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
  * @returns Pre-filled "Add relationship" dialog object.
  */
 export function createAddRelationshipDialog(targetEntity) {
@@ -20,15 +20,14 @@ export function createAddRelationshipDialog(targetEntity) {
 /**
  * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
  * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
- * @param {InternalEntity} [artistData] Edit data of the performing artist (optional).
+ * @param {Partial<MB.InternalArtist>} [artistData] Data of the performing artist (optional).
  * @param {string} [roleName] Credited name of the voice actor's role (optional).
  * @param {string} [artistCredit] Credited name of the performing artist (optional).
  * @returns MusicBrainz "Add relationship" dialog.
  */
 export function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 	const viewModel = MB.releaseRelationshipEditor;
-	/** @type {TargetEntity} */
-	const target = new MB.entity(artistData, 'artist'); // automatically caches entities (unlike `MB.entity.Artist`)
+	const target = MB.entity(artistData, 'artist'); // automatically caches entities with a GID (unlike `MB.entity.Artist`)
 	const dialog = new MB.relationshipEditor.UI.AddDialog({
 		source: viewModel.source,
 		target,
@@ -49,11 +48,10 @@ export function createVoiceActorDialog(artistData = {}, roleName = '', artistCre
 /**
  * Creates an entity object which can be used as target of relationships.
  * @param {string} url URL of a MusicBrainz entity page.
- * @returns {Promise<TargetEntity>}
  */
 export async function targetEntityFromURL(url) {
 	const entity = extractEntityFromURL(url);
-	return new MB.entity(await fetchEntity(entity.mbid));
+	return MB.entity(await fetchEntity(entity.mbid));
 }
 
 /**
@@ -83,16 +81,3 @@ export function openDialogAndTriggerAutocomplete(dialog, event = document.create
 	dialog.autocomplete.$input.focus();
 	dialog.autocomplete.search();
 }
-
-/**
- * @typedef InternalEntity Internal entity object, can be an empty record or just a name.
- * @property {string} [name] Name of the entity.
- * @property {string} [gid] MBID of the entity.
- */
-
-/**
- * @typedef TargetEntity Entity object which can be used as target of relationships.
- * @property {string} entityType Type of the entity.
- * @property {string} name Name of the entity.
- * @property {string} [gid] MBID of the entity.
- */
