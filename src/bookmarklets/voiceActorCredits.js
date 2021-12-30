@@ -4,4 +4,4 @@
 
 import { createVoiceActorDialog } from '../relationshipEditor.js';
 
-createVoiceActorDialog().open(document.createEvent('MouseEvent'));
+createVoiceActorDialog().open();
