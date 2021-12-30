@@ -10,7 +10,7 @@ async function guessSeriesRelationship(entityName) {
 	const seriesMatch = entityName.match(/(.+?)(?: (\d+))?:/);
 	if (!seriesMatch) return;
 	const seriesResults = await searchEntity('series', seriesMatch[1]);
-	const dialog = createAddRelationshipDialog(new MB.entity(seriesResults[0]));
+	const dialog = createAddRelationshipDialog(MB.entity(seriesResults[0]));
 	const seriesNumber = seriesMatch[2];
 	if (seriesNumber) {
 		dialog.relationship().setAttributes([{

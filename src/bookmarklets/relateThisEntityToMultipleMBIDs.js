@@ -14,7 +14,7 @@ import { fetchEntity } from '../internalAPI.js';
  */
 async function relateThisEntityToMultiple(mbids, relTypeId, backward = false) {
 	for (let mbid of mbids) {
-		const targetEntity = new MB.entity(await fetchEntity(mbid));
+		const targetEntity = MB.entity(await fetchEntity(mbid));
 		const dialog = createAddRelationshipDialog(targetEntity);
 		if (relTypeId) {
 			const rel = dialog.relationship();

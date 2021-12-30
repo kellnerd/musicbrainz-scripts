@@ -13,7 +13,7 @@ import { fetchEntity } from '../internalAPI.js';
  */
 async function relateThisSeriesToParts(mbids) {
 	for (let mbid of mbids) {
-		const targetEntity = new MB.entity(await fetchEntity(mbid));
+		const targetEntity = MB.entity(await fetchEntity(mbid));
 		const dialog = createAddRelationshipDialog(targetEntity);
 		const seriesNumberMatch = targetEntity.name.match(/\d+/);
 		if (seriesNumberMatch) {
