@@ -38,7 +38,7 @@ async function fetchEntityFromAPI(entityType, entityId) {
 export async function fetchCredits(releaseURL) {
 	const entity = extractEntityFromURL(releaseURL);
 	if (entity && entity[0] === 'release') {
-		/** @type {Release} */
+		/** @type {Discogs.Release} */
 		const release = await fetchEntityFromAPI(...entity);
 		return release.extraartists.map((artist) => {
 			// split roles with credited role names in square brackets (for convenience)
@@ -57,26 +57,3 @@ export async function fetchCredits(releaseURL) {
 export async function fetchVoiceActors(releaseURL) {
 	return (await fetchCredits(releaseURL)).filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role));
 }
-
-
-/* Type definitions for IntelliSense (WIP) */
-
-/**
- * @typedef Release
- * @property {string} title
- * @property {number} id
- * @property {Artist[]} artists
- * @property {Artist[]} extraartists Extra artists (credits).
- */
-
-/**
- * @typedef Artist
- * @property {string} name Main artist name.
- * @property {string} anv Artist name variation, empty if no name variation is used.
- * @property {string} join
- * @property {string} role Role of the artist, may contain the role as credited in square brackets.
- * @property {string} [roleCredit] Role name as credited (custom extension for convenience).
- * @property {string} tracks
- * @property {number} id
- * @property {string} resource_url API URL of the artist.
- */
