@@ -196,19 +196,20 @@
 	/**
 	 * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
 	 * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
-	 * @param {Object} artistData Edit data of the performing artist (optional).
-	 * @param {string} roleName Credited name of the voice actor's role (optional).
-	 * @param {string} artistCredit Credited name of the performing artist (optional).
+	 * @param {Partial<MB.InternalArtist>} [artistData] Data of the performing artist (optional).
+	 * @param {string} [roleName] Credited name of the voice actor's role (optional).
+	 * @param {string} [artistCredit] Credited name of the performing artist (optional).
 	 * @returns MusicBrainz "Add relationship" dialog.
 	 */
 	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 		const viewModel = MB.releaseRelationshipEditor;
-		let target = new MB.entity(artistData, 'artist'); // automatically caches entities (unlike `MB.entity.Artist`)
+		const target = MB.entity(artistData, 'artist'); // automatically caches entities with a GID (unlike `MB.entity.Artist`)
 		const dialog = new MB.relationshipEditor.UI.AddDialog({
 			source: viewModel.source,
 			target,
 			viewModel,
 		});
+
 		const rel = dialog.relationship();
 		rel.linkTypeID(60); // set type: performance -> performer -> vocals
 		rel.entity0_credit(artistCredit);
@@ -216,6 +217,7 @@
 			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
 			credited_as: roleName,
 		}]);
+
 		return dialog;
 	}
 
@@ -239,9 +241,9 @@
 	/**
 	 * Opens the given dialog, focuses the autocomplete input and triggers the search.
 	 * @param {*} dialog 
-	 * @param {Event} event Affects the position of the opened dialog.
+	 * @param {Event} [event] Affects the position of the opened dialog (optional).
 	 */
-	function openDialogAndTriggerAutocomplete(dialog, event = document.createEvent('MouseEvent')) {
+	function openDialogAndTriggerAutocomplete(dialog, event) {
 		dialog.open(event);
 		dialog.autocomplete.$input.focus();
 		dialog.autocomplete.search();
@@ -284,7 +286,7 @@
 	async function fetchCredits(releaseURL) {
 		const entity = extractEntityFromURL(releaseURL);
 		if (entity && entity[0] === 'release') {
-			/** @type {Release} */
+			/** @type {Discogs.Release} */
 			const release = await fetchEntityFromAPI(...entity);
 			return release.extraartists.map((artist) => {
 				// split roles with credited role names in square brackets (for convenience)
@@ -303,29 +305,6 @@
 	async function fetchVoiceActors(releaseURL) {
 		return (await fetchCredits(releaseURL)).filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role));
 	}
-
-
-	/* Type definitions for IntelliSense (WIP) */
-
-	/**
-	 * @typedef Release
-	 * @property {string} title
-	 * @property {number} id
-	 * @property {Artist[]} artists
-	 * @property {Artist[]} extraartists Extra artists (credits).
-	 */
-
-	/**
-	 * @typedef Artist
-	 * @property {string} name Main artist name.
-	 * @property {string} anv Artist name variation, empty if no name variation is used.
-	 * @property {string} join
-	 * @property {string} role Role of the artist, may contain the role as credited in square brackets.
-	 * @property {string} [roleCredit] Role name as credited (custom extension for convenience).
-	 * @property {string} tracks
-	 * @property {number} id
-	 * @property {string} resource_url API URL of the artist.
-	 */
 
 	async function importVoiceActorsFromDiscogs(releaseURL, event) {
 		const actors = await fetchVoiceActors(releaseURL);
