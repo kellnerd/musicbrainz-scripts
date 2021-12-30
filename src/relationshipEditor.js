@@ -9,7 +9,9 @@ import {
  * @returns Pre-filled "Add relationship" dialog object.
  */
 export function createAddRelationshipDialog(targetEntity) {
-	const viewModel = MB.sourceRelationshipEditor;
+	const viewModel = MB.sourceRelationshipEditor
+		// releases have multiple relationship editors, edit the release itself
+		?? MB.releaseRelationshipEditor;
 	return new MB.relationshipEditor.UI.AddDialog({
 		viewModel,
 		source: viewModel.source,
