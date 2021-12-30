@@ -3,14 +3,15 @@
  * - Tries to extract the series number from the entity name to use it as relationship attribute.
  */
 
-import { searchEntity } from '../internalAPI.js';
-import { createAddRelationshipDialog } from '../relationshipEditor.js';
+import {
+	createAddRelationshipDialog,
+	openDialogAndTriggerAutocomplete,
+} from '../relationshipEditor.js';
 
 async function guessSeriesRelationship(entityName) {
 	const seriesMatch = entityName.match(/(.+?)(?: (\d+))?:/);
 	if (!seriesMatch) return;
-	const seriesResults = await searchEntity('series', seriesMatch[1]);
-	const dialog = createAddRelationshipDialog(MB.entity(seriesResults[0]));
+	const dialog = createAddRelationshipDialog(MB.entity({ name: seriesMatch[1] }, 'series'));
 	const seriesNumber = seriesMatch[2];
 	if (seriesNumber) {
 		dialog.relationship().setAttributes([{
@@ -18,7 +19,7 @@ async function guessSeriesRelationship(entityName) {
 			text_value: seriesNumber,
 		}]);
 	}
-	dialog.accept();
+	openDialogAndTriggerAutocomplete(dialog);
 }
 
 const entityName = document.querySelector('h1 bdi').textContent;
