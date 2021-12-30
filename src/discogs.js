@@ -41,12 +41,16 @@ export async function fetchCredits(releaseURL) {
 		/** @type {Discogs.Release} */
 		const release = await fetchEntityFromAPI(...entity);
 		return release.extraartists.map((artist) => {
+			// drop bracketed numeric suffixes for ambiguous artist names
+			artist.name = artist.name.replace(/ \(\d+\)$/, '');
+
 			// split roles with credited role names in square brackets (for convenience)
 			const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
 			if (roleWithCredit) {
 				artist.role = roleWithCredit[1];
 				artist.roleCredit = roleWithCredit[2];
 			}
+
 			return artist;
 		});
 	} else {
