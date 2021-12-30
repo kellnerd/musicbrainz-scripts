@@ -33,7 +33,6 @@ async function fetchEntityFromAPI(entityType, entityId) {
 /**
  * Fetches the extra artists (credits) for the given release.
  * @param {string} releaseURL URL of a Discogs release page.
- * @returns {Promise<Artist[]>}
  */
 export async function fetchCredits(releaseURL) {
 	const entity = extractEntityFromURL(releaseURL);
@@ -59,5 +58,12 @@ export async function fetchCredits(releaseURL) {
 }
 
 export async function fetchVoiceActors(releaseURL) {
-	return (await fetchCredits(releaseURL)).filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role));
+	return (await fetchCredits(releaseURL))
+		.filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role))
+		.flatMap((artist) => {
+			// split artists with multiple roles into multiple credits
+			const roles = artist.roleCredit.split('/');
+			if (roles.length === 1) return artist;
+			return roles.map((role) => ({ ...artist, roleCredit: role.trim() }));
+		});
 }
