@@ -13,7 +13,7 @@ const callAPI = rateLimit(fetch, 60 * 1000, 25);
  * @returns {[string,string]|undefined} Type and ID.
  */
 function extractEntityFromURL(url) {
-	return url.match(/(artist|label|master|release)\/(\d+)$/)?.slice(1);
+	return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);
 }
 
 export function buildEntityURL(entityType, entityId) {
