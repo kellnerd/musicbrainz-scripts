@@ -1,9 +1,8 @@
 /**
  * @template Params
  * @template Result
- * @property {Record<string,Result>} data
  */
-class FunctionCache {
+export class FunctionCache {
 	/**
 	 * @param {string} name 
 	 * @param {(...params:Params)=>Promise<Result>} expensiveFunction 
@@ -41,7 +40,10 @@ class FunctionCache {
 		cacheEntry = record[lastKey];
 		if (cacheEntry === undefined) {
 			// create a new entry to cache the result of the expensive function
-			cacheEntry = record[lastKey] = await this.expensiveFunction(...params);
+			const newEntry = await this.expensiveFunction(...params);
+			if (newEntry !== undefined) {
+				cacheEntry = record[lastKey] = newEntry;
+			}
 		}
 
 		return cacheEntry;
