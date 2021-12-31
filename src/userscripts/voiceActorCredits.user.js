@@ -1,4 +1,6 @@
 import { addMessageToEditNote } from '../editNote.js';
+import { discogsToMBIDCache } from '../entityMapping.js';
+import { entityCache } from '../internalAPI.js';
 import {
 	fetchEntity,
 } from '../publicAPI.js';
@@ -46,3 +48,5 @@ function insertVoiceActorButtons() {
 }
 
 insertVoiceActorButtons();
+discogsToMBIDCache.load();
+entityCache.load();

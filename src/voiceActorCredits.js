@@ -1,13 +1,12 @@
 import {
-	buildEntityURL as buildDiscogsURL,
 	fetchVoiceActors as fetchVoiceActorsFromDiscogs,
 } from './discogs.js';
 import {
-	internalArtist,
-} from './internalAPI.js';
+	discogsToMBIDCache,
+} from './entityMapping.js';
 import {
-	getEntityForResourceURL,
-} from './publicAPI.js';
+	entityCache,
+} from './internalAPI.js';
 import {
 	createVoiceActorDialog,
 	ensureNoActiveDialog,
@@ -27,14 +26,14 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event) {
 		}
 
 		const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
-		const mbArtist = await getEntityForResourceURL('artist', buildDiscogsURL('artist', actor.id));
-		// TODO: use a cache for the Discogs->MB artist mappings
+		const artistMBID = await discogsToMBIDCache.get('artist', actor.id);
 
 		await ensureNoActiveDialog();
 
-		if (mbArtist) {
-			createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
-			// TODO: catch exception which occurs for duplicate rels
+		if (artistMBID) {
+			const mbArtist = await entityCache.get(artistMBID);
+			createVoiceActorDialog(mbArtist, roleName, artistCredit).accept();
+			// TODO: skip already existing rels, use the entity cache of MBS?
 		} else {
 			console.info('Failed to find the linked MB artist for:', actor);
 			// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
@@ -42,4 +41,8 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event) {
 			openDialogAndTriggerAutocomplete(dialog, event);
 		}
 	}
+
+	// persist cache entries after each import, TODO: only do this on page unload
+	discogsToMBIDCache.store();
+	entityCache.store();
 }
