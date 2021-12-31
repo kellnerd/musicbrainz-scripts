@@ -1,5 +1,5 @@
 import { FunctionCache } from './cache.js';
-import { buildEntityURL } from './discogs.js';
+import { buildEntityURL as buildDiscogsEntityURL } from './discogs.js';
 import { getEntityForResourceURL } from './publicAPI.js';
 
 const DISCOGS_ENTITY_TYPES = {
@@ -18,9 +18,11 @@ export async function discogsToMBID(entityType, discogsId) {
 	const discogsType = DISCOGS_ENTITY_TYPES[entityType];
 	if (!discogsType) return;
 
-	const entity = await getEntityForResourceURL(entityType, buildEntityURL(discogsType, discogsId));
+	const entity = await getEntityForResourceURL(entityType, buildDiscogsEntityURL(discogsType, discogsId));
 	return entity?.id;
 }
 
+/**
+ * Cache for the mapping of Discogs entities to the MBIDs of their equivalent entities on MusicBrainz.
+ */
 export const discogsToMBIDCache = new FunctionCache('discogsToMBIDCache', discogsToMBID, (type, id) => [type, id]);
-
