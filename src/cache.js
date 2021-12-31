@@ -4,19 +4,23 @@
  */
 export class FunctionCache {
 	/**
-	 * @param {string} name 
-	 * @param {(...params:Params)=>Promise<Result>} expensiveFunction 
-	 * @param {(...params:Params)=>string[]} keyMapper 
+	 * @param {string} name Name of the cache, used as storage key.
+	 * @param {(...params:Params)=>Promise<Result>} expensiveFunction Expensive function whose results should be cached.
+	 * @param {(...params:Params)=>string[]} keyMapper Maps the function parameters to the components of the cache's key.
+	 * @param {Storage} storage Storage which should be used to persist the cache, defaults to `localStorage`.
 	 */
-	constructor(name, expensiveFunction, keyMapper) {
+	constructor(name, expensiveFunction, keyMapper, storage = window.localStorage) {
 		this.name = name;
 		this.expensiveFunction = expensiveFunction;
 		this.keyMapper = keyMapper;
+		this.storage = storage
 		/** @type {Record<string,Result>} */
 		this.data = {};
 	}
 
 	/**
+	 * Looks up the result for the given parameters and returns it.
+	 * If the result is not cached, it will be calculated and added to the cache.
 	 * @param {Params} params 
 	 */
 	async get(...params) {
@@ -24,63 +28,66 @@ export class FunctionCache {
 		const lastKey = keys.pop();
 		if (!lastKey) return;
 
-		let record = this.data;
-		let cacheEntry;
-
-		for (const key of keys) {
-			cacheEntry = record[key];
-			if (cacheEntry === undefined) {
-				// create a new entry as empty record for all keys except the last one
-				cacheEntry = record[key] = {};
-			}
-			// prepare to index with the next level of the key
-			record = cacheEntry;
-		};
-
-		cacheEntry = record[lastKey];
-		if (cacheEntry === undefined) {
+		const record = this._get(keys);
+		if (record[lastKey] === undefined) {
 			// create a new entry to cache the result of the expensive function
 			const newEntry = await this.expensiveFunction(...params);
 			if (newEntry !== undefined) {
-				cacheEntry = record[lastKey] = newEntry;
+				record[lastKey] = newEntry;
 			}
 		}
 
-		return cacheEntry;
+		return record[lastKey];
 	}
 
 	/**
-	 * @param {Params} params 
+	 * Manually sets the cache value for the given key.
+	 * @param {string[]} keys Components of the key.
 	 * @param {Result} value 
 	 */
-	set(...params, value) {
-		const keys = this.keyMapper(...params);
-		let record = this.data;
-		keys.forEach((key, index) => {
-			if (index === keys.length - 1) {
-				record[key] = value;
-			} else if (record[key] === undefined) {
-				// create a new entry as empty record for all keys except the last one
-				record[key] = {};
-			}
-			// prepare to index with the next level of the key
-			record = record[key];
-		});
+	set(keys, value) {
+		const lastKey = keys.pop();
+		this._get(keys)[lastKey] = value;
 	}
 
+	/**
+	 * Loads the persisted cache entries.
+	 */
 	load() {
-		const storedData = window.localStorage.getItem(this.name);
+		const storedData = this.storage.getItem(this.name);
 		if (storedData) {
 			this.data = JSON.parse(storedData);
 		}
 	}
 
+	/**
+	 * Persists all entries of the cache.
+	 */
 	store() {
-		window.localStorage.setItem(this.name, JSON.stringify(this.data));
+		this.storage.setItem(this.name, JSON.stringify(this.data));
 	}
 
+	/**
+	 * Clears all entries of the cache and persists the changes.
+	 */
 	clear() {
 		this.data = {};
 		this.store();
+	}
+
+	/**
+	 * Returns the cache record which is indexed by the key.
+	 * @param {string[]} keys Components of the key
+	 */
+	_get(keys) {
+		let record = this.data;
+		keys.forEach((key) => {
+			if (record[key] === undefined) {
+				// create an empty record for all missing keys
+				record[key] = {};
+			}
+			record = record[key];
+		});
+		return record;
 	}
 }
