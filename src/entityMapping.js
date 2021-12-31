@@ -22,5 +22,5 @@ export async function discogsToMBID(entityType, discogsId) {
 	return entity?.id;
 }
 
-export const DISCOGS2MBID = new FunctionCache('discogsToMBIDCache', discogsToMBID, (...keys) => [...keys]);
+export const discogsToMBIDCache = new FunctionCache('discogsToMBIDCache', discogsToMBID, (type, id) => [type, id]);
 

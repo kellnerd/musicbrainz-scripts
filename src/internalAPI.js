@@ -1,3 +1,4 @@
+import { FunctionCache } from './cache.js';
 import { createRecordMapper } from './createRecordMapper.js';
 
 /**
@@ -28,3 +29,8 @@ const ARTIST_INTERNAL_FIELDS = {
  * Creates a ws/js compatible artist object from an API response.
  */
 export const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);
+
+/**
+ * Temporary cache for fetched entities from the ws/js API during a browser session.
+ */
+export const entityCache = new FunctionCache('entityCache', fetchEntity, (gid) => [gid], window.sessionStorage);
