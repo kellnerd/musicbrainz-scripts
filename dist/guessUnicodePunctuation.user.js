@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2021.10.5
+// @version      2022.1.1
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -116,21 +116,41 @@
 	}
 
 	const transformationRules = [
+		/* quoted text */
 		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
 		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
 		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
 		// ... which is enclosed by non-word characters or at the beginning/end of the title
 		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
+
+		/* primes */
 		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
 		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
+
+		/* apostrophes */
 		[/'/g, '’'], // ... and finally the apostrophes should be remaining
+
+		/* ellipses */
 		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
+
+		/* dashes */
 		[/ - /g, ' – '], // en dash as separator
-		[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g, '$1‐$2‐$3'], // hyphens for ISO 8601 dates, e.g. 1987‐07–30
-		[/(\d{4})-(\d{2})(?=\W|$)/g, '$1‐$2'], // hyphen for ISO 8601 partial dates, e.g. 2016-04
+
+		/* hyphens for (partial) ISO 8601 dates, e.g. 1987‐07–30 or 2016-04 */
+		[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g, (potentialDate) => {
+			if (Number.isNaN(Date.parse(potentialDate))) return potentialDate; // skip invalid date strings, e.g. 1989-90
+			return potentialDate.replaceAll('-', '‐');
+		}],
+
+		/* figure dashes: separate three or more groups of digits (two groups could be range) */
+		[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
+
 		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
+
+		/* hyphens */
 		[/-/g, '‐'], // ... and finally the hyphens should be remaining
-		// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
+
+		/* rare cases where it is difficult to define precise rules: em dash, minus */
 	];
 
 	/**
@@ -139,15 +159,19 @@
 	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
 	 */
 	const transformationRulesToPreserveMarkup = [
-		// Base64 encode URLs
+		/* Base64 encode URLs */
 		[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // labeled link
 		[/(?<=\/\/)(\S+)/g, (_match, path) => btoa(path)], // plain text URLs
+
 		[/'''/g, '<b>'], // bold text
 		[/''/g, '<i>'], // italic text
+
 		...transformationRules,
+
 		[/<b>/g, "'''"],
 		[/<i>/g, "''"],
-		// decode Base64 URLs
+
+		/* decode Base64 URLs */
 		[/(?<=\/\/)([A-Za-z0-9+/=]+)/g, (_match, path) => atob(path)], // plain text URLs
 		[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // labeled link
 	];
@@ -157,9 +181,9 @@
 	 * @type {Record<string,string[]>}
 	 */
 	const languageSpecificQuotes = {
-		de: ['„$1“', '‚$1‘'], // German
-		en: ['“$1”', '‘$1’'], // English
-		fr: ['« $1 »', '‹ $1 ›'], // French
+		German: ['„$1“', '‚$1‘'],
+		English: ['“$1”', '‘$1’'],
+		French: ['« $1 »', '‹ $1 ›'],
 	};
 
 	/**
@@ -169,7 +193,7 @@
 
 	/**
 	 * Creates language-specific punctuation guessing transformation rules.
-	 * @param {string} [language] ISO 639-1 two letter language code.
+	 * @param {string} [language] Name of the language (in English).
 	 */
 	function transformationRulesForLanguage(language) {
 		const replaceValueIndex = 1;
@@ -186,7 +210,7 @@
 	 * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
-	 * @param {string} [language] Language of the input fields' text (ISO 639-1 two letter code, optional).
+	 * @param {string} [language] Language of the input fields' text (English name, optional).
 	 * @param {Event} [event] Event which should be triggered for changed input fields (optional).
 	 */
 	function guessUnicodePunctuation(inputSelectors, language, event) {
@@ -217,85 +241,16 @@
 		433: 'Turkish',
 	};
 
-	// taken from https://github.com/loujine/musicbrainz-scripts/blob/master/mbz-loujine-common.js
-	const languageCodes = {
-		'Afrikaans': 'af',
-		'Azerbaijani': 'az',
-		'Albanian': 'sq',
-		'Arabic': 'ar',
-		'Armenian': 'hy',
-		'Bengali/Bangla': 'bn',
-		'Basque': 'eu',
-		'Belorussian': 'be',
-		'Bosnian': 'bs',
-		'Bulgarian': 'bg',
-		'Cantonese': 'zh_yue',
-		'Catalan': 'ca',
-		'Chinese': 'zh',
-		'Croatian': 'hr',
-		'Czech': 'cs',
-		'Danish': 'da',
-		'Dutch': 'nl',
-		'English': 'en',
-		'Esperanto': 'eo',
-		'Estonian': 'et',
-		'Finnish': 'fi',
-		'French': 'fr',
-		'German': 'de',
-		'Greek': 'el',
-		'Hebrew': 'he',
-		'Hindi': 'hi',
-		'Hungarian': 'hu',
-		'Icelandic': 'is',
-		'Indonesian': 'id',
-		'Irish': 'ga',
-		'Italian': 'it',
-		'Japanese': 'ja',
-		'Javanese': 'jv',
-		'Kazakh': 'kk',
-		'Khmer (Central)': 'km',
-		'Korean': 'ko',
-		'Latvian': 'lv',
-		'Lithuanian': 'lt',
-		'Macedonian': 'mk',
-		'Malay': 'ms',
-		'Malayam': 'ml',
-		'Nepali': 'ne',
-		'Norwegian Bokmål': 'nb',
-		'Norwegian Nynorsk': 'nn',
-		'Persian (Farsi)': 'fa',
-		'Polish': 'pl',
-		'Portuguese': 'pt',
-		'Punjabi': 'pa',
-		'Romanian': 'ro',
-		'Russian': 'ru',
-		'Serbian': 'sr',
-		'Serbo-Croatian': 'sh',
-		'Slovakian': 'sk',
-		'Slovenian': 'sl',
-		'Spanish': 'es',
-		'Swahili': 'sw',
-		'Swedish': 'sv',
-		'Thai': 'th',
-		'Turkish': 'tr',
-		'Urdu': 'ur',
-		'Ukrainian': 'uk',
-		'Uzbek': 'uz',
-		'Vietnamese': 'vi',
-		'Welsh (Cymric)': 'cy',
-	};
-
 	/**
 	 * Detects the selected language in the release editor.
-	 * @returns {string} Language as ISO 639-1 two letter code.
+	 * @returns {string} Name of the language (in English).
 	 */
 	function detectReleaseLanguage() {
 		// get the ID of the selected language, the name (text value) is localization-dependent
 		const languageID = dom('language')?.selectedOptions[0].value;
 		if (languageID) {
-			// check only frequent languages (for most of the others we have no language code mapping anyway; also reduces bundle size)
-			const languageName = frequentLanguageIDs[languageID];
-			return languageCodes[languageName];
+			// check only frequent languages (for most of the others we have no special features anyway; also reduces bundle size)
+			return frequentLanguageIDs[languageID];
 		}
 	}
 
