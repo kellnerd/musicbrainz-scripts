@@ -66,9 +66,9 @@ export const transformationRulesToPreserveMarkup = [
  * @type {Record<string,string[]>}
  */
 const languageSpecificQuotes = {
-	de: ['„$1“', '‚$1‘'], // German
-	en: ['“$1”', '‘$1’'], // English
-	fr: ['« $1 »', '‹ $1 ›'], // French
+	German: ['„$1“', '‚$1‘'],
+	English: ['“$1”', '‘$1’'],
+	French: ['« $1 »', '‹ $1 ›'],
 };
 
 /**
@@ -78,7 +78,7 @@ const quotationRuleIndices = [0, 2];
 
 /**
  * Creates language-specific punctuation guessing transformation rules.
- * @param {string} [language] ISO 639-1 two letter language code.
+ * @param {string} [language] Name of the language (in English).
  */
 function transformationRulesForLanguage(language) {
 	const replaceValueIndex = 1;
@@ -95,7 +95,7 @@ function transformationRulesForLanguage(language) {
  * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string[]} inputSelectors CSS selectors of the input fields.
- * @param {string} [language] Language of the input fields' text (ISO 639-1 two letter code, optional).
+ * @param {string} [language] Language of the input fields' text (English name, optional).
  * @param {Event} [event] Event which should be triggered for changed input fields (optional).
  */
 export function guessUnicodePunctuation(inputSelectors, language, event) {
