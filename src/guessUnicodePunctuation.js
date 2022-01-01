@@ -18,9 +18,12 @@ export const transformationRules = [
 		return potentialDate.replaceAll('-', '‐');
 	}],
 
+	/* figure dashes to separate three or more groups of digits (two groups could be range) */
+	[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
+
 	[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 	[/-/g, '‐'], // ... and finally the hyphens should be remaining
-	// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
+	// difficult to find rules for: em dash (rare), minus (very rare)
 ];
 
 /**

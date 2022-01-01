@@ -30,6 +30,11 @@ const punctuationTestCases = [
 	['The Early Years: 1965-1972', 'The Early Years: 1965–1972'],
 	['advanced date range 1234-05-06-1789-10-11', 'advanced date range 1234‐05‐06–1789‐10‐11'],
 	['1989-90', '1989–90'], // second year abbreviated, not a valid date
+	// other numbers
+	['Volumes 1-5', 'Volumes 1–5'], // numeric range (en dash)
+	['ISBN 978-0-12345-678-9', 'ISBN 978‒0‒12345‒678‒9'], // figure dash to group digits
+	['2345-67-89', '2345‒67‒89'], // figure dash to group digits, not a valid date
+	// failing: ['555-1212', '555‒1212'], // figure dash, phone number with only two groups of digits (could be a range)
 	// failing: ['\'74-\'75', '’74–’75'], // would work with spaces
 	// hyphens
 	['Bron-Yr-Aur Stomp', 'Bron‐Yr‐Aur Stomp'],
