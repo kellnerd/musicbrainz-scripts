@@ -29,6 +29,7 @@ const punctuationTestCases = [
 	['live, 2016-04', 'live, 2016‐04'],
 	['The Early Years: 1965-1972', 'The Early Years: 1965–1972'],
 	['advanced date range 1234-05-06-1789-10-11', 'advanced date range 1234‐05‐06–1789‐10‐11'],
+	['1989-90', '1989–90'], // second year abbreviated, not a valid date
 	// failing: ['\'74-\'75', '’74–’75'], // would work with spaces
 	// hyphens
 	['Bron-Yr-Aur Stomp', 'Bron‐Yr‐Aur Stomp'],
