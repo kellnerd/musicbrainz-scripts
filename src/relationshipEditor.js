@@ -51,9 +51,9 @@ export function createVoiceActorDialog(artistData = {}, roleName = '', artistCre
  * Creates an entity object which can be used as target of relationships.
  * @param {string} url URL of a MusicBrainz entity page.
  */
-export async function targetEntityFromURL(url) {
+export function targetEntityFromURL(url) {
 	const entity = extractEntityFromURL(url);
-	return MB.entity(await fetchEntity(entity.mbid));
+	return fetchEntity(entity.mbid);
 }
 
 /**

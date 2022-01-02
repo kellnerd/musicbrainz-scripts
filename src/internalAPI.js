@@ -6,7 +6,7 @@ import { createRecordMapper } from './createRecordMapper.js';
  */
 export async function fetchEntity(gid) {
 	const result = await fetch(`/ws/js/entity/${gid}`);
-	return result.json();
+	return MB.entity(await result.json()); // automatically caches entities
 }
 
 export async function searchEntity(entityType, query) {
