@@ -1,5 +1,6 @@
 import { rateLimit } from './rateLimit.js';
 import 'cross-fetch/dist/node-polyfill.js';
+import { useUnicodePunctuation } from './guessUnicodePunctuation.js';
 
 /**
  * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
@@ -42,12 +43,13 @@ export async function fetchCredits(releaseURL) {
 		return release.extraartists.map((artist) => {
 			// drop bracketed numeric suffixes for ambiguous artist names
 			artist.name = artist.name.replace(/ \(\d+\)$/, '');
+			artist.anv = useUnicodePunctuation(artist.anv || artist.name);
 
 			// split roles with credited role names in square brackets (for convenience)
 			const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
 			if (roleWithCredit) {
 				artist.role = roleWithCredit[1];
-				artist.roleCredit = roleWithCredit[2];
+				artist.roleCredit = useUnicodePunctuation(roleWithCredit[2]);
 			}
 
 			return artist;

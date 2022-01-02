@@ -25,7 +25,7 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 			roleName = 'Narrator'; // TODO: localize according to release language?
 		}
 
-		const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
+		const artistCredit = actor.anv; // we are already using the name as a fallback
 		const artistMBID = await discogsToMBIDCache.get('artist', actor.id);
 
 		await ensureNoActiveDialog();

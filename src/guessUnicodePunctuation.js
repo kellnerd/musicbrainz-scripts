@@ -1,4 +1,4 @@
-import { transformInputValues } from './transformInputValues.js';
+import { transform, transformInputValues } from './transformInputValues.js';
 
 export const transformationRules = [
 	[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
@@ -45,4 +45,13 @@ export const transformationRulesToPreserveMarkup = [
  */
 export function guessUnicodePunctuation(inputSelectors) {
 	transformInputValues(inputSelectors.join(), transformationRules);
+}
+
+/**
+ * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
+ * These can only be guessed based on context as the ASCII symbols are ambiguous.
+ * @param {string} text
+ */
+export function useUnicodePunctuation(text) {
+	return transform(text, transformationRules);
 }
