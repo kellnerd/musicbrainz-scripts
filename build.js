@@ -143,6 +143,7 @@ async function buildBookmarklet(modulePath, debug = false) {
 	};
 	const minifiedBundle = UglifyJS.minify(output[0].code, uglifyOptions);
 	if (minifiedBundle.error) {
+		console.error('Failed to minify bookmarklet', modulePath);
 		throw minifiedBundle.error;
 	}
 
