@@ -31,6 +31,9 @@ const ARTIST_INTERNAL_FIELDS = {
 export const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);
 
 /**
- * Temporary cache for fetched entities from the ws/js API during a browser session.
+ * Temporary cache for fetched entities from the ws/js API.
  */
-export const entityCache = new FunctionCache('entityCache', fetchEntity, (gid) => [gid], window.sessionStorage);
+export const entityCache = new FunctionCache(fetchEntity, {
+	keyMapper: (gid) => [gid],
+	data: MB.entityCache, // share data with MBS
+});

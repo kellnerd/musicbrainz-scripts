@@ -25,4 +25,8 @@ export async function discogsToMBID(entityType, discogsId) {
 /**
  * Cache for the mapping of Discogs entities to the MBIDs of their equivalent entities on MusicBrainz.
  */
-export const discogsToMBIDCache = new FunctionCache('discogsToMBIDCache', discogsToMBID, (type, id) => [type, id]);
+export const discogsToMBIDCache = new FunctionCache(discogsToMBID, {
+	keyMapper: (type, id) => [type, id],
+	name: 'discogsToMBIDCache',
+	storage: window.localStorage,
+});

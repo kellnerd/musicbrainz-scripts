@@ -4,18 +4,19 @@
  */
 export class FunctionCache {
 	/**
-	 * @param {string} name Name of the cache, used as storage key.
 	 * @param {(...params:Params)=>Promise<Result>} expensiveFunction Expensive function whose results should be cached.
-	 * @param {(...params:Params)=>string[]} keyMapper Maps the function parameters to the components of the cache's key.
-	 * @param {Storage} storage Storage which should be used to persist the cache, defaults to `localStorage`.
+	 * @param {Object} options
+	 * @param {(...params:Params)=>string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+	 * @param {string} [options.name] Name of the cache, used as storage key (optional).
+	 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
+	 * @param {Record<string,Result>} [options.data] Record which should be used as cache (defaults to an empty record).
 	 */
-	constructor(name, expensiveFunction, keyMapper, storage = window.localStorage) {
-		this.name = name;
+	constructor(expensiveFunction, options) {
 		this.expensiveFunction = expensiveFunction;
-		this.keyMapper = keyMapper;
-		this.storage = storage
-		/** @type {Record<string,Result>} */
-		this.data = {};
+		this.keyMapper = options.keyMapper;
+		this.name = options.name ?? `defaultCache`;
+		this.storage = options.storage;
+		this.data = options.data ?? {};
 	}
 
 	/**
@@ -54,7 +55,7 @@ export class FunctionCache {
 	 * Loads the persisted cache entries.
 	 */
 	load() {
-		const storedData = this.storage.getItem(this.name);
+		const storedData = this.storage?.getItem(this.name);
 		if (storedData) {
 			this.data = JSON.parse(storedData);
 		}
@@ -64,7 +65,7 @@ export class FunctionCache {
 	 * Persists all entries of the cache.
 	 */
 	store() {
-		this.storage.setItem(this.name, JSON.stringify(this.data));
+		this.storage?.setItem(this.name, JSON.stringify(this.data));
 	}
 
 	/**
