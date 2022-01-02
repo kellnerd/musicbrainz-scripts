@@ -6,7 +6,7 @@ import {
 /**
  * Creates a dialog to add a relationship to the currently edited source entity.
  * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
- * @returns Pre-filled "Add relationship" dialog object.
+ * @returns {MB.RE.Dialog} Pre-filled "Add relationship" dialog object.
  */
 export function createAddRelationshipDialog(targetEntity) {
 	const viewModel = MB.sourceRelationshipEditor
@@ -30,6 +30,7 @@ export function createAddRelationshipDialog(targetEntity) {
 export function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 	const viewModel = MB.releaseRelationshipEditor;
 	const target = MB.entity(artistData, 'artist'); // automatically caches entities with a GID (unlike `MB.entity.Artist`)
+	/** @type {MB.RE.Dialog} */
 	const dialog = new MB.relationshipEditor.UI.AddDialog({
 		source: viewModel.source,
 		target,
@@ -57,14 +58,14 @@ export function targetEntityFromURL(url) {
 }
 
 /**
- * Ensures that the given relationship editor has no active dialog.
+ * Resolves after the given dialog has been closed.
+ * @param {MB.RE.Dialog} dialog
  */
-export function ensureNoActiveDialog(editor = MB.releaseRelationshipEditor) {
+export function closingDialog(dialog) {
 	return new Promise((resolve) => {
-		const activeDialog = editor.activeDialog();
-		if (activeDialog) {
+		if (dialog) {
 			// wait until the jQuery UI dialog has been closed
-			activeDialog.$dialog.on('dialogclose', () => {
+			dialog.$dialog.on('dialogclose', () => {
 				resolve();
 			});
 		} else {
@@ -75,11 +76,20 @@ export function ensureNoActiveDialog(editor = MB.releaseRelationshipEditor) {
 
 /**
  * Opens the given dialog, focuses the autocomplete input and triggers the search.
- * @param {*} dialog 
+ * @param {MB.RE.Dialog} dialog 
  * @param {Event} [event] Affects the position of the opened dialog (optional).
  */
 export function openDialogAndTriggerAutocomplete(dialog, event) {
 	dialog.open(event);
 	dialog.autocomplete.$input.focus();
 	dialog.autocomplete.search();
+}
+
+/**
+ * Returns the target entity of the given relationship dialog.
+ * @param {MB.RE.Dialog} dialog 
+ */
+export function getTargetEntity(dialog) {
+	return dialog.relationship().entities() // source and target entity
+		.find((entity) => entity.entityType === dialog.targetType());
 }

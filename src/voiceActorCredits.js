@@ -1,4 +1,5 @@
 import {
+	buildEntityURL as buildDiscogsURL,
 	fetchVoiceActors as fetchVoiceActorsFromDiscogs,
 } from './discogs.js';
 import {
@@ -8,12 +9,22 @@ import {
 	discogsToMBIDCache,
 } from './entityMapping.js';
 import {
+	closingDialog,
 	createVoiceActorDialog,
-	ensureNoActiveDialog,
+	getTargetEntity,
 	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
 
+/**
+ * Imports all existing voice actor credits from the given Discogs release.
+ * Automatically maps Discogs entities to MBIDs where possible, asks the user to match the remaining ones.
+ * @param {string} releaseURL URL of the Discogs source release.
+ * @returns Manually matched entities for which MB does not store the Discogs URLs.
+ */
 export async function importVoiceActorsFromDiscogs(releaseURL) {
+	/** @type {EntityMapping[]} */
+	const newArtistMappings = [];
+
 	const actors = await fetchVoiceActorsFromDiscogs(releaseURL);
 	for (const actor of actors) {
 		console.debug(actor);
@@ -28,8 +39,6 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 		const artistCredit = actor.anv; // we are already using the name as a fallback
 		const artistMBID = await discogsToMBIDCache.get('artist', actor.id);
 
-		await ensureNoActiveDialog();
-
 		if (artistMBID) {
 			// mapping already exists, automatically add the relationship
 			const mbArtist = await entityCache.get(artistMBID);
@@ -41,9 +50,25 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 
 			// let the user select the matching entity
 			openDialogAndTriggerAutocomplete(dialog);
+			await closingDialog(dialog);
+
+			// collect mappings for freshly matched artists
+			const artistMatch = getTargetEntity(dialog);
+			if (artistMatch) {
+				discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
+				newArtistMappings.push({
+					MBID: artistMatch.gid,
+					name: artistMatch.name,
+					comment: artistMatch.comment,
+					discogsURL: buildDiscogsURL('artist', actor.id),
+					discogsName: actor.name,
+				});
+			}
 		}
 	}
 
 	// persist cache entries after each import, TODO: only do this on page unload
 	discogsToMBIDCache.store();
+
+	return newArtistMappings;
 }

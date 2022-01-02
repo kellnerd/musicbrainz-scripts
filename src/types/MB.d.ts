@@ -28,7 +28,7 @@ namespace MB {
 		day: number | null;
 	};
 
-	type Entity = {
+	type CoreEntity = {
 		entityType: EntityType;
 		/** MBID. */
 		gid: MBID;
@@ -36,7 +36,7 @@ namespace MB {
 	};
 
 	/** Entity object as returned by `/ws/js/entity/MBID`. */
-	type InternalEntity = Entity & {
+	type InternalEntity = CoreEntity & {
 		/** Internal (row) ID. */
 		id: number;
 		/** Disambiguation comment, can be empty. */
@@ -70,23 +70,84 @@ namespace MB {
 	namespace RE {
 		type Relationship = {
 			id: number;
+			/** Should return two elements, the source and the target entity (order defined by link type). */
+			entities: Getter<TargetEntity[]>;
+			attributes: Getter<Attribute[]>;
+			setAttributes: Setter<CoreAttribute[]>;
 			entityTypes: string; // e.g. "artist-release"
-			original: RelationshipCore & { id: number };
+			original?: CoreRelationship;
 			parent: BaseEditor;
 			uniqueID: string;
 			editsPending: false;
 			// TODO: incomplete, there are more functions
-		} & CreateGetterSetters<RelationshipCore>;
+		} & CreateGetterSetters<Omit<CoreRelationship, 'id' | 'entities' | 'attributes'>>;
 
-		type RelationshipCore = {
-			attributes: Attribute[];
+		type CoreRelationship = {
+			id?: number;
+			attributes: CoreAttribute[];
 			begin_date: Date;
 			end_date: Date;
 			ended: boolean;
-			entities: Entity[]; // should have two elements
+			/** Should have two elements, the source and the target entity (order defined by link type). */
+			entities: CoreEntity[];
 			entity0_credit: string;
 			entity1_credit: string;
 			linkTypeID: number;
+		};
+
+		type Attribute = {
+			type: AttributeType;
+			creditedAs?: Getter<string>;
+			// TODO: incomplete, see CoreAttribute
+		};
+
+		type CoreAttribute = {
+			type: AttributeType;
+			credited_as: string;
+			// TODO: incomplete, there are more optional attributes
+		};
+
+		type AttributeType = {
+			gid: MBID;
+			id: number;
+			name: string;
+			description: string;
+			creditable: true;
+			free_text: boolean;
+			entityType: 'link_attribute_type';
+			parent_id: number | null;
+			child_order: 0;
+			root: AttributeType;
+			root_gid: MBID;
+			root_id: number;
+			children?: AttributeType[];
+		};
+
+		type Dialog = {
+			$dialog: JQuery;
+			accept: () => void;
+			open: (event?: Event) => void;
+			autocomplete: {
+				$input: JQuery<HTMLInputElement>;
+				search: () => void;
+				// TODO: incomplete
+			};
+			originalRelationship?: Relationship;
+			relationship: Getter<Relationship>;
+			source: TargetEntity;
+			targetType: Getter<EntityType>;
+			viewModel: BaseEditor;
+			changeOtherRelationshipCredits: {
+				source: GetterSetter<boolean>;
+				target: GetterSetter<boolean>;
+			};
+			/** Use together with `changeOtherRelationshipCredits`. */
+			selectedRelationshipCredits: {
+				// TODO: find valid values other than 'all'
+				source: GetterSetter<string>;
+				target: GetterSetter<string>;
+			};
+			// TODO: incomplete, there are more functions
 		};
 
 		// TODO: imprecise
@@ -122,7 +183,7 @@ namespace MB {
 
 		type BaseEditor = {
 			cache: Record<string, Relationship>;
-			source: Target<InternalEntity>;
+			source: TargetEntity;
 			uniqueID: string;
 			// TODO: incomplete, there are more functions
 		};
@@ -139,6 +200,8 @@ namespace MB {
 			relationshipElements: {}; // ?
 			uniqueID: string;
 		};
+		type TargetEntity = Target<InternalEntity>;
+		type TargetArtist = Target<InternalArtist>;
 
 		type Minimal<T extends InternalEntity> = Partial<T> & {
 			entityType: EntityType;
@@ -155,7 +218,7 @@ declare namespace MB {
 	const releaseRelationshipEditor: RE.ReleaseEditor;
 
 	function entity(data: RE.MinimalEntity): RE.Target<RE.MinimalEntity>;
-	function entity(data: Partial<InternalEntity>, type: Entity): RE.Target<Partial<InternalEntity>>;
+	function entity(data: Partial<InternalEntity>, type: EntityType): RE.Target<Partial<InternalEntity>>;
 	function entity(data: Partial<InternalArtist>, type: 'artist'): RE.Target<Partial<InternalArtist>>;
 }
 
