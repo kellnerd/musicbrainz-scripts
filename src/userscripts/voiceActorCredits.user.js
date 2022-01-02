@@ -1,5 +1,4 @@
 import { addMessageToEditNote } from '../editNote.js';
-import { entityCache } from '../entityCache.js';
 import { discogsToMBIDCache } from '../entityMapping.js';
 import {
 	fetchEntity,
@@ -31,7 +30,7 @@ function insertVoiceActorButtons() {
 		.on('click', (event) => createVoiceActorDialog().open(event))
 		.appendTo('#release-rels');
 	$(importButton)
-		.on('click', async (event) => {
+		.on('click', async () => {
 			const releaseData = await fetchEntity(window.location.href, ['release-groups', 'url-rels']);
 			let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
 
@@ -40,13 +39,12 @@ function insertVoiceActorButtons() {
 			}
 
 			if (discogsURL) {
-				importVoiceActorsFromDiscogs(discogsURL, event);
+				importVoiceActorsFromDiscogs(discogsURL);
 				addMessageToEditNote(`Imported voice actor credits from ${discogsURL}`);
 			}
 		})
 		.appendTo('#release-rels');
 }
 
-insertVoiceActorButtons();
 discogsToMBIDCache.load();
-entityCache.load();
+insertVoiceActorButtons();

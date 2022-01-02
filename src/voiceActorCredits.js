@@ -13,7 +13,7 @@ import {
 	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
 
-export async function importVoiceActorsFromDiscogs(releaseURL, event) {
+export async function importVoiceActorsFromDiscogs(releaseURL) {
 	const actors = await fetchVoiceActorsFromDiscogs(releaseURL);
 	for (const actor of actors) {
 		console.debug(actor);
@@ -31,18 +31,19 @@ export async function importVoiceActorsFromDiscogs(releaseURL, event) {
 		await ensureNoActiveDialog();
 
 		if (artistMBID) {
+			// mapping already exists, automatically add the relationship
 			const mbArtist = await entityCache.get(artistMBID);
 			createVoiceActorDialog(mbArtist, roleName, artistCredit).accept();
-			// TODO: skip already existing rels, use the entity cache of MBS?
+			// duplicates of already existing rels will be merged automatically
 		} else {
-			console.info('Failed to find the linked MB artist for:', actor);
 			// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
 			const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
-			openDialogAndTriggerAutocomplete(dialog, event);
+
+			// let the user select the matching entity
+			openDialogAndTriggerAutocomplete(dialog);
 		}
 	}
 
 	// persist cache entries after each import, TODO: only do this on page unload
 	discogsToMBIDCache.store();
-	entityCache.store();
 }
