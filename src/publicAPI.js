@@ -12,6 +12,7 @@ const callAPI = rateLimit(fetch, 1000);
  * Requests the given entity from the MusicBrainz API.
  * @param {string} url (Partial) URL which contains the entity type and the entity's MBID.
  * @param {string[]} inc Include parameters which should be added to the API request.
+ * @returns {Promise<MB.Entity>}
  */
 export function fetchEntity(url, inc) {
 	const entity = extractEntityFromURL(url);
@@ -22,10 +23,10 @@ export function fetchEntity(url, inc) {
 }
 
 /**
- * Returns the entity of the desired type which is associated to the given ressource URL.
- * @param {string} entityType Desired type of the entity.
+ * Returns the entity of the desired type which is associated to the given resource URL.
+ * @param {MB.EntityType} entityType Desired type of the entity.
  * @param {string} resourceURL 
- * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
+ * @returns {Promise<MB.Entity>} The first matching entity. (TODO: handle ambiguous URLs)
  */
 export async function getEntityForResourceURL(entityType, resourceURL) {
 	try {

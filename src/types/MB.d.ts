@@ -19,8 +19,11 @@ namespace MB {
 	/** Format: `/[0-9a-f-]{36}/` (UUID) */
 	type MBID = string;
 
-	/** Format: `YYYY-MM-DDThh:mm:ssZ` */
+	/** Format: `YYYY-MM-DD` */
 	type DateString = string;
+
+	/** Format: `YYYY-MM-DDThh:mm:ssZ` */
+	type DateTimeString = string;
 
 	type Date = {
 		year: number | null;
@@ -42,7 +45,7 @@ namespace MB {
 		/** Disambiguation comment, can be empty. */
 		comment: string;
 		editsPending: boolean;
-		last_updated: DateString;
+		last_updated: DateTimeString;
 	};
 
 	/** Artist object as returned by `/ws/js/entity/MBID`. */
@@ -66,6 +69,60 @@ namespace MB {
 		entityType: 'release';
 		// TODO: incomplete
 	};
+
+	// API
+
+	type Entity = {
+		id: MBID;
+		name: string;
+		'sort-name': string;
+		disambiguation: string;
+		type: string | null;
+		'type-id': MBID;
+	}
+
+	/** Artist object as returned by `/ws/2/artist/MBID`. */
+	type Artist = Entity & {
+		type: ArtistType;
+		gender: Gender;
+		'gender-id': MBID;
+		area: Area | null;
+		country: CountryCode;
+		'begin-area': Area | null;
+		'end-area': Area | null;
+		'life-span': {
+			begin: DateString | null;
+			end: DateString | null;
+			ended: boolean;
+		};
+		aliases: ArtistAlias[];
+		ipis: string[];
+		isnis: string[];
+	};
+
+	type Area = Entity & {
+		'iso-3166-1-codes'?: string[]; // for countries
+		'iso-3166-2-codes'?: string[]; // for subdivisions
+	}
+
+	type ArtistAlias = {
+		name: string;
+		'sort-name': string;
+		type: 'Artist Name' | 'Legal name' | 'Search hint' | null;
+		'type-id': MBID;
+		locale: string;
+		primary: boolean | null;
+		begin: DateString | null;
+		end: DateString | null;
+		ended: boolean;
+	};
+
+	type ArtistType = 'Person' | 'Group' | 'Choir' | 'Orchestra' | 'Other' | null;
+	
+	type Gender = 'Male' | 'Female' | 'Other' | 'Not applicable' | null;
+
+	/** Two letter ISO country code */
+	type CountryCode = string;
 
 	namespace RE {
 		type Relationship = {
