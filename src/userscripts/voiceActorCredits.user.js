@@ -1,6 +1,6 @@
 import { addMessageToEditNote } from '../editNote.js';
+import { entityCache } from '../entityCache.js';
 import { discogsToMBIDCache } from '../entityMapping.js';
-import { entityCache } from '../internalAPI.js';
 import {
 	fetchEntity,
 } from '../publicAPI.js';

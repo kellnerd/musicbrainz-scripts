@@ -2,11 +2,11 @@ import {
 	fetchVoiceActors as fetchVoiceActorsFromDiscogs,
 } from './discogs.js';
 import {
+	entityCache,
+} from './entityCache.js';
+import {
 	discogsToMBIDCache,
 } from './entityMapping.js';
-import {
-	entityCache,
-} from './internalAPI.js';
 import {
 	createVoiceActorDialog,
 	ensureNoActiveDialog,
