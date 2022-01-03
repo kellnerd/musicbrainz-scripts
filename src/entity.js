@@ -10,3 +10,11 @@ export function extractEntityFromURL(url) {
 		mbid: entity[2]
 	} : undefined;
 }
+
+/**
+ * @param {MB.EntityType} entityType 
+ * @param {MB.MBID} mbid 
+ */
+export function buildEntityURL(entityType, mbid) {
+	return `https://musicbrainz.org/${entityType}/${mbid}`;
+}

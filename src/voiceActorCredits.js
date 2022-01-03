@@ -19,11 +19,16 @@ import {
  * Imports all existing voice actor credits from the given Discogs release.
  * Automatically maps Discogs entities to MBIDs where possible, asks the user to match the remaining ones.
  * @param {string} releaseURL URL of the Discogs source release.
- * @returns Manually matched entities for which MB does not store the Discogs URLs.
+ * @returns - Number of credits (total & automatically mapped).
+ * - List of unmapped entities (manually matched or skipped) for which MB does not store the Discogs URLs.
  */
 export async function importVoiceActorsFromDiscogs(releaseURL) {
-	/** @type {EntityMapping[]} */
-	const newArtistMappings = [];
+	/**
+	 * Unmapped entities for which MB does not store the Discogs URLs.
+	 * @type {EntityMapping[]}
+	 */
+	const unmappedArtists = [];
+	let mappedCredits = 0;
 
 	const actors = await fetchVoiceActorsFromDiscogs(releaseURL);
 	for (const actor of actors) {
@@ -43,6 +48,7 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 			// mapping already exists, automatically add the relationship
 			const mbArtist = await entityCache.get(artistMBID);
 			createVoiceActorDialog(mbArtist, roleName, artistCredit).accept();
+			mappedCredits++;
 			// duplicates of already existing rels will be merged automatically
 		} else {
 			// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
@@ -54,21 +60,25 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 
 			// collect mappings for freshly matched artists
 			const artistMatch = getTargetEntity(dialog);
-			if (artistMatch) {
+			if (artistMatch.gid) {
 				discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
-				newArtistMappings.push({
-					MBID: artistMatch.gid,
-					name: artistMatch.name,
-					comment: artistMatch.comment,
-					discogsURL: buildDiscogsURL('artist', actor.id),
-					discogsName: actor.name,
-				});
 			}
+			unmappedArtists.push({
+				MBID: artistMatch.gid,
+				name: artistMatch.name,
+				comment: artistMatch.comment,
+				externalURL: buildDiscogsURL('artist', actor.id),
+				externalName: actor.name,
+			});
 		}
 	}
 
 	// persist cache entries after each import, TODO: only do this on page unload
 	discogsToMBIDCache.store();
 
-	return newArtistMappings;
+	return {
+		totalCredits: actors.length,
+		mappedCredits,
+		unmappedArtists,
+	};
 }
