@@ -388,4 +388,4 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 		}), 100);
 	}
 
-}());
+})();

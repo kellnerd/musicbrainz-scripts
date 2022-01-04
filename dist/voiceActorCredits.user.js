@@ -672,4 +672,4 @@
 	discogsToMBIDCache.load();
 	buildUI();
 
-}());
+})();
