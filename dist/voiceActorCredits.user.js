@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2021.12.30
+// @version      2022.1.3
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -52,7 +52,7 @@
 	/**
 	 * Extracts the entity type and ID from a MusicBrainz URL (can be incomplete and/or with additional path components and query parameters).
 	 * @param {string} url URL of a MusicBrainz entity page.
-	 * @returns {{type:string,mbid:string}|undefined} Type and ID.
+	 * @returns {{ type: MB.EntityType, mbid: MB.MBID } | undefined} Type and ID.
 	 */
 	function extractEntityFromURL$1(url) {
 		const entity = url.match(/(area|artist|event|genre|instrument|label|place|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
@@ -60,6 +60,150 @@
 			type: entity[1],
 			mbid: entity[2]
 		} : undefined;
+	}
+
+	/**
+	 * @param {MB.EntityType} entityType 
+	 * @param {MB.MBID} mbid 
+	 */
+	function buildEntityURL$1(entityType, mbid) {
+		return `https://musicbrainz.org/${entityType}/${mbid}`;
+	}
+
+	/**
+	 * @template Params
+	 * @template Result
+	 */
+	class FunctionCache {
+		/**
+		 * @param {(...params:Params)=>Promise<Result>} expensiveFunction Expensive function whose results should be cached.
+		 * @param {Object} options
+		 * @param {(...params:Params)=>string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
+		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
+		 * @param {Record<string,Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		 */
+		constructor(expensiveFunction, options) {
+			this.expensiveFunction = expensiveFunction;
+			this.keyMapper = options.keyMapper;
+			this.name = options.name ?? `defaultCache`;
+			this.storage = options.storage;
+			this.data = options.data ?? {};
+		}
+
+		/**
+		 * Looks up the result for the given parameters and returns it.
+		 * If the result is not cached, it will be calculated and added to the cache.
+		 * @param {Params} params 
+		 */
+		async get(...params) {
+			const keys = this.keyMapper(...params);
+			const lastKey = keys.pop();
+			if (!lastKey) return;
+
+			const record = this._get(keys);
+			if (record[lastKey] === undefined) {
+				// create a new entry to cache the result of the expensive function
+				const newEntry = await this.expensiveFunction(...params);
+				if (newEntry !== undefined) {
+					record[lastKey] = newEntry;
+				}
+			}
+
+			return record[lastKey];
+		}
+
+		/**
+		 * Manually sets the cache value for the given key.
+		 * @param {string[]} keys Components of the key.
+		 * @param {Result} value 
+		 */
+		set(keys, value) {
+			const lastKey = keys.pop();
+			this._get(keys)[lastKey] = value;
+		}
+
+		/**
+		 * Loads the persisted cache entries.
+		 */
+		load() {
+			const storedData = this.storage?.getItem(this.name);
+			if (storedData) {
+				this.data = JSON.parse(storedData);
+			}
+		}
+
+		/**
+		 * Persists all entries of the cache.
+		 */
+		store() {
+			this.storage?.setItem(this.name, JSON.stringify(this.data));
+		}
+
+		/**
+		 * Clears all entries of the cache and persists the changes.
+		 */
+		clear() {
+			this.data = {};
+			this.store();
+		}
+
+		/**
+		 * Returns the cache record which is indexed by the key.
+		 * @param {string[]} keys Components of the key
+		 */
+		_get(keys) {
+			let record = this.data;
+			keys.forEach((key) => {
+				if (record[key] === undefined) {
+					// create an empty record for all missing keys
+					record[key] = {};
+				}
+				record = record[key];
+			});
+			return record;
+		}
+	}
+
+	/**
+	 * Transforms the given value using the given substitution rules.
+	 * @param {string} value 
+	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @returns {string}
+	 */
+	function transform(value, substitutionRules) {
+		substitutionRules.forEach(([searchValue, newValue]) => {
+			value = value.replace(searchValue, newValue);
+		});
+		return value;
+	}
+
+	const transformationRules = [
+		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
+		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
+		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
+		// ... which is enclosed by non-word characters or at the beginning/end of the title
+		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
+		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
+		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
+		[/'/g, '’'], // ... and finally the apostrophes should be remaining
+		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
+		[/ - /g, ' – '], // en dash as separator
+		[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g, '$1‐$2‐$3'], // hyphens for ISO 8601 dates, e.g. 1987‐07–30
+		[/(\d{4})-(\d{2})(?=\W|$)/g, '$1‐$2'], // hyphen for ISO 8601 partial dates, e.g. 2016-04
+		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
+		[/-/g, '‐'], // ... and finally the hyphens should be remaining
+		// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
+		// TODO: localize quotes using release/lyrics language
+	];
+
+	/**
+	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
+	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
+	 * @param {string} text
+	 */
+	function useUnicodePunctuation(text) {
+		return transform(text, transformationRules);
 	}
 
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
@@ -101,17 +245,102 @@
 	}
 
 	/**
+	 * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
+	 * https://www.discogs.com/developers/
+	 */
+	const callAPI$1 = rateLimit(fetch, 60 * 1000, 25);
+
+	/**
+	 * Extracts the entity type and ID from a Discogs URL.
+	 * @param {string} url URL of a Discogs entity page.
+	 * @returns {[string,string]|undefined} Type and ID.
+	 */
+	function extractEntityFromURL(url) {
+		return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);
+	}
+
+	/**
+	 * @param {Discogs.EntityType} entityType 
+	 * @param {number} entityId 
+	 */
+	function buildEntityURL(entityType, entityId) {
+		return `https://www.discogs.com/${entityType}/${entityId}`;
+	}
+
+	/**
+	 * Requests the given entity from the Discogs API.
+	 * @param {Discogs.EntityType} entityType 
+	 * @param {number} entityId 
+	 */
+	async function fetchEntityFromAPI(entityType, entityId) {
+		const url = `https://api.discogs.com/${entityType}s/${entityId}`;
+		const response = await callAPI$1(url);
+		if (response.ok) {
+			return response.json();
+		} else {
+			throw response;
+		}
+	}
+
+	/**
+	 * Fetches the extra artists (credits) for the given release.
+	 * @param {string} releaseURL URL of a Discogs release page.
+	 */
+	async function fetchCredits(releaseURL) {
+		const entity = extractEntityFromURL(releaseURL);
+		if (entity && entity[0] === 'release') {
+			/** @type {Discogs.Release} */
+			const release = await fetchEntityFromAPI(...entity);
+			return release.extraartists.map((artist) => {
+				/** @type {Discogs.ParsedArtist} */
+				const parsedArtist = { ...artist };
+				// drop bracketed numeric suffixes for ambiguous artist names
+				parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
+
+				parsedArtist.anv = useUnicodePunctuation(artist.anv || artist.name);
+
+				// split roles with credited role names in square brackets (for convenience)
+				const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
+				if (roleWithCredit) {
+					parsedArtist.role = roleWithCredit[1];
+					parsedArtist.roleCredit = useUnicodePunctuation(roleWithCredit[2]);
+				}
+
+				return parsedArtist;
+			});
+		} else {
+			throw new Error('Invalid Discogs URL');
+		}
+	}
+
+	/**
+	 * Fetches the voice actor and narrator credits for the given release.
+	 * @param {string} releaseURL URL of a Discogs release page.
+	 */
+	async function fetchVoiceActors(releaseURL) {
+		return (await fetchCredits(releaseURL))
+			.filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role))
+			.flatMap((artist) => {
+				// split artists with multiple roles into multiple credits
+				const roles = artist.roleCredit.split('/');
+				if (roles.length === 1) return artist;
+				return roles.map((role) => ({ ...artist, roleCredit: role.trim() }));
+			});
+	}
+
+	/**
 	 * Calls to the MusicBrainz API are limited to one request per second.
 	 * https://musicbrainz.org/doc/MusicBrainz_API
 	 */
-	const callAPI$1 = rateLimit(fetch, 1000);
+	const callAPI = rateLimit(fetch, 1000);
 
 	/**
 	 * Requests the given entity from the MusicBrainz API.
 	 * @param {string} url (Partial) URL which contains the entity type and the entity's MBID.
 	 * @param {string[]} inc Include parameters which should be added to the API request.
+	 * @returns {Promise<MB.Entity>}
 	 */
-	function fetchEntity(url, inc) {
+	function fetchEntity$1(url, inc) {
 		const entity = extractEntityFromURL$1(url);
 		if (!entity) throw new Error('Invalid entity URL');
 
@@ -120,10 +349,10 @@
 	}
 
 	/**
-	 * Returns the entity of the desired type which is associated to the given ressource URL.
-	 * @param {string} entityType Desired type of the entity.
+	 * Returns the entity of the desired type which is associated to the given resource URL.
+	 * @param {MB.EntityType} entityType Desired type of the entity.
 	 * @param {string} resourceURL 
-	 * @returns {Promise<{name:string,id:string}>} The first matching entity. (TODO: handle ambiguous URLs)
+	 * @returns {Promise<MB.Entity>} The first matching entity. (TODO: handle ambiguous URLs)
 	 */
 	async function getEntityForResourceURL(entityType, resourceURL) {
 		try {
@@ -149,7 +378,7 @@
 			'Accept': 'application/json',
 			// 'User-Agent': 'Application name/<version> ( contact-url )',
 		};
-		const response = await callAPI$1(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+		const response = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
 		if (response.ok) {
 			return response.json();
 		} else {
@@ -157,41 +386,44 @@
 		}
 	}
 
-	/**
-	 * Creates a function that maps entries of an input record to different property names of the output record according
-	 * to the given mapping. Only properties with an existing mapping will be copied.
-	 * @param {Record<string,string>} mapping Maps property names of the output record to those of the input record.
-	 * @returns {(input:Record<string,any>)=>Record<string,any>} Mapper function.
-	 */
-	function createRecordMapper(mapping) {
-		return function (input) {
-			/** @type {Record<string,any>} */
-			let output = {};
-			for (let outputProperty in mapping) {
-				const inputProperty = mapping[outputProperty];
-				const value = input[inputProperty];
-				if (value !== undefined) {
-					output[outputProperty] = value;
-				}
-			}
-			return output;
-		};
-	}
-
-	/**
-	 * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
-	 */
-	const ARTIST_INTERNAL_FIELDS = {
-		gid: 'id', // MBID
-		name: 'name',
-		sort_name: 'sort-name',
-		comment: 'disambiguation',
+	const DISCOGS_ENTITY_TYPES = {
+		artist: 'artist',
+		label: 'label',
+		release: 'release',
+		'release_group': 'master',
 	};
 
 	/**
-	 * Creates a ws/js compatible artist object from an API response.
+	 * Maps Discogs IDs to MBIDs.
+	 * @param {MB.EntityType} entityType 
+	 * @param {number} discogsId 
 	 */
-	const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);
+	async function discogsToMBID(entityType, discogsId) {
+		const discogsType = DISCOGS_ENTITY_TYPES[entityType];
+		if (!discogsType) return;
+
+		const entity = await getEntityForResourceURL(entityType, buildEntityURL(discogsType, discogsId));
+		return entity?.id;
+	}
+
+	/**
+	 * Cache for the mapping of Discogs entities to the MBIDs of their equivalent entities on MusicBrainz.
+	 */
+	const discogsToMBIDCache = new FunctionCache(discogsToMBID, {
+		keyMapper: (type, id) => [type, id],
+		name: 'discogsToMBIDCache',
+		storage: window.localStorage,
+	});
+
+	/**
+	 * Fetches the entity with the given MBID from the internal API ws/js.
+	 * @param {string} gid MBID of the entity.
+	 * @returns {Promise<MB.RE.TargetEntity>}
+	 */
+	async function fetchEntity(gid) {
+		const result = await fetch(`/ws/js/entity/${gid}`);
+		return MB.entity(await result.json()); // automatically caches entities
+	}
 
 	/**
 	 * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
@@ -204,6 +436,7 @@
 	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 		const viewModel = MB.releaseRelationshipEditor;
 		const target = MB.entity(artistData, 'artist'); // automatically caches entities with a GID (unlike `MB.entity.Artist`)
+		/** @type {MB.RE.Dialog} */
 		const dialog = new MB.relationshipEditor.UI.AddDialog({
 			source: viewModel.source,
 			target,
@@ -222,14 +455,14 @@
 	}
 
 	/**
-	 * Ensures that the given relationship editor has no active dialog.
+	 * Resolves after the given dialog has been closed.
+	 * @param {MB.RE.Dialog} dialog
 	 */
-	function ensureNoActiveDialog(editor = MB.releaseRelationshipEditor) {
+	function closingDialog(dialog) {
 		return new Promise((resolve) => {
-			const activeDialog = editor.activeDialog();
-			if (activeDialog) {
+			if (dialog) {
 				// wait until the jQuery UI dialog has been closed
-				activeDialog.$dialog.on('dialogclose', () => {
+				dialog.$dialog.on('dialogclose', () => {
 					resolve();
 				});
 			} else {
@@ -240,7 +473,7 @@
 
 	/**
 	 * Opens the given dialog, focuses the autocomplete input and triggers the search.
-	 * @param {*} dialog 
+	 * @param {MB.RE.Dialog} dialog 
 	 * @param {Event} [event] Affects the position of the opened dialog (optional).
 	 */
 	function openDialogAndTriggerAutocomplete(dialog, event) {
@@ -250,63 +483,58 @@
 	}
 
 	/**
-	 * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
-	 * https://www.discogs.com/developers/
+	 * Returns the target entity of the given relationship dialog.
+	 * @param {MB.RE.Dialog} dialog 
 	 */
-	const callAPI = rateLimit(fetch, 60 * 1000, 25);
-
-	/**
-	 * Extracts the entity type and ID from a Discogs URL.
-	 * @param {string} url URL of a Discogs entity page.
-	 * @returns {[string,string]|undefined} Type and ID.
-	 */
-	function extractEntityFromURL(url) {
-		return url.match(/(artist|label|master|release)\/(\d+)$/)?.slice(1);
-	}
-
-	function buildEntityURL(entityType, entityId) {
-		return `https://www.discogs.com/${entityType}/${entityId}`;
-	}
-
-	async function fetchEntityFromAPI(entityType, entityId) {
-		const url = `https://api.discogs.com/${entityType}s/${entityId}`;
-		const response = await callAPI(url);
-		if (response.ok) {
-			return response.json();
-		} else {
-			throw response;
-		}
+	function getTargetEntity(dialog) {
+		return dialog.relationship().entities() // source and target entity
+			.find((entity) => entity.entityType === dialog.targetType());
 	}
 
 	/**
-	 * Fetches the extra artists (credits) for the given release.
-	 * @param {string} releaseURL URL of a Discogs release page.
-	 * @returns {Promise<Artist[]>}
+	 * Creates an URL to seed the editor of the given artist with the given external link.
+	 * @param {MB.MBID} mbid MBID of the artist.
+	 * @param {string} url External link.
+	 * @param {number} linkTypeID
+	 * @param {string} [editNote]
 	 */
-	async function fetchCredits(releaseURL) {
-		const entity = extractEntityFromURL(releaseURL);
-		if (entity && entity[0] === 'release') {
-			/** @type {Discogs.Release} */
-			const release = await fetchEntityFromAPI(...entity);
-			return release.extraartists.map((artist) => {
-				// split roles with credited role names in square brackets (for convenience)
-				const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
-				if (roleWithCredit) {
-					artist.role = roleWithCredit[1];
-					artist.roleCredit = roleWithCredit[2];
-				}
-				return artist;
-			});
-		} else {
-			throw new Error('Invalid Discogs URL');
+
+	function seedURLForArtist(mbid, url, linkTypeID, editNote) {
+		const seedingParams = new URLSearchParams({
+			'edit-artist.url.0.text': url,
+			'edit-artist.url.0.link_type_id': linkTypeID
+		});
+
+		if (editNote) {
+			seedingParams.set('edit-artist.edit_note', buildEditNote(editNote));
 		}
+
+		return `https://musicbrainz.org/artist/${mbid}/edit?${seedingParams}`;
 	}
 
-	async function fetchVoiceActors(releaseURL) {
-		return (await fetchCredits(releaseURL)).filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role));
-	}
+	/**
+	 * Temporary cache for fetched entities from the ws/js API, shared with MBS.
+	 */
+	const entityCache = new FunctionCache(fetchEntity, {
+		keyMapper: (gid) => [gid],
+		data: MB.entityCache,
+	});
 
-	async function importVoiceActorsFromDiscogs(releaseURL, event) {
+	/**
+	 * Imports all existing voice actor credits from the given Discogs release.
+	 * Automatically maps Discogs entities to MBIDs where possible, asks the user to match the remaining ones.
+	 * @param {string} releaseURL URL of the Discogs source release.
+	 * @returns - Number of credits (total & automatically mapped).
+	 * - List of unmapped entities (manually matched or skipped) for which MB does not store the Discogs URLs.
+	 */
+	async function importVoiceActorsFromDiscogs(releaseURL) {
+		/**
+		 * Unmapped entities for which MB does not store the Discogs URLs.
+		 * @type {EntityMapping[]}
+		 */
+		const unmappedArtists = [];
+		let mappedCredits = 0;
+
 		const actors = await fetchVoiceActors(releaseURL);
 		for (const actor of actors) {
 			let roleName = actor.roleCredit;
@@ -317,22 +545,46 @@
 				roleName = 'Narrator'; // TODO: localize according to release language?
 			}
 
-			const artistCredit = actor.anv || actor.name; // ANV is empty if it is the same as the main name
-			const mbArtist = await getEntityForResourceURL('artist', buildEntityURL('artist', actor.id));
-			// TODO: use a cache for the Discogs->MB artist mappings
+			const artistCredit = actor.anv; // we are already using the name as a fallback
+			const artistMBID = await discogsToMBIDCache.get('artist', actor.id);
 
-			await ensureNoActiveDialog();
-
-			if (mbArtist) {
-				createVoiceActorDialog(internalArtist(mbArtist), roleName, artistCredit).accept();
-				// TODO: catch exception which occurs for duplicate rels
+			if (artistMBID) {
+				// mapping already exists, automatically add the relationship
+				const mbArtist = await entityCache.get(artistMBID);
+				createVoiceActorDialog(mbArtist, roleName, artistCredit).accept();
+				mappedCredits++;
+				// duplicates of already existing rels will be merged automatically
 			} else {
-				console.info('Failed to find the linked MB artist for:', actor);
 				// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
 				const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
-				openDialogAndTriggerAutocomplete(dialog, event);
+
+				// let the user select the matching entity
+				openDialogAndTriggerAutocomplete(dialog);
+				await closingDialog(dialog);
+
+				// collect mappings for freshly matched artists
+				const artistMatch = getTargetEntity(dialog);
+				if (artistMatch.gid) {
+					discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
+				}
+				unmappedArtists.push({
+					MBID: artistMatch.gid,
+					name: artistMatch.name,
+					comment: artistMatch.comment,
+					externalURL: buildEntityURL('artist', actor.id),
+					externalName: actor.name,
+				});
 			}
 		}
+
+		// persist cache entries after each import, TODO: only do this on page unload
+		discogsToMBIDCache.store();
+
+		return {
+			totalCredits: actors.length,
+			mappedCredits,
+			unmappedArtists,
+		};
 	}
 
 	const addIcon = $('img', '.add-rel.btn').attr('src');
@@ -349,14 +601,22 @@
 	Import voice actors
 </span>`	;
 
-	function insertVoiceActorButtons() {
+	const UI =
+`<div id="credit-import-tools">
+	<div id="credit-import-status" class="row no-label"></div>
+	<div id="credit-import-errors" class="row no-label error"></div>
+</div>`	;
+
+	function buildUI() {
 		// TODO: only show buttons for certain RG types (audiobook, audio drama, spoken word) of the MB release?
 		$(addButton)
 			.on('click', (event) => createVoiceActorDialog().open(event))
 			.appendTo('#release-rels');
+
 		$(importButton)
-			.on('click', async (event) => {
-				const releaseData = await fetchEntity(window.location.href, ['release-groups', 'url-rels']);
+			.on('click', async () => {
+				const releaseData = await fetchEntity$1(window.location.href, ['release-groups', 'url-rels']);
+				const releaseURL = buildEntityURL$1('release', releaseData.id);
 				let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
 
 				if (!discogsURL) {
@@ -364,13 +624,33 @@
 				}
 
 				if (discogsURL) {
-					importVoiceActorsFromDiscogs(discogsURL, event);
+					const result = await importVoiceActorsFromDiscogs(discogsURL);
 					addMessageToEditNote(`Imported voice actor credits from ${discogsURL}`);
+
+					// mapping suggestions
+					const newMatches = result.unmappedArtists.filter((mapping) => mapping.MBID);
+					const artistSeedNote = `Matching artist identified while importing credits from ${discogsURL} to ${releaseURL}`;
+					const messages = newMatches.map((match) => [
+						'Please add the external link',
+						`<a href="${match.externalURL}" target="_blank">${match.externalName}</a>`,
+						'to the matched entity:',
+						`<a href="${seedURLForArtist(match.MBID, match.externalURL, 180, artistSeedNote)}" target="_blank">${match.name}</a>`,
+						match.comment ? `<span class="comment">(<bdi>${match.comment}</bdi>)</span>` : '',
+					].join(' '));
+
+					// import statistics
+					const importedCredits = result.mappedCredits + newMatches.length;
+					messages.unshift(`Successfully imported ${importedCredits} of ${result.totalCredits} credits, ${result.mappedCredits} of them were mapped automatically.`);
+
+					$('#credit-import-status').html(messages.map((message) => `<p>${message}</p>`).join('\n'));
 				}
 			})
 			.appendTo('#release-rels');
+
+		$(UI).appendTo('#release-rels');
 	}
 
-	insertVoiceActorButtons();
+	discogsToMBIDCache.load();
+	buildUI();
 
 }());
