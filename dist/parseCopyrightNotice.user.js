@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name         MusicBrainz: Parse copyright text
-// @version      2022.1.4
+// @name         MusicBrainz: Parse copyright notice
+// @version      2022.1.5
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
-// @description  Parses copyright texts and assists the user to create release-label relationships for these.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#parse-copyright-text
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightText.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightText.user.js
+// @description  Parses copyright notices and assists the user to create release-label relationships for these.
+// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#parse-copyright-notice
+// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
+// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        none
 // @run-at       document-idle
@@ -134,11 +134,11 @@
 	 * Extracts all copyright data and legal information from the given text.
 	 * @param {string} text 
 	 */
-	function parseCopyrightText(text) {
+	function parseCopyrightNotice(text) {
 		/** @type {CopyrightData[]} */
 		const results = [];
 
-		// standardize copyright text
+		// standardize copyright notice
 		text = transform(text, [
 			[/\(C\)/gi, '©'],
 			[/\(P\)/gi, '℗'],
@@ -223,15 +223,15 @@
 	const parseCopyrightButton =
 `<span class="add-rel btn" id="parse-copyright" title="ALT key for automatic matching">
 	<img class="bottom" src="${addIcon}">
-	Parse copyright text
+	Parse copyright notice
 </span>`	;
 
 	function buildUI() {
 		$(parseCopyrightButton)
 			.on('click', async (event) => {
-				const input = prompt('Copyright text:');
+				const input = prompt('Copyright notice:');
 				if (input) {
-					const copyrightData = parseCopyrightText(input);
+					const copyrightData = parseCopyrightNotice(input);
 					const automaticMode = event.altKey;
 					await addCopyrightRelationships(copyrightData, automaticMode);
 					addMessageToEditNote(input);

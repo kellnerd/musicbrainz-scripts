@@ -1,7 +1,7 @@
-import { parseCopyrightText } from '../src/parseCopyrightText.js';
+import { parseCopyrightNotice } from '../src/parseCopyrightNotice.js';
 import { assertFunction } from '../tools/test.js';
 
-/** @type {Array<[string, import('../src/parseCopyrightText.js').CopyrightData]>} */
+/** @type {Array<[string, import('../src/parseCopyrightNotice.js').CopyrightData]>} */
 const copyrightTestCases = [
 	/* simple copyrights */
 	['© 2021 Universal Music New Zealand Limited', [{
@@ -15,7 +15,7 @@ const copyrightTestCases = [
 		year: '2021',
 	}]],
 
-	/* copyright text with French quotes from a-tisket */
+	/* copyright notice with French quotes from a-tisket */
 	['© «2021 Universal Music New Zealand Limited»', [{
 		name: 'Universal Music New Zealand Limited',
 		types: ['©'],
@@ -57,5 +57,5 @@ const copyrightTestCases = [
 
 export default function testCopyrightParser() {
 	console.log('Testing copyright parser...');
-	return assertFunction(parseCopyrightText, copyrightTestCases);
+	return assertFunction(parseCopyrightNotice, copyrightTestCases);
 }

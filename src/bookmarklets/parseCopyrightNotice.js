@@ -5,12 +5,12 @@
 
 import {
 	addCopyrightRelationships,
-	parseCopyrightText,
-} from '../parseCopyrightText.js';
+	parseCopyrightNotice,
+} from '../parseCopyrightNotice.js';
 
-const input = prompt('Copyright text:');
+const input = prompt('Copyright notice:');
 
 if (input) {
-	const copyrightData = parseCopyrightText(input);
+	const copyrightData = parseCopyrightNotice(input);
 	addCopyrightRelationships(copyrightData);
 }

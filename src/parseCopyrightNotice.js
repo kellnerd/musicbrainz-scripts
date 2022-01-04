@@ -23,11 +23,11 @@ const LINK_TYPES = {
  * Extracts all copyright data and legal information from the given text.
  * @param {string} text 
  */
-export function parseCopyrightText(text) {
+export function parseCopyrightNotice(text) {
 	/** @type {CopyrightData[]} */
 	const results = [];
 
-	// standardize copyright text
+	// standardize copyright notice
 	text = transform(text, [
 		[/\(C\)/gi, '©'],
 		[/\(P\)/gi, '℗'],

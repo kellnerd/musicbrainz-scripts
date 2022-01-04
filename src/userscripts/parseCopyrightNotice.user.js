@@ -1,23 +1,23 @@
 import { addMessageToEditNote } from '../editNote.js';
 import {
 	addCopyrightRelationships,
-	parseCopyrightText,
-} from '../parseCopyrightText.js';
+	parseCopyrightNotice,
+} from '../parseCopyrightNotice.js';
 
 const addIcon = $('img', '.add-rel.btn').attr('src');
 
 const parseCopyrightButton =
 `<span class="add-rel btn" id="parse-copyright" title="ALT key for automatic matching">
 	<img class="bottom" src="${addIcon}">
-	Parse copyright text
+	Parse copyright notice
 </span>`;
 
 function buildUI() {
 	$(parseCopyrightButton)
 		.on('click', async (event) => {
-			const input = prompt('Copyright text:');
+			const input = prompt('Copyright notice:');
 			if (input) {
-				const copyrightData = parseCopyrightText(input);
+				const copyrightData = parseCopyrightNotice(input);
 				const automaticMode = event.altKey;
 				await addCopyrightRelationships(copyrightData, automaticMode);
 				addMessageToEditNote(input);
