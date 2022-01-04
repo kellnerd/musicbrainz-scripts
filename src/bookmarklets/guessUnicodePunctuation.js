@@ -4,14 +4,15 @@
  * - Highlights all updated input fields in order to allow the user to review the changes.
  * - Works for release/medium/track titles and release disambiguation comments (in the release editor)
  *   and for entity names and disambiguation comments (on their respective edit and creation pages).
+ * - Detects the selected language (in the release editor) and uses localized quotes (userscript only).
  * - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
  */
 
 import {
-	guessUnicodePunctuation,
+	transformationRules,
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
-import { transformInputValues } from '../transformInputValues.js';
+import { $transformInputValues } from '../transformInputValues.js';
 
 const titleInputSelectors = [
 	'input#name', // release title (release editor)
@@ -29,5 +30,5 @@ const textareaSelectors = [
 	'.edit-note', // edit note (edit pages)
 ];
 
-guessUnicodePunctuation(titleInputSelectors);
-transformInputValues(textareaSelectors.join(), transformationRulesToPreserveMarkup);
+$transformInputValues(titleInputSelectors.join(), transformationRules);
+$transformInputValues(textareaSelectors.join(), transformationRulesToPreserveMarkup);

@@ -9,7 +9,7 @@ import {
 	markdownToAnnotation,
 	convertEntityLinks,
 } from '../annotationConverter.js';
-import { transformInputValues } from '../transformInputValues.js';
+import { $transformInputValues } from '../transformInputValues.js';
 
 const annotationInput = [
 	'textarea[name$=text]', // entity annotation
@@ -17,11 +17,13 @@ const annotationInput = [
 	'textarea[name$=biography]', // user profile biography
 ].join();
 
-transformInputValues(annotationInput, markdownToAnnotation);
+$transformInputValues(annotationInput, markdownToAnnotation);
 
 $(annotationInput).each(async (_index, input) => {
+	input.disabled = true; // lock input, requests for the names of multiple entities may take a while
 	let newValue = await convertEntityLinks(input.value);
 	if (newValue != input.value) {
 		$(input).val(newValue);
 	}
+	input.disabled = false;
 });
