@@ -1,3 +1,4 @@
+
 /**
  * Transforms the values of the selected input fields using the given substitution rules.
  * Highlights all updated input fields in order to allow the user to review the changes.
@@ -24,8 +25,6 @@ export function transformInputValues(inputSelector, substitutionRules) {
 			}
 		});
 }
-
-// TODO: UglifyJS creates unnecessary clutter like `a=b,a=f(a),b=a` when the following function is used above...
 
 /**
  * Transforms the given value using the given substitution rules.
