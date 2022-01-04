@@ -41,12 +41,12 @@ const punctuationTestCases = [
 	['The Gold It\'s in The...', 'The Gold It’s in The…'], // at the end
 	['Is This the World We Created...?', 'Is This the World We Created…?'], // before another punctuation symbol
 	// non-Latin scripts
-	['Όσο Και Να Σ\' Αγαπάω (Υπ\' Ευθύνη Μου)',	'Όσο Και Να Σ’ Αγαπάω (Υπ’ Ευθύνη Μου)'],
+	['Όσο Και Να Σ\' Αγαπάω (Υπ\' Ευθύνη Μου)', 'Όσο Και Να Σ’ Αγαπάω (Υπ’ Ευθύνη Μου)'],
 	// ignored cases
 	['Death on Two Legs (Dedicated to......', 'Death on Two Legs (Dedicated to......'],
 ];
 
-console.log('Testing punctuation transformation rules for titles...');
-let failures = assertFunction(transform, punctuationTestCases, transformationRules);
-
-process.exit(failures);
+export default function testPunctuationRules() {
+	console.log('Testing punctuation transformation rules for titles...');
+	return assertFunction(transform, punctuationTestCases, transformationRules);
+}
