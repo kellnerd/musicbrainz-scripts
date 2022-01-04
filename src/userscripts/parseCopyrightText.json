@@ -1,0 +1,7 @@
+{
+	"name": "MusicBrainz: Parse copyright text",
+	"author": "kellnerd",
+	"description": "Parses copyright texts and assists the user to create release-label relationships for these.",
+	"run-at": "document-idle",
+	"match": "*://*.musicbrainz.org/release/*/edit-relationships"
+}
