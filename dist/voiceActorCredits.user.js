@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.3
+// @version      2022.1.4
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -172,29 +172,48 @@
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, newValue]) => {
-			value = value.replace(searchValue, newValue);
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
 		});
 		return value;
 	}
 
 	const transformationRules = [
+		/* quoted text */
 		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
 		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
 		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
 		// ... which is enclosed by non-word characters or at the beginning/end of the title
 		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
+
+		/* primes */
 		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
 		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
+
+		/* apostrophes */
 		[/'/g, '’'], // ... and finally the apostrophes should be remaining
+
+		/* ellipses */
 		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
+
+		/* dashes */
 		[/ - /g, ' – '], // en dash as separator
-		[/(\d{4})-(\d{2})-(\d{2})(?=\W|$)/g, '$1‐$2‐$3'], // hyphens for ISO 8601 dates, e.g. 1987‐07–30
-		[/(\d{4})-(\d{2})(?=\W|$)/g, '$1‐$2'], // hyphen for ISO 8601 partial dates, e.g. 2016-04
+
+		/* hyphens for (partial) ISO 8601 dates, e.g. 1987‐07–30 or 2016-04 */
+		[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g, (potentialDate) => {
+			if (Number.isNaN(Date.parse(potentialDate))) return potentialDate; // skip invalid date strings, e.g. 1989-90
+			return potentialDate.replaceAll('-', '‐');
+		}],
+
+		/* figure dashes: separate three or more groups of digits (two groups could be range) */
+		[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
+
 		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
+
+		/* hyphens */
 		[/-/g, '‐'], // ... and finally the hyphens should be remaining
-		// difficult to find rules for: em dash (rare), minus (very rare), figure dash (very rare)
-		// TODO: localize quotes using release/lyrics language
+
+		/* rare cases where it is difficult to define precise rules: em dash, minus */
 	];
 
 	/**
@@ -253,7 +272,7 @@
 	/**
 	 * Extracts the entity type and ID from a Discogs URL.
 	 * @param {string} url URL of a Discogs entity page.
-	 * @returns {[string,string]|undefined} Type and ID.
+	 * @returns {[Discogs.EntityType,string]|undefined} Type and ID.
 	 */
 	function extractEntityFromURL(url) {
 		return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);

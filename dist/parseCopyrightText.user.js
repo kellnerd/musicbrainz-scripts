@@ -111,8 +111,8 @@
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, newValue]) => {
-			value = value.replace(searchValue, newValue);
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
 		});
 		return value;
 	}
