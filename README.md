@@ -86,6 +86,18 @@ javascript:(function(){function t(t,e){var g='background-color';$(t).css(g,'').e
   and for entity names and disambiguation comments (on their respective edit and creation pages).
 - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
 
+## [Parse Copyright Text](src/parseCopyrightText.js)
+
+[![Source](https://raw.github.com/jerone/UserScripts/master/_resources/Source-button.png)](dist/parseCopyrightText.user.js)
+[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](dist/parseCopyrightText.user.js?raw=1)
+
+```js
+javascript:(function(){function a(o,e){return e.forEach(([e,t])=>{o=o.replace(e,t)}),o}var p={release:{label:{'\xa9':708,'\u2117':711,'licensed from':712,'licensed to':833,'marketed by':848}}};function i(e){return a(e.toLowerCase().trim(),[['licence','license']])}var e=prompt('Copyright text:');e&&async function(e){for(const i of e){var t='label',o=p.release[t],n=MB.entity({name:i.name,entityType:t});for(const s of i.types){const c=(r=n,a=void 0,a=MB.sourceRelationshipEditor??MB.releaseRelationshipEditor,new MB.relationshipEditor.UI.AddDialog({viewModel:a,source:a.source,target:r})),l=c.relationship();l.linkTypeID(o[s]),l.entity0_credit(i.name),i.year&&(l.begin_date.year(i.year),l.end_date.year(i.year)),r=void 0,(a=c).open(r),a.autocomplete.$input.focus(),a.autocomplete.search(),await function(t){new Promise(e=>{t?t.$dialog.on('dialogclose',()=>{e()}):e()})}(c)}}var r,a}(function(e){const t=[];for(const n of(e=a(e,[[/\(C\)/gi,'\xa9'],[/\(P\)/gi,'\u2117'],[/\xab(.+?)\xbb/g,'$1']])).matchAll(/([\xa9\u2117]|\u2117\s*[&+]\s*\xa9)\s*(\d+)\s+([^.,]+)/g)){var o=n[1].split(/[&+]/).map(i);t.push({name:n[3],types:o,year:n[2]})}for(const r of e.matchAll(/(licen[sc]ed (?:to|from)|marketed by)\s+([^.,]+)/gi))t.push({name:r[2],types:[i(r[1])]});return t}(e))})();
+```
+
+- Extracts all copyright data and legal information from the given text.
+- Assists the user to create release-label relationships for these.
+
 ## [Relate This Entity To Multiple MBIDs](src/bookmarklets/relateThisEntityToMultipleMBIDs.js)
 
 ```js
