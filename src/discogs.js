@@ -11,7 +11,7 @@ const callAPI = rateLimit(fetch, 60 * 1000, 25);
 /**
  * Extracts the entity type and ID from a Discogs URL.
  * @param {string} url URL of a Discogs entity page.
- * @returns {[string,string]|undefined} Type and ID.
+ * @returns {[Discogs.EntityType,string]|undefined} Type and ID.
  */
 function extractEntityFromURL(url) {
 	return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);
