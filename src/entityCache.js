@@ -1,5 +1,5 @@
 import { FunctionCache } from './cache.js';
-import { fetchEntity } from './internalAPI';
+import { fetchEntity } from './internalAPI.js';
 
 /**
  * Temporary cache for fetched entities from the ws/js API, shared with MBS.
