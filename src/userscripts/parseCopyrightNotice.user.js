@@ -1,4 +1,5 @@
 import { addMessageToEditNote } from '../editNote.js';
+import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import {
 	addCopyrightRelationships,
 	parseCopyrightNotice,
@@ -21,9 +22,11 @@ function buildUI() {
 				const automaticMode = event.altKey;
 				await addCopyrightRelationships(copyrightData, automaticMode);
 				addMessageToEditNote(input);
+				nameToMBIDCache.store();
 			}
 		})
 		.appendTo('#release-rels');
 }
 
+nameToMBIDCache.load();
 buildUI();
