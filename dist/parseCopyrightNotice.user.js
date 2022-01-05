@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.5.3
+// @version      2022.1.5
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -15,39 +15,6 @@
 
 (function () {
 	'use strict';
-
-	/**
-	 * Adds the given message and a footer for the active userscript to the edit note.
-	 * @param {string} message Edit note message.
-	 */
-	function addMessageToEditNote(message) {
-		/** @type {HTMLTextAreaElement} */
-		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
-		const previousContent = editNoteInput.value.split(separator);
-		editNoteInput.value = buildEditNote(...previousContent, message);
-		editNoteInput.dispatchEvent(new Event('change'));
-	}
-
-	/**
-	 * Builds an edit note for the given message sections and adds a footer section for the active userscript.
-	 * Automatically de-duplicates the sections to reduce auto-generated message and footer spam.
-	 * @param {...string} sections Edit note sections.
-	 * @returns {string} Complete edit note content.
-	 */
-	function buildEditNote(...sections) {
-		sections = sections.map((section) => section.trim());
-
-		if (typeof GM_info !== 'undefined') {
-			sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
-		}
-
-		// drop empty sections and keep only the last occurrence of duplicate sections
-		return sections
-			.filter((section, index) => section && sections.lastIndexOf(section) === index)
-			.join(separator);
-	}
-
-	const separator = '\n—\n';
 
 	/**
 	 * @template Params
@@ -145,22 +112,6 @@
 	}
 
 	/**
-	 * Dummy function to make the cache fail without actually running an expensive function.
-	 * @param {MB.EntityType} entityType
-	 * @param {string} name
-	 * @returns {string}
-	 */
-	function _nameToMBID(entityType, name) {
-		return undefined;
-	}
-
-	const nameToMBIDCache = new FunctionCache(_nameToMBID, {
-		keyMapper: (entityType, name) => [entityType, name],
-		name: 'nameToMBIDCache',
-		storage: window.localStorage
-	});
-
-	/**
 	 * Fetches the entity with the given MBID from the internal API ws/js.
 	 * @param {MB.MBID} gid MBID of the entity.
 	 * @returns {Promise<MB.RE.TargetEntity>}
@@ -188,6 +139,36 @@
 		keyMapper: (gid) => [gid],
 		data: MB.entityCache,
 	});
+
+	/**
+	 * Dummy function to make the cache fail without actually running an expensive function.
+	 * @param {MB.EntityType} entityType
+	 * @param {string} name
+	 * @returns {string}
+	 */
+	function _nameToMBID(entityType, name) {
+		return undefined;
+	}
+
+	const nameToMBIDCache = new FunctionCache(_nameToMBID, {
+		keyMapper: (entityType, name) => [entityType, name],
+		name: 'nameToMBIDCache',
+		storage: window.localStorage
+	});
+
+	/** MBS relationship link type IDs (incomplete). */
+	const LINK_TYPES = {
+		release: {
+			label: {
+				'©': 708,
+				'℗': 711,
+				'licensed from': 712,
+				'licensed to': 833,
+				'distributed by': 361,
+				'marketed by': 848
+			}
+		}
+	};
 
 	/**
 	 * Creates a dialog to add a relationship to the currently edited source entity.
@@ -243,77 +224,6 @@
 	}
 
 	/**
-	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value 
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
-	 * @returns {string}
-	 */
-	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, replaceValue]) => {
-			value = value.replace(searchValue, replaceValue);
-		});
-		return value;
-	}
-
-	/** MBS relationship link type IDs (incomplete). */
-	const LINK_TYPES = {
-		release: {
-			label: {
-				'©': 708,
-				'℗': 711,
-				'licensed from': 712,
-				'licensed to': 833,
-				'distributed by': 361,
-				'marketed by': 848,
-			},
-		},
-	};
-
-	const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
-
-	const copyrightPattern = new RegExp(
-		/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
-
-	const legalInfoPattern = new RegExp(
-		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
-
-	/**
-	 * Extracts all copyright data and legal information from the given text.
-	 * @param {string} text 
-	 */
-	function parseCopyrightNotice(text) {
-		/** @type {CopyrightData[]} */
-		const results = [];
-
-		// standardize copyright notice
-		text = transform(text, [
-			[/\(C\)/gi, '©'],
-			[/\(P\)/gi, '℗'],
-			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
-		]);
-
-		const copyrightMatches = text.matchAll(copyrightPattern);
-		for (const match of copyrightMatches) {
-			const types = match[1].split(/[&+]/).map(cleanType);
-			results.push({
-				name: match[3].trim(),
-				types,
-				year: match[2],
-			});
-		}
-
-		const legalInfoMatches = text.matchAll(legalInfoPattern);
-		for (const match of legalInfoMatches) {
-			results.push({
-				name: match[2],
-				types: [cleanType(match[1])],
-			});
-		}
-
-		return results;
-	}
-
-	/**
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
 	 * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
 	 * Automatically chooses the first search result and accepts the dialog in automatic mode.
@@ -363,6 +273,96 @@
 				}
 			}
 		}
+	}
+
+	/**
+	 * Adds the given message and a footer for the active userscript to the edit note.
+	 * @param {string} message Edit note message.
+	 */
+	function addMessageToEditNote(message) {
+		/** @type {HTMLTextAreaElement} */
+		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
+		const previousContent = editNoteInput.value.split(separator);
+		editNoteInput.value = buildEditNote(...previousContent, message);
+		editNoteInput.dispatchEvent(new Event('change'));
+	}
+
+	/**
+	 * Builds an edit note for the given message sections and adds a footer section for the active userscript.
+	 * Automatically de-duplicates the sections to reduce auto-generated message and footer spam.
+	 * @param {...string} sections Edit note sections.
+	 * @returns {string} Complete edit note content.
+	 */
+	function buildEditNote(...sections) {
+		sections = sections.map((section) => section.trim());
+
+		if (typeof GM_info !== 'undefined') {
+			sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
+		}
+
+		// drop empty sections and keep only the last occurrence of duplicate sections
+		return sections
+			.filter((section, index) => section && sections.lastIndexOf(section) === index)
+			.join(separator);
+	}
+
+	const separator = '\n—\n';
+
+	/**
+	 * Transforms the given value using the given substitution rules.
+	 * @param {string} value 
+	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @returns {string}
+	 */
+	function transform(value, substitutionRules) {
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
+		});
+		return value;
+	}
+
+	const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
+
+	const copyrightPattern = new RegExp(
+		/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
+
+	const legalInfoPattern = new RegExp(
+		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
+
+	/**
+	 * Extracts all copyright data and legal information from the given text.
+	 * @param {string} text 
+	 */
+	function parseCopyrightNotice(text) {
+		/** @type {CopyrightData[]} */
+		const results = [];
+
+		// standardize copyright notice
+		text = transform(text, [
+			[/\(C\)/gi, '©'],
+			[/\(P\)/gi, '℗'],
+			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
+		]);
+
+		const copyrightMatches = text.matchAll(copyrightPattern);
+		for (const match of copyrightMatches) {
+			const types = match[1].split(/[&+]/).map(cleanType);
+			results.push({
+				name: match[3].trim(),
+				types,
+				year: match[2],
+			});
+		}
+
+		const legalInfoMatches = text.matchAll(legalInfoPattern);
+		for (const match of legalInfoMatches) {
+			results.push({
+				name: match[2],
+				types: [cleanType(match[1])],
+			});
+		}
+
+		return results;
 	}
 
 	/**

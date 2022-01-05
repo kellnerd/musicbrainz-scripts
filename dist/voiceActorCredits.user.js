@@ -76,12 +76,12 @@
 	 */
 	class FunctionCache {
 		/**
-		 * @param {(...params:Params)=>Promise<Result>} expensiveFunction Expensive function whose results should be cached.
+		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
 		 * @param {Object} options
-		 * @param {(...params:Params)=>string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+		 * @param {(...params: Params) => string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
 		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
 		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-		 * @param {Record<string,Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		 * @param {Record<string, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
 		 */
 		constructor(expensiveFunction, options) {
 			this.expensiveFunction = expensiveFunction;
@@ -436,7 +436,7 @@
 
 	/**
 	 * Fetches the entity with the given MBID from the internal API ws/js.
-	 * @param {string} gid MBID of the entity.
+	 * @param {MB.MBID} gid MBID of the entity.
 	 * @returns {Promise<MB.RE.TargetEntity>}
 	 */
 	async function fetchEntity(gid) {
