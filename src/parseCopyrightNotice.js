@@ -44,7 +44,7 @@ export function parseCopyrightNotice(text) {
 		});
 	}
 
-	const legalInfoMatches = text.matchAll(/(licen[sc]ed (?:to|from)|marketed by)\s+([^.,]+)/ig);
+	const legalInfoMatches = text.matchAll(/(licen[sc]ed? (?:to|from)|marketed by)\s+([^.,]+)/ig);
 	for (const match of legalInfoMatches) {
 		results.push({
 			name: match[2],
@@ -96,7 +96,7 @@ export async function addCopyrightRelationships(data, automaticMode = false) {
  */
 function cleanType(type) {
 	return transform(type.toLowerCase().trim(), [
-		['licence', 'license'],
+		[/licen[sc]ed?/g, 'licensed'],
 	]);
 }
 

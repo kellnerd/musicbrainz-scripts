@@ -60,6 +60,14 @@ const copyrightTestCases = [
 		name: 'Turbo Artist AS',
 		types: ['licensed from'],
 	}]],
+	['℗ & © «2016 Maspeth Music BV, under exclusive license to Republic Records, a division of UMG Recordings, Inc. (Eddie O Ent.)»', [{
+		name: 'Maspeth Music BV',
+		types: ['℗', '©'],
+		year: '2016',
+	}, {
+		name: 'Republic Records',
+		types: ['licensed to'],
+	}]],
 ];
 
 export default function testCopyrightParser() {
