@@ -68,6 +68,14 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['licensed to'],
 	}]],
+	['℗ & © «2019 Magic Quid Limited under exclusive licence to BMG Rights Management (UK) Limited»', [{
+		name: 'Magic Quid Limited',
+		types: ['℗', '©'],
+		year: '2019',
+	}, {
+		name: 'BMG Rights Management (UK) Limited',
+		types: ['licensed to'],
+	}]],
 
 	/* distribution & marketing */
 	['Distributed By Republic Records.', [{

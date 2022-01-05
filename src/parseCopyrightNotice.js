@@ -20,7 +20,7 @@ const LINK_TYPES = {
 	},
 };
 
-const labelNamePattern = /([^.,]+(?:, (?:LLP|Inc\.?))?)/;
+const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
 
 const copyrightPattern = new RegExp(
 	/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
@@ -47,7 +47,7 @@ export function parseCopyrightNotice(text) {
 	for (const match of copyrightMatches) {
 		const types = match[1].split(/[&+]/).map(cleanType);
 		results.push({
-			name: match[3],
+			name: match[3].trim(),
 			types,
 			year: match[2],
 		});
