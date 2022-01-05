@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.5
+// @version      2022.1.5.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -125,10 +125,19 @@
 				'℗': 711,
 				'licensed from': 712,
 				'licensed to': 833,
+				'distributed by': 361,
 				'marketed by': 848,
 			},
 		},
 	};
+
+	const labelNamePattern = /([^.,]+(?:, (?:LLP|Inc\.?))?)/;
+
+	const copyrightPattern = new RegExp(
+		/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
+
+	const legalInfoPattern = new RegExp(
+		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
 
 	/**
 	 * Extracts all copyright data and legal information from the given text.
@@ -145,7 +154,7 @@
 			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
 		]);
 
-		const copyrightMatches = text.matchAll(/([©℗]|℗\s*[&+]\s*©)\s*(\d+)\s+([^.,]+)/g);
+		const copyrightMatches = text.matchAll(copyrightPattern);
 		for (const match of copyrightMatches) {
 			const types = match[1].split(/[&+]/).map(cleanType);
 			results.push({
@@ -155,7 +164,7 @@
 			});
 		}
 
-		const legalInfoMatches = text.matchAll(/(licen[sc]ed (?:to|from)|marketed by)\s+([^.,]+)/ig);
+		const legalInfoMatches = text.matchAll(legalInfoPattern);
 		for (const match of legalInfoMatches) {
 			results.push({
 				name: match[2],
@@ -207,7 +216,7 @@
 	 */
 	function cleanType(type) {
 		return transform(type.toLowerCase().trim(), [
-			['licence', 'license'],
+			[/licen[sc]ed?/g, 'licensed'],
 		]);
 	}
 
