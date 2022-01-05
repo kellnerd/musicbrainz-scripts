@@ -68,6 +68,12 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['licensed to'],
 	}]],
+
+	/* distribution & marketing */
+	['Distributed By Republic Records.', [{
+		name: 'Republic Records',
+		types: ['distributed by'],
+	}]],
 ];
 
 export default function testCopyrightParser() {

@@ -14,6 +14,7 @@ const LINK_TYPES = {
 			'℗': 711,
 			'licensed from': 712,
 			'licensed to': 833,
+			'distributed by': 361,
 			'marketed by': 848,
 		},
 	},
@@ -44,7 +45,7 @@ export function parseCopyrightNotice(text) {
 		});
 	}
 
-	const legalInfoMatches = text.matchAll(/(licen[sc]ed? (?:to|from)|marketed by)\s+([^.,]+)/ig);
+	const legalInfoMatches = text.matchAll(/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+([^.,]+)/ig);
 	for (const match of legalInfoMatches) {
 		results.push({
 			name: match[2],
