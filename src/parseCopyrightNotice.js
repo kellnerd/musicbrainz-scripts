@@ -20,6 +20,14 @@ const LINK_TYPES = {
 	},
 };
 
+const labelNamePattern = /([^.,]+(?:, (?:LLP|Inc\.?))?)/;
+
+const copyrightPattern = new RegExp(
+	/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
+
+const legalInfoPattern = new RegExp(
+	/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
+
 /**
  * Extracts all copyright data and legal information from the given text.
  * @param {string} text 
@@ -35,7 +43,7 @@ export function parseCopyrightNotice(text) {
 		[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
 	]);
 
-	const copyrightMatches = text.matchAll(/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+([^.,]+)/g);
+	const copyrightMatches = text.matchAll(copyrightPattern);
 	for (const match of copyrightMatches) {
 		const types = match[1].split(/[&+]/).map(cleanType);
 		results.push({
@@ -45,7 +53,7 @@ export function parseCopyrightNotice(text) {
 		});
 	}
 
-	const legalInfoMatches = text.matchAll(/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+([^.,]+)/ig);
+	const legalInfoMatches = text.matchAll(legalInfoPattern);
 	for (const match of legalInfoMatches) {
 		results.push({
 			name: match[2],

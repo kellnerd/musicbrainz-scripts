@@ -74,6 +74,24 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['distributed by'],
 	}]],
+
+	/* labels with company suffixes */
+	['© 2021 SSA Recording, LLP, under exclusive license to Republic Records, a division of UMG Recordings, Inc.', [{
+		name: 'SSA Recording, LLP',
+		types: ['©'],
+		year: '2021',
+	}, {
+		name: 'Republic Records',
+		types: ['licensed to'],
+	}]],
+	['Distributed By Republic Records.; ℗ 2011 The Weeknd XO, Inc.', [{
+		name: 'The Weeknd XO, Inc.',
+		types: ['℗'],
+		year: '2011',
+	}, {
+		name: 'Republic Records',
+		types: ['distributed by'],
+	}]],
 ];
 
 export default function testCopyrightParser() {
