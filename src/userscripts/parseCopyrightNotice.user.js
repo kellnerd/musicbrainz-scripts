@@ -1,7 +1,7 @@
+import { addCopyrightRelationships } from '../copyrightRelationships.js';
 import { addMessageToEditNote } from '../editNote.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import {
-	addCopyrightRelationships,
 	parseCopyrightNotice,
 } from '../parseCopyrightNotice.js';
 
