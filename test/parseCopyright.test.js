@@ -29,6 +29,13 @@ const copyrightTestCases = [
 		year: '2021',
 	}]],
 
+	/* combined (P) & (C) copyright without date */
+	['℗ & © «Rare»', [{
+		name: 'Rare',
+		types: ['℗', '©'],
+		year: undefined,
+	}]],
+
 	/* copyright with additional text */
 	['© «2017 Elektra Records. All Rights Reserved.»', [{
 		name: 'Elektra Records',

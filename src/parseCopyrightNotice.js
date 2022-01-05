@@ -34,7 +34,7 @@ export function parseCopyrightNotice(text) {
 		[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
 	]);
 
-	const copyrightMatches = text.matchAll(/([©℗]|℗\s*[&+]\s*©)\s*(\d+)\s+([^.,]+)/g);
+	const copyrightMatches = text.matchAll(/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+([^.,]+)/g);
 	for (const match of copyrightMatches) {
 		const types = match[1].split(/[&+]/).map(cleanType);
 		results.push({
