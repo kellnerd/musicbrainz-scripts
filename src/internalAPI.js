@@ -2,7 +2,7 @@ import { createRecordMapper } from './createRecordMapper.js';
 
 /**
  * Fetches the entity with the given MBID from the internal API ws/js.
- * @param {string} gid MBID of the entity.
+ * @param {MB.MBID} gid MBID of the entity.
  * @returns {Promise<MB.RE.TargetEntity>}
  */
 export async function fetchEntity(gid) {
