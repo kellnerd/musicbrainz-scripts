@@ -1,7 +1,7 @@
 import { parseCopyrightNotice } from '../src/parseCopyrightNotice.js';
 import { assertFunction } from '../tools/test.js';
 
-/** @type {Array<[string, import('../src/parseCopyrightNotice.js').CopyrightData]>} */
+/** @type {Array<[string, import('../src/parseCopyrightNotice.js').CopyrightData[]]>} */
 const copyrightTestCases = [
 	/* simple copyrights */
 	['© 2021 Universal Music New Zealand Limited', [{
@@ -133,6 +133,7 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['distributed by'],
 	}]],
+	// other order would drop the point from 'Inc': '℗ 2011 The Weeknd XO, Inc. Distributed By Republic Records.'
 ];
 
 export default function testCopyrightParser() {
