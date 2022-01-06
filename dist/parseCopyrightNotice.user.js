@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.5
+// @version      2022.1.6
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -165,7 +165,7 @@
 				'licensed from': 712,
 				'licensed to': 833,
 				'distributed by': 361,
-				'marketed by': 848
+				'marketed by': 848,
 			}
 		}
 	};
@@ -227,7 +227,7 @@
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
 	 * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
 	 * Automatically chooses the first search result and accepts the dialog in automatic mode.
-	 * @param {CopyrightData[]} data List of copyright information.
+	 * @param {import('./parseCopyrightNotice.js').CopyrightData[]} data List of copyright information.
 	 * @param {boolean} [automaticMode] Automatic mode, disabled by default.
 	 */
 	async function addCopyrightRelationships(data, automaticMode = false) {
@@ -324,7 +324,7 @@
 	const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
 
 	const copyrightPattern = new RegExp(
-		/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
+		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'g');
 
 	const legalInfoPattern = new RegExp(
 		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
@@ -346,11 +346,14 @@
 
 		const copyrightMatches = text.matchAll(copyrightPattern);
 		for (const match of copyrightMatches) {
-			const types = match[1].split(/[&+]/).map(cleanType);
-			results.push({
-				name: match[3].trim(),
-				types,
-				year: match[2],
+			const names = match[3].split(/\/(?=\w{2})/g).map((name) => name.trim());
+			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
+			names.forEach((name) => {
+				results.push({
+					name,
+					types,
+					year: match[2],
+				});
 			});
 		}
 
