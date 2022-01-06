@@ -28,6 +28,11 @@ const copyrightTestCases = [
 		types: ['℗', '©'],
 		year: '2021',
 	}]],
+	['℗© 1974 Asylum Records', [{
+		name: 'Asylum Records',
+		types: ['℗', '©'],
+		year: '1974',
+	}]],
 
 	/* combined (P) & (C) copyright without date */
 	['℗ & © «Rare»', [{
