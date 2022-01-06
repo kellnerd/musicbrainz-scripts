@@ -48,6 +48,27 @@ const copyrightTestCases = [
 		year: '2017',
 	}]],
 
+	/* copyright shared by multiple labels */
+	['℗ «2012 Shady Records/Aftermath Records/Interscope Records»', [{
+		name: 'Shady Records',
+		types: ['℗'],
+		year: '2012',
+	}, {
+		name: 'Aftermath Records',
+		types: ['℗'],
+		year: '2012',
+	}, {
+		name: 'Interscope Records',
+		types: ['℗'],
+		year: '2012',
+	}]],
+	/* only one label, name contains a slash */
+	['© «1983 Universal Music A/S»', [{
+		name: 'Universal Music A/S',
+		types: ['©'],
+		year: '1983',
+	}]],
+
 	/* copyright & legal information */
 	['℗ «2017 Elektra Records. All Rights Reserved. Marketed by Rhino Entertainment Company, a Warner Music Group Company»', [{
 		name: 'Elektra Records',

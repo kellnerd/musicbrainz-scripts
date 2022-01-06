@@ -25,11 +25,14 @@ export function parseCopyrightNotice(text) {
 
 	const copyrightMatches = text.matchAll(copyrightPattern);
 	for (const match of copyrightMatches) {
+		const names = match[3].split(/\/(?=\w{2})/g).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
-		results.push({
-			name: match[3].trim(),
-			types,
-			year: match[2],
+		names.forEach((name) => {
+			results.push({
+				name,
+				types,
+				year: match[2],
+			});
 		});
 	}
 
