@@ -3,7 +3,7 @@ import { transform } from './transformInputValues.js';
 const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
 
 const copyrightPattern = new RegExp(
-	/(℗\s*[&+]\s*©|[©℗])\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
+	/([©℗](?:\s*[&+]\s*[©℗])?)\s*(\d+)?\s+/.source + labelNamePattern.source, 'g');
 
 const legalInfoPattern = new RegExp(
 	/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
