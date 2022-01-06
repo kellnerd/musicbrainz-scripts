@@ -82,6 +82,13 @@ const copyrightTestCases = [
 		types: ['licensed to'],
 	}]],
 
+	/* release label between copyright symbol and year */
+	['℗Motown Records; 2021 UMG Recordings, Inc.', [{
+		name: 'UMG Recordings, Inc.',
+		types: ['℗'],
+		year: '2021',
+	}]],
+
 	/* distribution & marketing */
 	['Distributed By Republic Records.', [{
 		name: 'Republic Records',
