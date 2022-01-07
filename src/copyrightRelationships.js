@@ -18,6 +18,8 @@ import {
  * @param {boolean} [automaticMode] Automatic mode, disabled by default.
  */
 export async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
+	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
+
 	for (const copyrightItem of copyrightInfo) {
 		const entityType = 'label';
 		const releaseRelTypes = LINK_TYPES.release[entityType];
@@ -43,7 +45,6 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 			targetEntity = await fillAndProcessDialog(dialog, copyrightItem, releaseRelTypes[type], targetEntity);
 
 			// also add phonographic copyright rels to all selected recordings
-			const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 			if (type === '℗' && selectedRecordings.length) {
 				const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
 				targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, recordingRelTypes[type], targetEntity);
