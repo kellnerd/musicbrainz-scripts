@@ -1,6 +1,7 @@
 /**
  * - Extracts all copyright and legal information from the given text.
  * - Assists the user to create release-label relationships for these.
+ * - Also creates phonographic copyright relationships for all selected recordings (userscript only).
  */
 
 import { parseCopyrightNotice } from '../parseCopyrightNotice.js';

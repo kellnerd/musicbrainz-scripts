@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.7
+// @version      2022.1.7.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -166,14 +166,19 @@
 				'licensed to': 833,
 				'distributed by': 361,
 				'marketed by': 848,
-			}
-		}
+			},
+		},
+		recording: {
+			label: {
+				'℗': 867,
+			},
+		},
 	};
 
 	/**
 	 * Creates a dialog to add a relationship to the currently edited source entity.
 	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
-	 * @returns {MB.RE.Dialog} Pre-filled "Add relationship" dialog object.
+	 * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
 	 */
 	function createAddRelationshipDialog(targetEntity) {
 		const viewModel = MB.sourceRelationshipEditor
@@ -182,6 +187,21 @@
 		return new MB.relationshipEditor.UI.AddDialog({
 			viewModel,
 			source: viewModel.source,
+			target: targetEntity,
+		});
+	}
+
+	/**
+	 * Creates a dialog to batch-add relationships to the given source entities of the currently edited release.
+	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
+	 * @param {MB.RE.TargetEntity[]} sourceEntities Entities to which the relationships should be added.
+	 * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
+	 */
+	function createBatchAddRelationshipsDialog(targetEntity, sourceEntities) {
+		const viewModel = MB.releaseRelationshipEditor;
+		return new MB.relationshipEditor.UI.BatchRelationshipDialog({
+			viewModel,
+			sources: sourceEntities,
 			target: targetEntity,
 		});
 	}
@@ -227,13 +247,14 @@
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
 	 * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
 	 * Automatically chooses the first search result and accepts the dialog in automatic mode.
-	 * @param {import('./parseCopyrightNotice.js').CopyrightData[]} data List of copyright information.
+	 * @param {CopyrightItem[]} copyrightInfo List of copyright items.
 	 * @param {boolean} [automaticMode] Automatic mode, disabled by default.
 	 */
-	async function addCopyrightRelationships(data, automaticMode = false) {
-		for (const entry of data) {
+	async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
+		for (const copyrightItem of copyrightInfo) {
 			const entityType = 'label';
-			const relTypes = LINK_TYPES.release[entityType];
+			const releaseRelTypes = LINK_TYPES.release[entityType];
+			const recordingRelTypes = LINK_TYPES.recording[entityType];
 
 			/**
 			 * There are multiple ways to fill the relationship's target entity:
@@ -241,39 +262,63 @@
 			 * (2) Select the first search result for the name (in automatic mode).
 			 * (3) Just fill in the name and let the user select an entity (in manual mode).
 			 */
-			const targetMBID = await nameToMBIDCache.get(entityType, entry.name); // (1a)
+			const targetMBID = await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
 			let targetEntity = targetMBID
 				? await entityCache.get(targetMBID) // (1b)
 				: MB.entity(automaticMode
-					? (await searchEntity(entityType, entry.name))[0] // (2a)
-					: { name: entry.name, entityType } // (3a)
+					? (await searchEntity(entityType, copyrightItem.name))[0] // (2a)
+					: { name: copyrightItem.name, entityType } // (3a)
 				);
 
-			for (const type of entry.types) {
+			for (const type of copyrightItem.types) {
+				// add all copyright rels to the release
 				const dialog = createAddRelationshipDialog(targetEntity);
-				const rel = dialog.relationship();
-				rel.linkTypeID(relTypes[type]);
-				rel.entity0_credit(entry.name);
-				if (entry.year) {
-					rel.begin_date.year(entry.year);
-					rel.end_date.year(entry.year);
-				}
+				targetEntity = await fillAndProcessDialog(dialog, copyrightItem, releaseRelTypes[type], targetEntity);
 
-				if (targetMBID || automaticMode) { // (1c) & (2b)
-					dialog.accept();
-				} else { // (3b)
-					openDialogAndTriggerAutocomplete(dialog);
-					await closingDialog(dialog);
-
-					// remember the entity which the user has chosen for the given name
-					targetEntity = getTargetEntity(dialog);
-					if (targetEntity.gid) {
-						nameToMBIDCache.set([entityType, entry.name], targetEntity.gid);
-					}
+				// also add phonographic copyright rels to all selected recordings
+				const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
+				if (type === '℗' && selectedRecordings.length) {
+					const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
+					targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, recordingRelTypes[type], targetEntity);
 				}
 			}
 		}
+
+		/**
+		 * @param {MB.RE.Dialog} dialog 
+		 * @param {CopyrightItem} copyrightItem 
+		 * @param {number} relTypeId 
+		 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity 
+		 * @returns {Promise<MB.RE.TargetEntity>}
+		 */
+		async function fillAndProcessDialog(dialog, copyrightItem, relTypeId, targetEntity) {
+			const rel = dialog.relationship();
+			rel.linkTypeID(relTypeId);
+			rel.entity0_credit(copyrightItem.name);
+			if (copyrightItem.year) {
+				rel.begin_date.year(copyrightItem.year);
+				rel.end_date.year(copyrightItem.year);
+			}
+
+			if (targetEntity.gid || automaticMode) { // (1c) & (2b)
+				dialog.accept();
+			} else { // (3b)
+				openDialogAndTriggerAutocomplete(dialog);
+				await closingDialog(dialog);
+
+				// remember the entity which the user has chosen for the given name
+				targetEntity = getTargetEntity(dialog);
+				if (targetEntity.gid) {
+					nameToMBIDCache.set([targetEntity.entityType, copyrightItem.name], targetEntity.gid);
+				}
+			}
+			return targetEntity;
+		}
 	}
+
+	/**
+	 * @typedef {import('./parseCopyrightNotice.js').CopyrightItem} CopyrightItem
+	 */
 
 	/**
 	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
@@ -338,12 +383,12 @@
 		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gim');
 
 	/**
-	 * Extracts all copyright data and legal information from the given text.
+	 * Extracts all copyright and legal information from the given text.
 	 * @param {string} text 
 	 */
 	function parseCopyrightNotice(text) {
-		/** @type {CopyrightData[]} */
-		const results = [];
+		/** @type {CopyrightItem[]} */
+		const copyrightInfo = [];
 
 		// standardize copyright notice
 		text = transform(text, [
@@ -357,7 +402,7 @@
 			const names = match[3].split(/\/(?=\w{2})/g).map((name) => name.trim());
 			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
 			names.forEach((name) => {
-				results.push({
+				copyrightInfo.push({
 					name,
 					types,
 					year: match[2],
@@ -367,17 +412,17 @@
 
 		const legalInfoMatches = text.matchAll(legalInfoPattern);
 		for (const match of legalInfoMatches) {
-			results.push({
+			copyrightInfo.push({
 				name: match[2],
 				types: [cleanType(match[1])],
 			});
 		}
 
-		return results;
+		return copyrightInfo;
 	}
 
 	/**
-	 * Cleans and standardizes the given free text type.
+	 * Cleans and standardizes the given free text copyright/legal type.
 	 * @param {string} type 
 	 */
 	function cleanType(type) {
@@ -387,7 +432,7 @@
 	}
 
 	/**
-	 * @typedef {Object} CopyrightData
+	 * @typedef {Object} CopyrightItem
 	 * @property {string} name Name of the copyright owner (label or artist).
 	 * @property {string[]} types Types of copyright or legal information, will be mapped to relationship types.
 	 * @property {string} [year] Numeric year, has to be a string with four digits, otherwise MBS complains.
@@ -400,7 +445,10 @@
 </summary>
 <form>
 	<div class="row">
-		<textarea name="credit-input" id="credit-input" cols="80" rows="10"></textarea>
+		<textarea name="credit-input" id="credit-input" cols="80" rows="10" placeholder="Paste credits here"></textarea>
+	</div>
+	<div class="row">
+		<p>Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).</p>
 	</div>
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
@@ -419,9 +467,9 @@
 			const textarea = dom('credit-input');
 			const input = textarea.value.trim();
 			if (input) {
-				const copyrightData = parseCopyrightNotice(input);
+				const copyrightInfo = parseCopyrightNotice(input);
 				const automaticMode = event.altKey;
-				await addCopyrightRelationships(copyrightData, automaticMode);
+				await addCopyrightRelationships(copyrightInfo, automaticMode);
 				addMessageToEditNote(input);
 				nameToMBIDCache.store();
 			}
