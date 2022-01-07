@@ -25,7 +25,7 @@ export function parseCopyrightNotice(text) {
 
 	const copyrightMatches = text.matchAll(copyrightPattern);
 	for (const match of copyrightMatches) {
-		const names = match[3].split(/\/(?=\w{2})/g).map((name) => name.trim());
+		const names = match[3].split(/\/(?=\s|\w{2})/g).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
 		names.forEach((name) => {
 			copyrightInfo.push({
