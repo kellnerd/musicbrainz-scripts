@@ -9,6 +9,7 @@ namespace MB {
 		'place',
 		'release',
 		'release_group',
+		'recording',
 		'series',
 		'url',
 		'work',
