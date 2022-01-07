@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.6
+// @version      2022.1.7
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -276,6 +276,14 @@
 	}
 
 	/**
+	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
+	 * @param {string} elementId String that specifies the ID value.
+	 */
+	function dom(elementId) {
+		return document.getElementById(elementId);
+	}
+
+	/**
 	 * Adds the given message and a footer for the active userscript to the edit note.
 	 * @param {string} message Edit note message.
 	 */
@@ -324,10 +332,10 @@
 	const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
 
 	const copyrightPattern = new RegExp(
-		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'g');
+		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
 
 	const legalInfoPattern = new RegExp(
-		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gi');
+		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gim');
 
 	/**
 	 * Extracts all copyright data and legal information from the given text.
@@ -385,27 +393,42 @@
 	 * @property {string} [year] Numeric year, has to be a string with four digits, otherwise MBS complains.
 	 */
 
-	const addIcon = $('img', '.add-rel.btn').attr('src');
-
-	const parseCopyrightButton =
-`<span class="add-rel btn" id="parse-copyright" title="ALT key for automatic matching">
-	<img class="bottom" src="${addIcon}">
-	Parse copyright notice
-</span>`	;
+	const creditParserUI =
+`<details id="credit-parser">
+<summary style="color: #EB743B; cursor: pointer;">
+	<h2 style="display: inline;">Credit Parser</h2>
+</summary>
+<form>
+	<div class="row">
+		<textarea name="credit-input" id="credit-input" cols="80" rows="10"></textarea>
+	</div>
+	<div class="row">
+		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
+		<label class="inline" for="remove-parsed-lines">Remove parsed lines</label>
+	</div>
+	<div class="row buttons">
+		<button type="button" id="parse-copyright">Parse copyright notice</button>
+	</div>
+</form>
+</details>`	;
 
 	function buildUI() {
-		$(parseCopyrightButton)
-			.on('click', async (event) => {
-				const input = prompt('Copyright notice:');
-				if (input) {
-					const copyrightData = parseCopyrightNotice(input);
-					const automaticMode = event.altKey;
-					await addCopyrightRelationships(copyrightData, automaticMode);
-					addMessageToEditNote(input);
-					nameToMBIDCache.store();
-				}
-			})
-			.appendTo('#release-rels');
+		dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+		dom('parse-copyright').addEventListener('click', async (event) => {
+			/** @type {HTMLTextAreaElement} */
+			const textarea = dom('credit-input');
+			const input = textarea.value.trim();
+			if (input) {
+				const copyrightData = parseCopyrightNotice(input);
+				const automaticMode = event.altKey;
+				await addCopyrightRelationships(copyrightData, automaticMode);
+				addMessageToEditNote(input);
+				nameToMBIDCache.store();
+			}
+			if (dom('remove-parsed-lines').checked) {
+				textarea.value = '';
+			}
+		});
 	}
 
 	nameToMBIDCache.load();
