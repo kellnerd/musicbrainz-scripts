@@ -13,7 +13,10 @@ const creditParserUI =
 </summary>
 <form>
 	<div class="row">
-		<textarea name="credit-input" id="credit-input" cols="80" rows="10"></textarea>
+		<textarea name="credit-input" id="credit-input" cols="80" rows="10" placeholder="Paste credits here"></textarea>
+	</div>
+	<div class="row">
+		<p>Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).</p>
 	</div>
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />

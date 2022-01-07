@@ -6,7 +6,7 @@ import {
 /**
  * Creates a dialog to add a relationship to the currently edited source entity.
  * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
- * @returns {MB.RE.Dialog} Pre-filled "Add relationship" dialog object.
+ * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
  */
 export function createAddRelationshipDialog(targetEntity) {
 	const viewModel = MB.sourceRelationshipEditor
@@ -20,12 +20,26 @@ export function createAddRelationshipDialog(targetEntity) {
 }
 
 /**
+ * Creates a dialog to batch-add relationships to the given source entities of the currently edited release.
+ * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
+ * @param {MB.RE.TargetEntity[]} sourceEntities Entities to which the relationships should be added.
+ * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
+ */
+export function createBatchAddRelationshipsDialog(targetEntity, sourceEntities) {
+	const viewModel = MB.releaseRelationshipEditor;
+	return new MB.relationshipEditor.UI.BatchRelationshipDialog({
+		viewModel,
+		sources: sourceEntities,
+		target: targetEntity,
+	});
+}
+
+/**
  * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
  * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
  * @param {Partial<MB.InternalArtist>} [artistData] Data of the performing artist (optional).
  * @param {string} [roleName] Credited name of the voice actor's role (optional).
  * @param {string} [artistCredit] Credited name of the performing artist (optional).
- * @returns MusicBrainz "Add relationship" dialog.
  */
 export function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 	const viewModel = MB.releaseRelationshipEditor;

@@ -9,6 +9,11 @@ export const LINK_TYPES = {
 			'licensed to': 833,
 			'distributed by': 361,
 			'marketed by': 848,
-		}
-	}
+		},
+	},
+	recording: {
+		label: {
+			'℗': 867,
+		},
+	},
 };

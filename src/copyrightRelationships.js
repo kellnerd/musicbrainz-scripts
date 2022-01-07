@@ -5,6 +5,7 @@ import { LINK_TYPES } from './relationshipData.js';
 import {
 	closingDialog,
 	createAddRelationshipDialog,
+	createBatchAddRelationshipsDialog,
 	getTargetEntity,
 	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
@@ -19,7 +20,8 @@ import {
 export async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
 	for (const copyrightItem of copyrightInfo) {
 		const entityType = 'label';
-		const relTypes = LINK_TYPES.release[entityType];
+		const releaseRelTypes = LINK_TYPES.release[entityType];
+		const recordingRelTypes = LINK_TYPES.recording[entityType];
 
 		/**
 		 * There are multiple ways to fill the relationship's target entity:
@@ -36,8 +38,16 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 			);
 
 		for (const type of copyrightItem.types) {
+			// add all copyright rels to the release
 			const dialog = createAddRelationshipDialog(targetEntity);
-			targetEntity = await fillAndProcessDialog(dialog, copyrightItem, relTypes[type], targetEntity);
+			targetEntity = await fillAndProcessDialog(dialog, copyrightItem, releaseRelTypes[type], targetEntity);
+
+			// also add phonographic copyright rels to all selected recordings
+			const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
+			if (type === '℗' && selectedRecordings.length) {
+				const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
+				targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, recordingRelTypes[type], targetEntity);
+			}
 		}
 	}
 
