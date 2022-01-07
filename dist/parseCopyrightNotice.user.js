@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.7.2
+// @version      2022.1.8
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -8,7 +8,8 @@
 // @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
-// @grant        none
+// @grant        GM.getValue
+// @grant        GM.setValue
 // @run-at       document-idle
 // @match        *://*.musicbrainz.org/release/*/edit-relationships
 // ==/UserScript==
@@ -251,6 +252,8 @@
 	 * @param {boolean} [automaticMode] Automatic mode, disabled by default.
 	 */
 	async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
+		const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
+
 		for (const copyrightItem of copyrightInfo) {
 			const entityType = 'label';
 			const releaseRelTypes = LINK_TYPES.release[entityType];
@@ -276,7 +279,6 @@
 				targetEntity = await fillAndProcessDialog(dialog, copyrightItem, releaseRelTypes[type], targetEntity);
 
 				// also add phonographic copyright rels to all selected recordings
-				const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 				if (type === '℗' && selectedRecordings.length) {
 					const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
 					targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, recordingRelTypes[type], targetEntity);
@@ -399,7 +401,7 @@
 
 		const copyrightMatches = text.matchAll(copyrightPattern);
 		for (const match of copyrightMatches) {
-			const names = match[3].split(/\/(?=\w{2})/g).map((name) => name.trim());
+			const names = match[3].split(/\/(?=\s|\w{2})/g).map((name) => name.trim());
 			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
 			names.forEach((name) => {
 				copyrightInfo.push({
@@ -438,6 +440,47 @@
 	 * @property {string} [year] Numeric year, has to be a string with four digits, otherwise MBS complains.
 	 */
 
+	/**
+	 * Persists the desired attribute of the given element across page loads and origins.
+	 * @param {HTMLElement} element 
+	 * @param {keyof HTMLElement} attribute 
+	 * @param {keyof HTMLElementEventMap} eventType
+	 */
+	async function persistElement(element, attribute, eventType) {
+		if (!element.id) {
+			throw new Error('Can not persist an element without ID');
+		}
+
+		const key = ['persist', element.id, attribute].join('.');
+
+		// initialize attribute
+		const persistedValue = await GM.getValue(key);
+		if (persistedValue) {
+			element[attribute] = persistedValue;
+		}
+
+		// persist attribute once the event occurs
+		element.addEventListener(eventType, () => {
+			GM.setValue(key, element[attribute]);
+		});
+	}
+
+	/**
+	 * Persists the state of the checkbox with the given ID across page loads and origins.
+	 * @param {string} id 
+	 */
+	function persistCheckbox(id) {
+		return persistElement(dom(id), 'checked', 'change');
+	}
+
+	/**
+	 * Persists the state of the collapsible details container with the given ID across page loads and origins.
+	 * @param {string} id 
+	 */
+	function persistDetails(id) {
+		return persistElement(dom(id), 'open', 'toggle');
+	}
+
 	const creditParserUI =
 `<details id="credit-parser">
 <summary style="color: #EB743B; cursor: pointer;">
@@ -462,6 +505,10 @@
 
 	function buildUI() {
 		dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+
+		persistDetails('credit-parser');
+		persistCheckbox('remove-parsed-lines');
+
 		dom('parse-copyright').addEventListener('click', async (event) => {
 			/** @type {HTMLTextAreaElement} */
 			const textarea = dom('credit-input');
