@@ -69,6 +69,17 @@ const copyrightTestCases = [
 		year: '1983',
 	}]],
 
+	/* multi-line copyright input */
+	['© «2017 The Media Champ»\n℗ «2003 The Media Champ»', [{
+		name: 'The Media Champ',
+		types: ['©'],
+		year: '2017',
+	}, {
+		name: 'The Media Champ',
+		types: ['℗'],
+		year: '2003',
+	}]],
+
 	/* copyright & legal information */
 	['℗ «2017 Elektra Records. All Rights Reserved. Marketed by Rhino Entertainment Company, a Warner Music Group Company»', [{
 		name: 'Elektra Records',
