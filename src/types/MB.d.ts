@@ -65,9 +65,46 @@ namespace MB {
 		isni_codes: []; // TODO: always empty, maybe a bug?
 	};
 
+	type InternalArtistCredit = {
+		entityType: 'artist_credit';
+		/** Numeric string. */
+		id: string;
+		editsPending: boolean;
+		names: Array<{
+			joinPhrase: string;
+			name: string;
+			artist: InternalArtist;
+		}>;
+	};
+
 	/** Release object as returned by `/ws/js/entity/MBID`. */
 	type InternalRelease = InternalEntity & {
 		entityType: 'release';
+		// TODO: incomplete
+	};
+
+	/** Recording object as returned by `/ws/js/entity/MBID`. */
+	type InternalRecording = InternalEntity & {
+		entityType: 'recording';
+		artist: string;
+		artistCredit: InternalArtistCredit;
+		/** Recording length in ms. */
+		length: number;
+		first_release_date: null; // TODO: always null!?
+		isrcs: Array<{
+			entityType: 'isrc';
+			id: number;
+			isrc: string;
+			recording_id: number;
+			editsPending: boolean;
+		}>;
+		related_works: []; // TODO: always empty!?
+		video: boolean;
+	};
+
+	/** Work object as returned by `/ws/js/entity/MBID`. */
+	type InternalWork = InternalEntity & {
+		entityType: 'work';
 		// TODO: incomplete
 	};
 
@@ -226,8 +263,8 @@ namespace MB {
 			BatchCreateWorksDialog: class;
 			BatchRelationshipDialog: class;
 			EditDialog: class;
-			checkedRecordings: function;
-			checkedWorks: function;
+			checkedRecordings: Getter<TargetRecording[]>;
+			checkedWorks: Getter<TargetWork[]>;
 		};
 
 		// TODO: imprecise
@@ -260,6 +297,8 @@ namespace MB {
 		};
 		type TargetEntity = Target<InternalEntity>;
 		type TargetArtist = Target<InternalArtist>;
+		type TargetRecording = Target<InternalRecording>;
+		type TargetWork = Target<InternalWork>;
 
 		type Minimal<T extends InternalEntity> = Partial<T> & {
 			entityType: EntityType;
