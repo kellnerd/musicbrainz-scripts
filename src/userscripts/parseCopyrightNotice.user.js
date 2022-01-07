@@ -1,31 +1,47 @@
 import { addCopyrightRelationships } from '../copyrightRelationships.js';
+import { dom } from '../dom.js';
 import { addMessageToEditNote } from '../editNote.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import {
 	parseCopyrightNotice,
 } from '../parseCopyrightNotice.js';
 
-const addIcon = $('img', '.add-rel.btn').attr('src');
-
-const parseCopyrightButton =
-`<span class="add-rel btn" id="parse-copyright" title="ALT key for automatic matching">
-	<img class="bottom" src="${addIcon}">
-	Parse copyright notice
-</span>`;
+const creditParserUI =
+`<details id="credit-parser">
+<summary style="color: #EB743B; cursor: pointer;">
+	<h2 style="display: inline;">Credit Parser</h2>
+</summary>
+<form>
+	<div class="row">
+		<textarea name="credit-input" id="credit-input" cols="80" rows="10"></textarea>
+	</div>
+	<div class="row">
+		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
+		<label class="inline" for="remove-parsed-lines">Remove parsed lines</label>
+	</div>
+	<div class="row buttons">
+		<button type="button" id="parse-copyright">Parse copyright notice</button>
+	</div>
+</form>
+</details>`;
 
 function buildUI() {
-	$(parseCopyrightButton)
-		.on('click', async (event) => {
-			const input = prompt('Copyright notice:');
-			if (input) {
-				const copyrightData = parseCopyrightNotice(input);
-				const automaticMode = event.altKey;
-				await addCopyrightRelationships(copyrightData, automaticMode);
-				addMessageToEditNote(input);
-				nameToMBIDCache.store();
-			}
-		})
-		.appendTo('#release-rels');
+	dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+	dom('parse-copyright').addEventListener('click', async (event) => {
+		/** @type {HTMLTextAreaElement} */
+		const textarea = dom('credit-input');
+		const input = textarea.value.trim();
+		if (input) {
+			const copyrightData = parseCopyrightNotice(input);
+			const automaticMode = event.altKey;
+			await addCopyrightRelationships(copyrightData, automaticMode);
+			addMessageToEditNote(input);
+			nameToMBIDCache.store();
+		}
+		if (dom('remove-parsed-lines').checked) {
+			textarea.value = '';
+		}
+	});
 }
 
 nameToMBIDCache.load();
