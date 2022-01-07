@@ -1,3 +1,4 @@
+
 /**
  * Creates a DOM element from the given HTML fragment.
  * @param {string} html HTML fragment.
