@@ -5,6 +5,10 @@ import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import {
 	parseCopyrightNotice,
 } from '../parseCopyrightNotice.js';
+import {
+	persistCheckbox,
+	persistDetails,
+} from '../persistElement.js';
 
 const creditParserUI =
 `<details id="credit-parser">
@@ -30,6 +34,10 @@ const creditParserUI =
 
 function buildUI() {
 	dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+
+	persistDetails('credit-parser');
+	persistCheckbox('remove-parsed-lines');
+
 	dom('parse-copyright').addEventListener('click', async (event) => {
 		/** @type {HTMLTextAreaElement} */
 		const textarea = dom('credit-input');
