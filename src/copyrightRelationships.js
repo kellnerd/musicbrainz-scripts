@@ -13,7 +13,7 @@ import {
  * Creates and fills an "Add relationship" dialog for each piece of copyright information.
  * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
  * Automatically chooses the first search result and accepts the dialog in automatic mode.
- * @param {import('./parseCopyrightNotice.js').CopyrightData[]} data List of copyright information.
+ * @param {CopyrightData[]} data List of copyright information.
  * @param {boolean} [automaticMode] Automatic mode, disabled by default.
  */
 export async function addCopyrightRelationships(data, automaticMode = false) {
@@ -37,26 +37,42 @@ export async function addCopyrightRelationships(data, automaticMode = false) {
 
 		for (const type of entry.types) {
 			const dialog = createAddRelationshipDialog(targetEntity);
-			const rel = dialog.relationship();
-			rel.linkTypeID(relTypes[type]);
-			rel.entity0_credit(entry.name);
-			if (entry.year) {
-				rel.begin_date.year(entry.year);
-				rel.end_date.year(entry.year);
-			}
-
-			if (targetMBID || automaticMode) { // (1c) & (2b)
-				dialog.accept();
-			} else { // (3b)
-				openDialogAndTriggerAutocomplete(dialog);
-				await closingDialog(dialog);
-
-				// remember the entity which the user has chosen for the given name
-				targetEntity = getTargetEntity(dialog);
-				if (targetEntity.gid) {
-					nameToMBIDCache.set([entityType, entry.name], targetEntity.gid);
-				}
-			}
+			targetEntity = await fillAndProcessDialog(dialog, entry, relTypes[type], targetEntity);
 		}
 	}
+
+	/**
+	 * @param {MB.RE.Dialog} dialog 
+	 * @param {CopyrightData} entry 
+	 * @param {number} relTypeId 
+	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity 
+	 * @returns {Promise<MB.RE.TargetEntity>}
+	 */
+	async function fillAndProcessDialog(dialog, entry, relTypeId, targetEntity) {
+		const rel = dialog.relationship();
+		rel.linkTypeID(relTypeId);
+		rel.entity0_credit(entry.name);
+		if (entry.year) {
+			rel.begin_date.year(entry.year);
+			rel.end_date.year(entry.year);
+		}
+
+		if (targetEntity.gid || automaticMode) { // (1c) & (2b)
+			dialog.accept();
+		} else { // (3b)
+			openDialogAndTriggerAutocomplete(dialog);
+			await closingDialog(dialog);
+
+			// remember the entity which the user has chosen for the given name
+			targetEntity = getTargetEntity(dialog);
+			if (targetEntity.gid) {
+				nameToMBIDCache.set([targetEntity.entityType, entry.name], targetEntity.gid);
+			}
+		}
+		return targetEntity;
+	}
 }
+
+/**
+ * @typedef {import('./parseCopyrightNotice.js').CopyrightData} CopyrightData
+ */
