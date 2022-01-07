@@ -32,9 +32,9 @@ function buildUI() {
 		const textarea = dom('credit-input');
 		const input = textarea.value.trim();
 		if (input) {
-			const copyrightData = parseCopyrightNotice(input);
+			const copyrightInfo = parseCopyrightNotice(input);
 			const automaticMode = event.altKey;
-			await addCopyrightRelationships(copyrightData, automaticMode);
+			await addCopyrightRelationships(copyrightInfo, automaticMode);
 			addMessageToEditNote(input);
 			nameToMBIDCache.store();
 		}

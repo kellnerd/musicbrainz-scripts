@@ -1,5 +1,5 @@
 /**
- * - Extracts all copyright data and legal information from the given text.
+ * - Extracts all copyright and legal information from the given text.
  * - Assists the user to create release-label relationships for these.
  */
 
@@ -16,21 +16,21 @@ import {
  * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
  * 
  * Light version without automatic mode and caching, to reduce bookmarklet size.
- * @param {CopyrightData[]} data List of copyright information.
+ * @param {import('../parseCopyrightNotice.js').CopyrightItem[]} copyrightInfo List of copyright items.
  */
-async function addCopyrightRelationships(data) {
-	for (const entry of data) {
+async function addCopyrightRelationships(copyrightInfo) {
+	for (const copyrightItem of copyrightInfo) {
 		const entityType = 'label';
 		const relTypes = LINK_TYPES.release[entityType];
-		const targetEntity = MB.entity({ name: entry.name, entityType });
-		for (const type of entry.types) {
+		const targetEntity = MB.entity({ name: copyrightItem.name, entityType });
+		for (const type of copyrightItem.types) {
 			const dialog = createAddRelationshipDialog(targetEntity);
 			const rel = dialog.relationship();
 			rel.linkTypeID(relTypes[type]);
-			rel.entity0_credit(entry.name);
-			if (entry.year) {
-				rel.begin_date.year(entry.year);
-				rel.end_date.year(entry.year);
+			rel.entity0_credit(copyrightItem.name);
+			if (copyrightItem.year) {
+				rel.begin_date.year(copyrightItem.year);
+				rel.end_date.year(copyrightItem.year);
 			}
 
 			openDialogAndTriggerAutocomplete(dialog);
@@ -42,6 +42,6 @@ async function addCopyrightRelationships(data) {
 const input = prompt('Copyright notice:');
 
 if (input) {
-	const copyrightData = parseCopyrightNotice(input);
-	addCopyrightRelationships(copyrightData);
+	const copyrightInfo = parseCopyrightNotice(input);
+	addCopyrightRelationships(copyrightInfo);
 }

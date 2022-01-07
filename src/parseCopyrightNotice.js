@@ -9,12 +9,12 @@ const legalInfoPattern = new RegExp(
 	/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gim');
 
 /**
- * Extracts all copyright data and legal information from the given text.
+ * Extracts all copyright and legal information from the given text.
  * @param {string} text 
  */
 export function parseCopyrightNotice(text) {
-	/** @type {CopyrightData[]} */
-	const results = [];
+	/** @type {CopyrightItem[]} */
+	const copyrightInfo = [];
 
 	// standardize copyright notice
 	text = transform(text, [
@@ -28,7 +28,7 @@ export function parseCopyrightNotice(text) {
 		const names = match[3].split(/\/(?=\w{2})/g).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
 		names.forEach((name) => {
-			results.push({
+			copyrightInfo.push({
 				name,
 				types,
 				year: match[2],
@@ -38,17 +38,17 @@ export function parseCopyrightNotice(text) {
 
 	const legalInfoMatches = text.matchAll(legalInfoPattern);
 	for (const match of legalInfoMatches) {
-		results.push({
+		copyrightInfo.push({
 			name: match[2],
 			types: [cleanType(match[1])],
 		});
 	}
 
-	return results;
+	return copyrightInfo;
 }
 
 /**
- * Cleans and standardizes the given free text type.
+ * Cleans and standardizes the given free text copyright/legal type.
  * @param {string} type 
  */
 function cleanType(type) {
@@ -58,7 +58,7 @@ function cleanType(type) {
 }
 
 /**
- * @typedef {Object} CopyrightData
+ * @typedef {Object} CopyrightItem
  * @property {string} name Name of the copyright owner (label or artist).
  * @property {string[]} types Types of copyright or legal information, will be mapped to relationship types.
  * @property {string} [year] Numeric year, has to be a string with four digits, otherwise MBS complains.
