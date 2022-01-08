@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.8.2
+// @version      2022.1.8.3
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -549,7 +549,7 @@ textarea#credit-input {
 				addMessageToEditNote(parsedLines.join('\n'));
 			}
 
-			if (removeParsedLines.checked && skippedLines.length) {
+			if (removeParsedLines.checked) {
 				creditInput.value = skippedLines.join('\n');
 				creditInput.dispatchEvent(new Event('input'));
 			}
