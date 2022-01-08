@@ -116,7 +116,7 @@ export function addParserButton(label, parser, description) {
 			addMessageToEditNote(parsedLines.join('\n'));
 		}
 
-		if (removeParsedLines.checked && skippedLines.length) {
+		if (removeParsedLines.checked) {
 			creditInput.value = skippedLines.join('\n');
 			creditInput.dispatchEvent(new Event('input'));
 		}
