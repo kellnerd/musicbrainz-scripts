@@ -1,5 +1,5 @@
 import { addCopyrightRelationships } from '../copyrightRelationships.js';
-import { dom } from '../dom.js';
+import { dom, injectStylesheet } from '../dom.js';
 import { addMessageToEditNote } from '../editNote.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import {
@@ -12,8 +12,8 @@ import {
 
 const creditParserUI =
 `<details id="credit-parser">
-<summary style="color: #EB743B; cursor: pointer;">
-	<h2 style="display: inline;">Credit Parser</h2>
+<summary>
+	<h2>Credit Parser</h2>
 </summary>
 <form>
 	<div class="row">
@@ -32,8 +32,18 @@ const creditParserUI =
 </form>
 </details>`;
 
+const css =
+`details#credit-parser > summary {
+	cursor: pointer;
+	display: block;
+}
+details#credit-parser > summary > h2 {
+	display: list-item;
+}`;
+
 function buildUI() {
 	dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+	injectStylesheet(css, 'credit-parser');
 
 	persistDetails('credit-parser');
 	persistCheckbox('remove-parsed-lines');
