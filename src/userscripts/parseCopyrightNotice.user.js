@@ -17,7 +17,7 @@ const creditParserUI =
 </summary>
 <form>
 	<div class="row">
-		<textarea name="credit-input" id="credit-input" cols="80" rows="10" placeholder="Paste credits here"></textarea>
+		<textarea name="credit-input" id="credit-input" cols="120" rows="1" placeholder="Paste credits here…"></textarea>
 	</div>
 	<div class="row">
 		<p>Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).</p>
@@ -39,15 +39,26 @@ const css =
 }
 details#credit-parser > summary > h2 {
 	display: list-item;
+}
+textarea#credit-input {
+	overflow-y: hidden;
 }`;
 
 function buildUI() {
 	dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
 	injectStylesheet(css, 'credit-parser');
 
+	// persist the state of the UI
 	persistDetails('credit-parser');
 	persistCheckbox('remove-parsed-lines');
 
+	// auto-resize the credit textarea (https://stackoverflow.com/a/25621277)
+	dom('credit-input').addEventListener('input', function () {
+		this.style.height = 'auto';
+		this.style.height = this.scrollHeight + 'px';
+	});
+
+	// register button handlers
 	dom('parse-copyright').addEventListener('click', async (event) => {
 		/** @type {HTMLTextAreaElement} */
 		const textarea = dom('credit-input');
@@ -61,6 +72,7 @@ function buildUI() {
 		}
 		if (dom('remove-parsed-lines').checked) {
 			textarea.value = '';
+			textarea.dispatchEvent(new Event('input'));
 		}
 	});
 }
