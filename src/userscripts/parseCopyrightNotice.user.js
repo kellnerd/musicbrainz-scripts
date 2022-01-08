@@ -5,8 +5,8 @@ import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
 
 function buildUI() {
 	buildCreditParserUI();
-	addParserButton('Parse copyright notice', async (credits, event) => {
-		const copyrightInfo = parseCopyrightNotice(credits);
+	addParserButton('Parse copyright notice', async (creditLine, event) => {
+		const copyrightInfo = parseCopyrightNotice(creditLine);
 		if (copyrightInfo.length) {
 			const automaticMode = event.altKey;
 			await addCopyrightRelationships(copyrightInfo, automaticMode);

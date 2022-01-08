@@ -85,8 +85,8 @@ export function addButton(label, clickHandler, description) {
 /**
  * Adds a new parser button with the given label and handler to the credit parser UI.
  * @param {string} label 
- * @param {(credits: string, event: MouseEvent) => Promise<boolean> | boolean} parser
- * Handler which parses the given credits and returns whether it has successful.
+ * @param {(creditLine: string, event: MouseEvent) => Promise<boolean> | boolean} parser
+ * Handler which parses the given credit line and returns whether it was successful.
  * @param {string} [description] Description of the button, shown as tooltip.
  */
 export function addParserButton(label, parser, description) {
@@ -94,16 +94,31 @@ export function addParserButton(label, parser, description) {
 	const removeParsedLines = dom('remove-parsed-lines');
 
 	return addButton(label, async (event, creditInput) => {
-		const credits = creditInput.value.trim();
-		if (credits) {
-			const parserSucceeded = await parser(credits, event);
-			if (parserSucceeded) {
-				addMessageToEditNote(credits);
-				if (removeParsedLines.checked) {
-					creditInput.value = '';
-					creditInput.dispatchEvent(new Event('input'));
-				}
+		const credits = creditInput.value.split('\n').map((line) => line.trim());
+		const parsedLines = [], skippedLines = [];
+
+		for (const line of credits) {
+			// skip empty lines, but keep them for display of skipped lines
+			if (!line) {
+				skippedLines.push(line);
+				continue;
 			}
+
+			const parserSucceeded = await parser(line, event);
+			if (parserSucceeded) {
+				parsedLines.push(line);
+			} else {
+				skippedLines.push(line);
+			}
+		}
+
+		if (parsedLines.length) {
+			addMessageToEditNote(parsedLines.join('\n'));
+		}
+
+		if (removeParsedLines.checked && skippedLines.length) {
+			creditInput.value = skippedLines.join('\n');
+			creditInput.dispatchEvent(new Event('input'));
 		}
 	}, description);
 }
