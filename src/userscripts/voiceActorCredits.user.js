@@ -7,7 +7,7 @@ import {
 import {
 	createVoiceActorDialog,
 } from '../relationshipEditor.js';
-import { seedURLForArtist } from '../seeding.js';
+import { seedURLForEntity } from '../seeding.js';
 import {
 	importVoiceActorsFromDiscogs,
 } from '../voiceActorCredits.js';
@@ -59,7 +59,7 @@ function buildUI() {
 					'Please add the external link',
 					`<a href="${match.externalURL}" target="_blank">${match.externalName}</a>`,
 					'to the matched entity:',
-					`<a href="${seedURLForArtist(match.MBID, match.externalURL, 180, artistSeedNote)}" target="_blank">${match.name}</a>`,
+					`<a href="${seedURLForEntity('artist', match.MBID, match.externalURL, 180, artistSeedNote)}" target="_blank">${match.name}</a>`,
 					match.comment ? `<span class="comment">(<bdi>${match.comment}</bdi>)</span>` : '',
 				].join(' '));
 
