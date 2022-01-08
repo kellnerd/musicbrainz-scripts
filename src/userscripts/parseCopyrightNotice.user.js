@@ -9,9 +9,9 @@ function buildUI() {
 		const copyrightInfo = parseCopyrightNotice(creditLine);
 		if (copyrightInfo.length) {
 			const automaticMode = event.altKey;
-			await addCopyrightRelationships(copyrightInfo, automaticMode);
+			const result = await addCopyrightRelationships(copyrightInfo, automaticMode);
 			nameToMBIDCache.store();
-			return true;
+			return result;
 		} else {
 			return false;
 		}

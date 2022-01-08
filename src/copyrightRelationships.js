@@ -16,9 +16,11 @@ import {
  * Automatically chooses the first search result and accepts the dialog in automatic mode.
  * @param {CopyrightItem[]} copyrightInfo List of copyright items.
  * @param {boolean} [automaticMode] Automatic mode, disabled by default.
+ * @returns Whether a relationships has been added successfully.
  */
 export async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
 	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
+	let addedRelCount = 0;
 
 	for (const copyrightItem of copyrightInfo) {
 		const entityType = 'label';
@@ -52,6 +54,8 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 		}
 	}
 
+	return !!addedRelCount;
+
 	/**
 	 * @param {MB.RE.Dialog} dialog 
 	 * @param {CopyrightItem} copyrightItem 
@@ -70,6 +74,7 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 
 		if (targetEntity.gid || automaticMode) { // (1c) & (2b)
 			dialog.accept();
+			addedRelCount++;
 		} else { // (3b)
 			openDialogAndTriggerAutocomplete(dialog);
 			await closingDialog(dialog);
@@ -78,6 +83,7 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 			targetEntity = getTargetEntity(dialog);
 			if (targetEntity.gid) {
 				nameToMBIDCache.set([targetEntity.entityType, copyrightItem.name], targetEntity.gid);
+				addedRelCount++;
 			}
 		}
 		return targetEntity;
