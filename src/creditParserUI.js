@@ -1,4 +1,10 @@
-import { dom, injectStylesheet } from './dom.js';
+import {
+	createElement,
+	dom,
+	injectStylesheet,
+	qs,
+} from './dom.js';
+import { addMessageToEditNote } from './editNote.js';
 import {
 	persistCheckbox,
 	persistDetails,
@@ -53,4 +59,51 @@ export function buildCreditParserUI() {
 		this.style.height = 'auto';
 		this.style.height = this.scrollHeight + 'px';
 	});
+}
+
+/**
+ * Adds a new button with the given label and click handler to the credit parser UI.
+ * @param {string} label 
+ * @param {(event: MouseEvent, creditInput: HTMLTextAreaElement) => any} clickHandler 
+ * @param {string} [description] Description of the button, shown as tooltip.
+ */
+export function addButton(label, clickHandler, description) {
+	/** @type {HTMLTextAreaElement} */
+	const creditInput = dom('credit-input');
+
+	/** @type {HTMLButtonElement} */
+	const button = createElement(`<button type="button">${label}</button>`);
+	if (description) {
+		button.title = description;
+	}
+
+	button.addEventListener('click', (event) => clickHandler(event, creditInput));
+
+	return qs('#credit-parser .buttons').appendChild(button);
+}
+
+/**
+ * Adds a new parser button with the given label and handler to the credit parser UI.
+ * @param {string} label 
+ * @param {(credits: string, event: MouseEvent) => Promise<boolean> | boolean} parser
+ * Handler which parses the given credits and returns whether it has successful.
+ * @param {string} [description] Description of the button, shown as tooltip.
+ */
+export function addParserButton(label, parser, description) {
+	/** @type {HTMLInputElement} */
+	const removeParsedLines = dom('remove-parsed-lines');
+
+	return addButton(label, async (event, creditInput) => {
+		const credits = creditInput.value.trim();
+		if (credits) {
+			const parserSucceeded = await parser(credits, event);
+			if (parserSucceeded) {
+				addMessageToEditNote(credits);
+				if (removeParsedLines.checked) {
+					creditInput.value = '';
+					creditInput.dispatchEvent(new Event('input'));
+				}
+			}
+		}
+	}, description);
 }
