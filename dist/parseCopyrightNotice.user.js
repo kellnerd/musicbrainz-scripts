@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.8.3
+// @version      2022.1.9
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -480,7 +480,9 @@ textarea#credit-input {
 		// possibly called by multiple userscripts, do not inject the UI again
 		if (dom('credit-parser')) return;
 
-		dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+		// inject credit parser between the sections for track and release relationships,
+		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
+		qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 		injectStylesheet(css, 'credit-parser');
 
 		// persist the state of the UI
@@ -492,12 +494,20 @@ textarea#credit-input {
 			this.style.height = 'auto';
 			this.style.height = this.scrollHeight + 'px';
 		});
+
+		addButton('Load annotation', (creditInput) => {
+			const annotation = MB.releaseRelationshipEditor.source.latest_annotation;
+			if (annotation) {
+				creditInput.value = annotation.text;
+				creditInput.dispatchEvent(new Event('input'));
+			}
+		});
 	}
 
 	/**
 	 * Adds a new button with the given label and click handler to the credit parser UI.
 	 * @param {string} label 
-	 * @param {(event: MouseEvent, creditInput: HTMLTextAreaElement) => any} clickHandler 
+	 * @param {(creditInput: HTMLTextAreaElement, event: MouseEvent) => any} clickHandler 
 	 * @param {string} [description] Description of the button, shown as tooltip.
 	 */
 	function addButton(label, clickHandler, description) {
@@ -510,7 +520,7 @@ textarea#credit-input {
 			button.title = description;
 		}
 
-		button.addEventListener('click', (event) => clickHandler(event, creditInput));
+		button.addEventListener('click', (event) => clickHandler(creditInput, event));
 
 		return qs('#credit-parser .buttons').appendChild(button);
 	}
@@ -526,7 +536,7 @@ textarea#credit-input {
 		/** @type {HTMLInputElement} */
 		const removeParsedLines = dom('remove-parsed-lines');
 
-		return addButton(label, async (event, creditInput) => {
+		return addButton(label, async (creditInput, event) => {
 			const credits = creditInput.value.split('\n').map((line) => line.trim());
 			const parsedLines = [], skippedLines = [];
 
@@ -569,7 +579,7 @@ textarea#credit-input {
 		return value;
 	}
 
-	const labelNamePattern = /(.+?(?:, (?:LLP|Inc\.?))?)(?=,|\.| under |$)/;
+	const labelNamePattern = /(.+?(?:, (?:LLC|LLP|Inc\.?))?)(?=,|\.| under |$)/;
 
 	const copyrightPattern = new RegExp(
 		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
