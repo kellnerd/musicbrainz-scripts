@@ -61,12 +61,20 @@ export function buildCreditParserUI() {
 		this.style.height = 'auto';
 		this.style.height = this.scrollHeight + 'px';
 	});
+
+	addButton('Load annotation', (creditInput) => {
+		const annotation = MB.releaseRelationshipEditor.source.latest_annotation;
+		if (annotation) {
+			creditInput.value = annotation.text;
+			creditInput.dispatchEvent(new Event('input'));
+		}
+	});
 }
 
 /**
  * Adds a new button with the given label and click handler to the credit parser UI.
  * @param {string} label 
- * @param {(event: MouseEvent, creditInput: HTMLTextAreaElement) => any} clickHandler 
+ * @param {(creditInput: HTMLTextAreaElement, event: MouseEvent) => any} clickHandler 
  * @param {string} [description] Description of the button, shown as tooltip.
  */
 export function addButton(label, clickHandler, description) {
@@ -79,7 +87,7 @@ export function addButton(label, clickHandler, description) {
 		button.title = description;
 	}
 
-	button.addEventListener('click', (event) => clickHandler(event, creditInput));
+	button.addEventListener('click', (event) => clickHandler(creditInput, event));
 
 	return qs('#credit-parser .buttons').appendChild(button);
 }
@@ -95,7 +103,7 @@ export function addParserButton(label, parser, description) {
 	/** @type {HTMLInputElement} */
 	const removeParsedLines = dom('remove-parsed-lines');
 
-	return addButton(label, async (event, creditInput) => {
+	return addButton(label, async (creditInput, event) => {
 		const credits = creditInput.value.split('\n').map((line) => line.trim());
 		const parsedLines = [], skippedLines = [];
 
