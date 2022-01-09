@@ -47,7 +47,9 @@ export function buildCreditParserUI() {
 	// possibly called by multiple userscripts, do not inject the UI again
 	if (dom('credit-parser')) return;
 
-	dom('release-rels').insertAdjacentHTML('afterend', creditParserUI);
+	// inject credit parser between the sections for track and release relationships,
+	// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
+	qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 	injectStylesheet(css, 'credit-parser');
 
 	// persist the state of the UI
