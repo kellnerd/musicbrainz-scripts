@@ -128,6 +128,11 @@ const copyrightTestCases = [
 	}]],
 
 	/* labels with company suffixes */
+	['℗ & © «1977 Capitol Records, LLC»', [{
+		name: 'Capitol Records, LLC',
+		types: ['℗', '©'],
+		year: '1977',
+	}]],
 	['© 2021 SSA Recording, LLP, under exclusive license to Republic Records, a division of UMG Recordings, Inc.', [{
 		name: 'SSA Recording, LLP',
 		types: ['©'],
