@@ -149,7 +149,14 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['distributed by'],
 	}]],
-	// other order would drop the point from 'Inc': '℗ 2011 The Weeknd XO, Inc. Distributed By Republic Records.'
+	['℗ 2011 The Weeknd XO, Inc. Distributed By Republic Records.', [{
+		name: 'The Weeknd XO, Inc.',
+		types: ['℗'],
+		year: '2011',
+	}, {
+		name: 'Republic Records',
+		types: ['distributed by'],
+	}]],
 
 	/* region-specific copyright */
 	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
