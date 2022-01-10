@@ -150,6 +150,17 @@ const copyrightTestCases = [
 		types: ['distributed by'],
 	}]],
 	// other order would drop the point from 'Inc': '℗ 2011 The Weeknd XO, Inc. Distributed By Republic Records.'
+
+	/* region-specific copyright */
+	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
+		name: 'Warner Music Nashville LLC',
+		types: ['℗', '©'],
+		year: '2020',
+	}, {
+		name: 'WEA International Inc.',
+		types: ['℗', '©'],
+		year: '2020',
+	}]],
 ];
 
 export default function testCopyrightParser() {

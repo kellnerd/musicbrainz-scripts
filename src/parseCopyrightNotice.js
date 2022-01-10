@@ -1,6 +1,6 @@
 import { transform } from './transformInputValues.js';
 
-const labelNamePattern = /(.+?(?:, (?:LLC|LLP|Inc\.?))?)(?=,|\.| under |$)/;
+const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|Inc\.?))?)(?=,|\.| under |$)/;
 
 const copyrightPattern = new RegExp(
 	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
@@ -21,6 +21,7 @@ export function parseCopyrightNotice(text) {
 		[/\(C\)/gi, '©'],
 		[/\(P\)/gi, '℗'],
 		[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
+		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // region-specific copyright
 	]);
 
 	const copyrightMatches = text.matchAll(copyrightPattern);
