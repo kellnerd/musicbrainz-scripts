@@ -21,7 +21,8 @@ export function parseCopyrightNotice(text) {
 		[/\(C\)/gi, '©'],
 		[/\(P\)/gi, '℗'],
 		[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
-		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // region-specific copyright
+		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
+		[/℗\s*(under )/gi, '$1'], // drop confusingly used ℗ symbols
 	]);
 
 	const copyrightMatches = text.matchAll(copyrightPattern);

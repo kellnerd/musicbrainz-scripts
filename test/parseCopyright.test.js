@@ -176,6 +176,12 @@ const copyrightTestCases = [
 		types: ['℗', '©'],
 		year: '2020',
 	}]],
+
+	/* confusing usage of copyright symbols */
+	['℗ «Under exclusive licence to Parlophone Records Limited»', [{
+		name: 'Parlophone Records Limited',
+		types: ['licensed to'],
+	}]],
 ];
 
 export default function testCopyrightParser() {
