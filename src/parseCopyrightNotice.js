@@ -1,6 +1,6 @@
 import { transform } from './transformInputValues.js';
 
-const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|Inc\.?))?)(?:(?<=\.)|$|(?=,|\.| under ))/;
+const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.| under ))/;
 
 const copyrightPattern = new RegExp(
 	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');

@@ -157,6 +157,14 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['distributed by'],
 	}]],
+	['(P) 2021 Pink Floyd (87) Ltd., under exclusive licence to Sony Music Entertainment', [{
+		name: 'Pink Floyd (87) Ltd.',
+		types: ['℗'],
+		year: '2021',
+	}, {
+		name: 'Sony Music Entertainment',
+		types: ['licensed to'],
+	}]],
 
 	/* region-specific copyright */
 	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
