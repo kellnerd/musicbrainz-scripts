@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.10
+// @version      2022.1.11
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -579,7 +579,7 @@ textarea#credit-input {
 		return value;
 	}
 
-	const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|Inc\.?))?)(?:(?<=\.)|$|(?=,|\.| under ))/;
+	const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.| under ))/;
 
 	const copyrightPattern = new RegExp(
 		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
@@ -600,7 +600,8 @@ textarea#credit-input {
 			[/\(C\)/gi, '©'],
 			[/\(P\)/gi, '℗'],
 			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
-			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // region-specific copyright
+			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
+			[/℗\s*(under )/gi, '$1'], // drop confusingly used ℗ symbols
 		]);
 
 		const copyrightMatches = text.matchAll(copyrightPattern);
