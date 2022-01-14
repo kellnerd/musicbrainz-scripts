@@ -77,6 +77,27 @@ const copyrightTestCases = [
 		types: ['℗'],
 		year: '2012',
 	}]],
+	['© 2016 Pink Floyd Music Ltd. / Pink Floyd (1987) Ltd.', [{
+		name: 'Pink Floyd Music Ltd.',
+		types: ['©'],
+		year: '2016',
+	}, {
+		name: 'Pink Floyd (1987) Ltd.',
+		types: ['©'],
+		year: '2016',
+	}]],
+	['℗ 2016 Pink Floyd Music Ltd. / Pink Floyd (1987) Ltd., marketed and distributed by Parlophone Records Ltd., a Warner Music Group Company', [{
+		name: 'Pink Floyd Music Ltd.',
+		types: ['℗'],
+		year: '2016',
+	}, {
+		name: 'Pink Floyd (1987) Ltd.',
+		types: ['℗'],
+		year: '2016',
+	}, {
+		name: 'Parlophone Records Ltd.',
+		types: ['marketed by', 'distributed by'],
+	}]],
 	/* only one label, name contains a slash */
 	['© «1983 Universal Music A/S»', [{
 		name: 'Universal Music A/S',
