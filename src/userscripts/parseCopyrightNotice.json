@@ -1,7 +1,7 @@
 {
 	"name": "MusicBrainz: Parse copyright notice",
 	"author": "kellnerd",
-	"description": "Parses copyright notices and assists the user to create release-label relationships for these.",
+	"description": "Parses copyright notices and automates the process of creating release and recording relationships for these.",
 	"grant": [
 		"GM.getValue",
 		"GM.setValue"

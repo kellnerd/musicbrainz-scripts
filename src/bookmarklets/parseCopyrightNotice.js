@@ -1,7 +1,9 @@
 /**
  * - Extracts all copyright and legal information from the given text.
- * - Assists the user to create release-label relationships for these.
+ * - Automates the process of creating release-label relationships for these.
  * - Also creates phonographic copyright relationships for all selected recordings (userscript only).
+ * - Detects artists who own the copyright of their own release and adds artist relationships for these (userscript only).
+ * - See the [wiki page](https://github.com/kellnerd/musicbrainz-bookmarklets/wiki/Parse-Copyright-Notices) for more details.
  */
 
 import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
