@@ -13,9 +13,10 @@ import {
  * Creates and fills an "Add relationship" dialog for each piece of copyright information.
  * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
  * @param {CopyrightItem[]} copyrightInfo List of copyright items.
+ * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
  * @returns Whether a relationships has been added successfully.
  */
-export async function addCopyrightRelationships(copyrightInfo) {
+export async function addCopyrightRelationships(copyrightInfo, bypassCache = false) {
 	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 	let addedRelCount = 0;
 
@@ -27,9 +28,9 @@ export async function addCopyrightRelationships(copyrightInfo) {
 		/**
 		 * There are multiple ways to fill the relationship's target entity:
 		 * (1) Directly map the name to an MBID (if the name is already cached).
-		 * (2) Just fill in the name and let the user select an entity (in manual mode).
+		 * (2) Just fill in the name and let the user select an entity (in manual mode or when the cache is bypassed).
 		 */
-		const targetMBID = await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
+		const targetMBID = !bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
 		let targetEntity = targetMBID
 			? await entityCache.get(targetMBID) // (1b)
 			: MB.entity({ name: copyrightItem.name, entityType }); // (2a)

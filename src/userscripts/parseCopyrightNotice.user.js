@@ -8,13 +8,14 @@ function buildUI() {
 	addParserButton('Parse copyright notice', async (creditLine, event) => {
 		const copyrightInfo = parseCopyrightNotice(creditLine);
 		if (copyrightInfo.length) {
-			const result = await addCopyrightRelationships(copyrightInfo);
+			const bypassCache = event.ctrlKey;
+			const result = await addCopyrightRelationships(copyrightInfo, bypassCache);
 			nameToMBIDCache.store();
 			return result;
 		} else {
 			return false;
 		}
-	});
+	}, 'CTRL key to bypass the cache and force a search');
 }
 
 nameToMBIDCache.load();
