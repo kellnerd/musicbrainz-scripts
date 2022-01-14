@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.11
+// @version      2022.1.14
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and assists the user to create release-label relationships for these.
@@ -579,13 +579,14 @@ textarea#credit-input {
 		return value;
 	}
 
-	const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.| under ))/;
+	const labelNamePattern = /(.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.|\sunder\s))/;
 
 	const copyrightPattern = new RegExp(
-		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
+		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?(?:[^,.]*\sby)?\s+/.source
+		+ String.raw`(${labelNamePattern.source}(?:\s*/\s*${labelNamePattern.source})*)`, 'gm');
 
 	const legalInfoPattern = new RegExp(
-		/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gim');
+		/((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/.source + labelNamePattern.source, 'gim');
 
 	/**
 	 * Extracts all copyright and legal information from the given text.
@@ -601,7 +602,7 @@ textarea#credit-input {
 			[/\(P\)/gi, '℗'],
 			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
 			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
-			[/℗\s*(under )/gi, '$1'], // drop confusingly used ℗ symbols
+			[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
 		]);
 
 		const copyrightMatches = text.matchAll(copyrightPattern);
@@ -619,9 +620,10 @@ textarea#credit-input {
 
 		const legalInfoMatches = text.matchAll(legalInfoPattern);
 		for (const match of legalInfoMatches) {
+			const types = match[1].split(/\sand\s/).map(cleanType);
 			copyrightInfo.push({
 				name: match[2],
-				types: [cleanType(match[1])],
+				types,
 			});
 		}
 
@@ -635,6 +637,7 @@ textarea#credit-input {
 	function cleanType(type) {
 		return transform(type.toLowerCase().trim(), [
 			[/licen[sc]ed?/g, 'licensed'],
+			[/(distributed|marketed)(\sby)?/, '$1 by'],
 		]);
 	}
 
