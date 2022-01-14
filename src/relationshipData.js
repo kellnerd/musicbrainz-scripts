@@ -2,6 +2,10 @@
 /** MBS relationship link type IDs (incomplete). */
 export const LINK_TYPES = {
 	release: {
+		artist: {
+			'©': 709,
+			'℗': 710,
+		},
 		label: {
 			'©': 708,
 			'℗': 711,
@@ -12,6 +16,9 @@ export const LINK_TYPES = {
 		},
 	},
 	recording: {
+		artist: {
+			'℗': 869,
+		},
 		label: {
 			'℗': 867,
 		},

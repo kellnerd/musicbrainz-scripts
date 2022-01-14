@@ -1,5 +1,6 @@
 import { entityCache } from './entityCache.js';
 import { nameToMBIDCache } from './nameToMBIDCache.js';
+import { normalizeName } from './normalizeName.js';
 import { LINK_TYPES } from './relationshipData.js';
 import {
 	closingDialog,
@@ -17,11 +18,15 @@ import {
  * @returns Whether a relationships has been added successfully.
  */
 export async function addCopyrightRelationships(copyrightInfo, bypassCache = false) {
+	const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
+		.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
+		.map(normalizeName);
 	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 	let addedRelCount = 0;
 
 	for (const copyrightItem of copyrightInfo) {
-		const entityType = 'label';
+		// detect artists who own the copyright of their own release
+		const entityType = releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
 		const releaseRelTypes = LINK_TYPES.release[entityType];
 		const recordingRelTypes = LINK_TYPES.recording[entityType];
 
