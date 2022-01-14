@@ -9,7 +9,6 @@ import { buildEntityURL } from './entity.js';
  * @param {number} linkTypeID
  * @param {string} [editNote]
  */
-
 export function seedURLForEntity(type, mbid, url, linkTypeID, editNote) {
 	const seedingParams = new URLSearchParams({
 		[`edit-${type}.url.0.text`]: url,
