@@ -47,6 +47,21 @@ const copyrightTestCases = [
 		types: ['©'],
 		year: '2017',
 	}]],
+	['℗ 2016 The copyright in this sound recording is owned by Pink Floyd Music Ltd.', [{
+		name: 'Pink Floyd Music Ltd.',
+		types: ['℗'],
+		year: '2016',
+	}]],
+	['℗ 2016 The copyright in this compilation is owned by Pink Floyd Music Ltd.', [{
+		name: 'Pink Floyd Music Ltd.',
+		types: ['℗'], // TODO: extract "compilation"
+		year: '2016',
+	}]],
+	['© by John Doe', [{
+		name: 'John Doe',
+		types: ['©'],
+		year: undefined,
+	}]],
 
 	/* copyright shared by multiple labels */
 	['℗ «2012 Shady Records/Aftermath Records/Interscope Records»', [{
