@@ -1,12 +1,12 @@
 import { transform } from './transformInputValues.js';
 
-const labelNamePattern = /(.+?(?:,? (?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.| under ))/;
+const labelNamePattern = /(.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.|\sunder\s))/;
 
 const copyrightPattern = new RegExp(
 	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
 
 const legalInfoPattern = new RegExp(
-	/(licen[sc]ed? (?:to|from)|(?:distributed|marketed) by)\s+/.source + labelNamePattern.source, 'gim');
+	/(licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)\sby)\s/.source + labelNamePattern.source, 'gim');
 
 /**
  * Extracts all copyright and legal information from the given text.
@@ -22,7 +22,7 @@ export function parseCopyrightNotice(text) {
 		[/\(P\)/gi, '℗'],
 		[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
 		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
-		[/℗\s*(under )/gi, '$1'], // drop confusingly used ℗ symbols
+		[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
 	]);
 
 	const copyrightMatches = text.matchAll(copyrightPattern);
