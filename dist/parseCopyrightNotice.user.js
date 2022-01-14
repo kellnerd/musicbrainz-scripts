@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.14
+// @version      2022.1.14.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
-// @description  Parses copyright notices and assists the user to create release-label relationships for these.
+// @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
 // @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#parse-copyright-notice
 // @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
@@ -123,17 +123,6 @@
 	}
 
 	/**
-	 * Searches for entities of the given type.
-	 * @param {MB.EntityType} entityType 
-	 * @param {string} query 
-	 * @returns {Promise<MB.InternalEntity[]>}
-	 */
-	async function searchEntity(entityType, query) {
-		const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
-		return result.json();
-	}
-
-	/**
 	 * Temporary cache for fetched entities from the ws/js API, shared with MBS.
 	 */
 	const entityCache = new FunctionCache(fetchEntity, {
@@ -157,9 +146,23 @@
 		storage: window.localStorage
 	});
 
+	/**
+	 * Normalizes the given name to ease matching of names.
+	 * @param {string} name 
+	 */
+	function normalizeName(name) {
+		return name.normalize('NFKD') // Unicode NFKD compatibility decomposition
+			.replace(/[^\p{L}\d]/ug, '') // keep only letters and numbers, remove combining diacritical marks of decompositions
+			.toLowerCase();
+	}
+
 	/** MBS relationship link type IDs (incomplete). */
 	const LINK_TYPES = {
 		release: {
+			artist: {
+				'©': 709,
+				'℗': 710,
+			},
 			label: {
 				'©': 708,
 				'℗': 711,
@@ -170,6 +173,9 @@
 			},
 		},
 		recording: {
+			artist: {
+				'℗': 869,
+			},
 			label: {
 				'℗': 867,
 			},
@@ -247,33 +253,32 @@
 	/**
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
 	 * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
-	 * Automatically chooses the first search result and accepts the dialog in automatic mode.
 	 * @param {CopyrightItem[]} copyrightInfo List of copyright items.
-	 * @param {boolean} [automaticMode] Automatic mode, disabled by default.
+	 * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
 	 * @returns Whether a relationships has been added successfully.
 	 */
-	async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
+	async function addCopyrightRelationships(copyrightInfo, bypassCache = false) {
+		const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
+			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
+			.map(normalizeName);
 		const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 		let addedRelCount = 0;
 
 		for (const copyrightItem of copyrightInfo) {
-			const entityType = 'label';
+			// detect artists who own the copyright of their own release
+			const entityType = releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
 			const releaseRelTypes = LINK_TYPES.release[entityType];
 			const recordingRelTypes = LINK_TYPES.recording[entityType];
 
 			/**
 			 * There are multiple ways to fill the relationship's target entity:
 			 * (1) Directly map the name to an MBID (if the name is already cached).
-			 * (2) Select the first search result for the name (in automatic mode).
-			 * (3) Just fill in the name and let the user select an entity (in manual mode).
+			 * (2) Just fill in the name and let the user select an entity (in manual mode or when the cache is bypassed).
 			 */
-			const targetMBID = await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
+			const targetMBID = !bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
 			let targetEntity = targetMBID
 				? await entityCache.get(targetMBID) // (1b)
-				: MB.entity(automaticMode
-					? (await searchEntity(entityType, copyrightItem.name))[0] // (2a)
-					: { name: copyrightItem.name, entityType } // (3a)
-				);
+				: MB.entity({ name: copyrightItem.name, entityType }); // (2a)
 
 			for (const type of copyrightItem.types) {
 				// add all copyright rels to the release
@@ -306,10 +311,10 @@
 				rel.end_date.year(copyrightItem.year);
 			}
 
-			if (targetEntity.gid || automaticMode) { // (1c) & (2b)
+			if (targetEntity.gid) { // (1c)
 				dialog.accept();
 				addedRelCount++;
-			} else { // (3b)
+			} else { // (2b)
 				openDialogAndTriggerAutocomplete(dialog);
 				await closingDialog(dialog);
 
@@ -653,14 +658,14 @@ textarea#credit-input {
 		addParserButton('Parse copyright notice', async (creditLine, event) => {
 			const copyrightInfo = parseCopyrightNotice(creditLine);
 			if (copyrightInfo.length) {
-				const automaticMode = event.altKey;
-				const result = await addCopyrightRelationships(copyrightInfo, automaticMode);
+				const bypassCache = event.ctrlKey;
+				const result = await addCopyrightRelationships(copyrightInfo, bypassCache);
 				nameToMBIDCache.store();
 				return result;
 			} else {
 				return false;
 			}
-		});
+		}, 'CTRL key to bypass the cache and force a search');
 	}
 
 	nameToMBIDCache.load();
