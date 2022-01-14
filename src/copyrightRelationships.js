@@ -1,6 +1,5 @@
 import { entityCache } from './entityCache.js';
 import { nameToMBIDCache } from './nameToMBIDCache.js';
-import { searchEntity } from './internalAPI.js';
 import { LINK_TYPES } from './relationshipData.js';
 import {
 	closingDialog,
@@ -13,12 +12,10 @@ import {
 /**
  * Creates and fills an "Add relationship" dialog for each piece of copyright information.
  * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
- * Automatically chooses the first search result and accepts the dialog in automatic mode.
  * @param {CopyrightItem[]} copyrightInfo List of copyright items.
- * @param {boolean} [automaticMode] Automatic mode, disabled by default.
  * @returns Whether a relationships has been added successfully.
  */
-export async function addCopyrightRelationships(copyrightInfo, automaticMode = false) {
+export async function addCopyrightRelationships(copyrightInfo) {
 	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 	let addedRelCount = 0;
 
@@ -30,16 +27,12 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 		/**
 		 * There are multiple ways to fill the relationship's target entity:
 		 * (1) Directly map the name to an MBID (if the name is already cached).
-		 * (2) Select the first search result for the name (in automatic mode).
-		 * (3) Just fill in the name and let the user select an entity (in manual mode).
+		 * (2) Just fill in the name and let the user select an entity (in manual mode).
 		 */
 		const targetMBID = await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
 		let targetEntity = targetMBID
 			? await entityCache.get(targetMBID) // (1b)
-			: MB.entity(automaticMode
-				? (await searchEntity(entityType, copyrightItem.name))[0] // (2a)
-				: { name: copyrightItem.name, entityType } // (3a)
-			);
+			: MB.entity({ name: copyrightItem.name, entityType }); // (2a)
 
 		for (const type of copyrightItem.types) {
 			// add all copyright rels to the release
@@ -72,10 +65,10 @@ export async function addCopyrightRelationships(copyrightInfo, automaticMode = f
 			rel.end_date.year(copyrightItem.year);
 		}
 
-		if (targetEntity.gid || automaticMode) { // (1c) & (2b)
+		if (targetEntity.gid) { // (1c)
 			dialog.accept();
 			addedRelCount++;
-		} else { // (3b)
+		} else { // (2b)
 			openDialogAndTriggerAutocomplete(dialog);
 			await closingDialog(dialog);
 

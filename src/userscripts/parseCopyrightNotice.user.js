@@ -8,8 +8,7 @@ function buildUI() {
 	addParserButton('Parse copyright notice', async (creditLine, event) => {
 		const copyrightInfo = parseCopyrightNotice(creditLine);
 		if (copyrightInfo.length) {
-			const automaticMode = event.altKey;
-			const result = await addCopyrightRelationships(copyrightInfo, automaticMode);
+			const result = await addCopyrightRelationships(copyrightInfo);
 			nameToMBIDCache.store();
 			return result;
 		} else {
