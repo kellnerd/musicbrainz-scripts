@@ -126,6 +126,10 @@ const copyrightTestCases = [
 		name: 'Republic Records',
 		types: ['distributed by'],
 	}]],
+	['marketed and distributed by Sony Music Entertainment', [{
+		name: 'Sony Music Entertainment',
+		types: ['marketed by', 'distributed by'],
+	}]],
 
 	/* labels with company suffixes */
 	['℗ & © «1977 Capitol Records, LLC»', [{

@@ -6,7 +6,7 @@ const copyrightPattern = new RegExp(
 	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?\s+/.source + labelNamePattern.source, 'gm');
 
 const legalInfoPattern = new RegExp(
-	/(licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)\sby)\s/.source + labelNamePattern.source, 'gim');
+	/((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/.source + labelNamePattern.source, 'gim');
 
 /**
  * Extracts all copyright and legal information from the given text.
@@ -40,9 +40,10 @@ export function parseCopyrightNotice(text) {
 
 	const legalInfoMatches = text.matchAll(legalInfoPattern);
 	for (const match of legalInfoMatches) {
+		const types = match[1].split(/\sand\s/).map(cleanType);
 		copyrightInfo.push({
 			name: match[2],
-			types: [cleanType(match[1])],
+			types,
 		});
 	}
 
@@ -56,6 +57,7 @@ export function parseCopyrightNotice(text) {
 function cleanType(type) {
 	return transform(type.toLowerCase().trim(), [
 		[/licen[sc]ed?/g, 'licensed'],
+		[/(distributed|marketed)(\sby)?/, '$1 by'],
 	]);
 }
 
