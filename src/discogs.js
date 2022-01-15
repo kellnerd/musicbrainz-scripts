@@ -55,7 +55,7 @@ export async function fetchCredits(releaseURL) {
 			// drop bracketed numeric suffixes for ambiguous artist names
 			parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-			parsedArtist.anv = useUnicodePunctuation(artist.anv || artist.name);
+			parsedArtist.anv = useUnicodePunctuation(artist.anv || parsedArtist.name);
 
 			// split roles with credited role names in square brackets (for convenience)
 			const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
