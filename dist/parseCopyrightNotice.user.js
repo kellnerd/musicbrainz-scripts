@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.14.2
+// @version      2022.1.15
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -306,7 +306,9 @@
 			const rel = dialog.relationship();
 			rel.linkTypeID(relTypeId);
 			rel.entity0_credit(copyrightItem.name);
-			if (copyrightItem.year) {
+
+			// do not fill the date if there are multiple unspecific years
+			if (copyrightItem.year && !Array.isArray(copyrightItem.year)) {
 				rel.begin_date.year(copyrightItem.year);
 				rel.end_date.year(copyrightItem.year);
 			}
@@ -572,6 +574,16 @@ textarea#credit-input {
 	}
 
 	/**
+	 * Converts an array with a single element into a scalar.
+	 * @template T
+	 * @param {T|T[]} maybeArray 
+	 */
+	function preferScalar(maybeArray) {
+		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
+		return maybeArray;
+	}
+
+	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value 
 	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
@@ -587,7 +599,7 @@ textarea#credit-input {
 	const labelNamePattern = /(.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.|\sunder\s))/;
 
 	const copyrightPattern = new RegExp(
-		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?(?:[^,.]*\sby)?\s+/.source
+		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/.source
 		+ String.raw`(${labelNamePattern.source}(?:\s*/\s*${labelNamePattern.source})*)`, 'gm');
 
 	const legalInfoPattern = new RegExp(
@@ -608,17 +620,19 @@ textarea#credit-input {
 			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
 			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
 			[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
+			[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
 		]);
 
 		const copyrightMatches = text.matchAll(copyrightPattern);
 		for (const match of copyrightMatches) {
-			const names = match[3].split(/\/(?=\s|\w{2})/g).map((name) => name.trim());
+			const names = match[3].split(/\/(?=\s|\w{2})/).map((name) => name.trim());
 			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
+			const years = match[2]?.split(/[,&]/).map((year) => year.trim());
 			names.forEach((name) => {
 				copyrightInfo.push({
 					name,
 					types,
-					year: match[2],
+					year: preferScalar(years),
 				});
 			});
 		}
@@ -650,7 +664,7 @@ textarea#credit-input {
 	 * @typedef {Object} CopyrightItem
 	 * @property {string} name Name of the copyright owner (label or artist).
 	 * @property {string[]} types Types of copyright or legal information, will be mapped to relationship types.
-	 * @property {string} [year] Numeric year, has to be a string with four digits, otherwise MBS complains.
+	 * @property {string|string[]} [year] Numeric year, has to be a string with four digits, otherwise MBS complains. Can be an array in case of multiple years.
 	 */
 
 	function buildUI() {
