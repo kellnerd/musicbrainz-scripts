@@ -52,6 +52,18 @@ const copyrightTestCases = [
 		types: ['℗'],
 		year: '2016',
 	}]],
+	['℗ Digital Remaster 2011 The copyright in this sound recording is owned by Pink Floyd Music Ltd/Pink Floyd (1987) Ltd under exclusive licence to EMI Records Ltd', [{
+		name: 'Pink Floyd Music Ltd',
+		types: ['℗'],
+		year: '2011',
+	}, {
+		name: 'Pink Floyd (1987) Ltd',
+		types: ['℗'],
+		year: '2011',
+	}, {
+		name: 'EMI Records Ltd',
+		types: ['licensed to'],
+	}]],
 	['℗ 2016 The copyright in this compilation is owned by Pink Floyd Music Ltd.', [{
 		name: 'Pink Floyd Music Ltd.',
 		types: ['℗'], // TODO: extract "compilation"
