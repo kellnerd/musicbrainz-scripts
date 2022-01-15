@@ -31,7 +31,9 @@ async function addCopyrightRelationships(copyrightInfo) {
 			const rel = dialog.relationship();
 			rel.linkTypeID(relTypes[type]);
 			rel.entity0_credit(copyrightItem.name);
-			if (copyrightItem.year) {
+
+			// do not fill the date if there are multiple unspecific years
+			if (copyrightItem.year && !Array.isArray(copyrightItem.year)) {
 				rel.begin_date.year(copyrightItem.year);
 				rel.end_date.year(copyrightItem.year);
 			}

@@ -1,9 +1,10 @@
+import { preferScalar } from './array.js';
 import { transform } from './transformInputValues.js';
 
 const labelNamePattern = /(.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.|\sunder\s))/;
 
 const copyrightPattern = new RegExp(
-	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4})?(?:[^,.]*\sby)?\s+/.source
+	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/.source
 	+ String.raw`(${labelNamePattern.source}(?:\s*/\s*${labelNamePattern.source})*)`, 'gm');
 
 const legalInfoPattern = new RegExp(
@@ -29,13 +30,14 @@ export function parseCopyrightNotice(text) {
 
 	const copyrightMatches = text.matchAll(copyrightPattern);
 	for (const match of copyrightMatches) {
-		const names = match[3].split(/\/(?=\s|\w{2})/g).map((name) => name.trim());
+		const names = match[3].split(/\/(?=\s|\w{2})/).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
+		const years = match[2]?.split(/[,&]/).map((year) => year.trim());
 		names.forEach((name) => {
 			copyrightInfo.push({
 				name,
 				types,
-				year: match[2],
+				year: preferScalar(years),
 			});
 		});
 	}
@@ -67,5 +69,5 @@ function cleanType(type) {
  * @typedef {Object} CopyrightItem
  * @property {string} name Name of the copyright owner (label or artist).
  * @property {string[]} types Types of copyright or legal information, will be mapped to relationship types.
- * @property {string} [year] Numeric year, has to be a string with four digits, otherwise MBS complains.
+ * @property {string|string[]} [year] Numeric year, has to be a string with four digits, otherwise MBS complains. Can be an array in case of multiple years.
  */

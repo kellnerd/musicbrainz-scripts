@@ -117,6 +117,19 @@ const copyrightTestCases = [
 		year: '1983',
 	}]],
 
+	/* copyright with multiple years */
+	['℗ 2014, 2017, 2018, 2019 & 2020 Bruce Springsteen', [{
+		name: 'Bruce Springsteen',
+		types: ['℗'],
+		year: ['2014', '2017', '2018', '2019', '2020'],
+	}]],
+	// failing, TODO: GMR (rights society) probably indicates a work level copyright
+	['© 1974, 1975, 1978, 1980 Bruce Springsteen (GMR)', [{
+		name: 'Bruce Springsteen',
+		types: ['©'],
+		year: ['1974', '1975', '1978', '1980'],
+	}]],
+
 	/* multi-line copyright input */
 	['© «2017 The Media Champ»\n℗ «2003 The Media Champ»', [{
 		name: 'The Media Champ',
