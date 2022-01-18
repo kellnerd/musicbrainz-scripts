@@ -1,22 +1,29 @@
 import { preferScalar } from './array.js';
 import { transform } from './transformInputValues.js';
 
-const labelNamePattern = /(.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.|\sunder\s))/;
+const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
 
-const copyrightPattern = new RegExp(
-	/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/.source
-	+ String.raw`(${labelNamePattern.source}(?:\s*/\s*${labelNamePattern.source})*)`, 'gm');
-
-const legalInfoPattern = new RegExp(
-	/((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/.source + labelNamePattern.source, 'gim');
+const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
 /**
  * Extracts all copyright and legal information from the given text.
  * @param {string} text 
+ * @param {object} [options]
+ * @param {RegExp} options.nameRE Pattern which matches the name of a copyright holder.
+ * @param {RegExp} options.terminatorRE Pattern which terminates a credit.
  */
-export function parseCopyrightNotice(text) {
+export function parseCopyrightNotice(text, options = {}) {
+	// provide default options
+	options = {
+		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
+		terminatorRE: /(?<=\.)|$|(?=,|\.|\sunder\s)/,
+		...options,
+	};
+
 	/** @type {CopyrightItem[]} */
 	const copyrightInfo = [];
+	const namePattern = options.nameRE.source;
+	const terminatorPattern = options.terminatorRE.source;
 
 	// standardize copyright notice
 	text = transform(text, [
@@ -28,7 +35,10 @@ export function parseCopyrightNotice(text) {
 		[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
 	]);
 
-	const copyrightMatches = text.matchAll(copyrightPattern);
+	const copyrightMatches = text.matchAll(new RegExp(
+		String.raw`${copyrightRE.source}(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
+		'gm'));
+
 	for (const match of copyrightMatches) {
 		const names = match[3].split(/\/(?=\s|\w{2})/).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
@@ -42,7 +52,10 @@ export function parseCopyrightNotice(text) {
 		});
 	}
 
-	const legalInfoMatches = text.matchAll(legalInfoPattern);
+	const legalInfoMatches = text.matchAll(new RegExp(
+		`${legalInfoRE.source}(${namePattern})(?:${terminatorPattern})`,
+		'gim'));
+
 	for (const match of legalInfoMatches) {
 		const types = match[1].split(/\sand\s/).map(cleanType);
 		copyrightInfo.push({
