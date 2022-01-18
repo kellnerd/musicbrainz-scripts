@@ -20,7 +20,9 @@ const creditParserUI =
 		<textarea name="credit-input" id="credit-input" cols="120" rows="1" placeholder="Paste credits here…"></textarea>
 	</div>
 	<div class="row">
-		<p>Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).</p>
+		Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).
+	</div>
+	<div class="row" id="credit-patterns">
 	</div>
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
@@ -41,6 +43,12 @@ details#credit-parser > summary > h2 {
 }
 textarea#credit-input {
 	overflow-y: hidden;
+}
+form div.row span.col:not(:last-child)::after {
+	content: " | ";
+}
+form div.row span.col label {
+	margin-right: 0;
 }`;
 
 export function buildCreditParserUI() {
@@ -69,6 +77,9 @@ export function buildCreditParserUI() {
 			creditInput.dispatchEvent(new Event('input'));
 		}
 	});
+
+	addPatternInput('credit-terminator', 'Credit terminator');
+	addPatternInput('name-separator', 'Name separator');
 }
 
 /**
@@ -131,4 +142,64 @@ export function addParserButton(label, parser, description) {
 			creditInput.dispatchEvent(new Event('input'));
 		}
 	}, description);
+}
+
+/**
+ * Adds an input field for regular expressions with a validation handler to the credit parser UI.
+ * @param {string} id ID and name of the input element.
+ * @param {string} label Label which should be used as description.
+ */
+function addPatternInput(id, label) {
+	/** @type {HTMLInputElement} */
+	const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" />`);
+
+	const explanationLink = document.createElement('a');
+	explanationLink.innerText = 'help';
+	explanationLink.target = '_blank';
+
+	// auto-resize the pattern input on input
+	patternInput.addEventListener('input', function () {
+		this.style.width = 'auto';
+		this.style.width = this.scrollWidth + 10 + 'px'; // account for border and padding
+	});
+
+	// validate pattern and update explanation link on change
+	patternInput.addEventListener('change', function () {
+		explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(this.value);
+		if (getPattern(this)) {
+			this.classList.remove('error');
+			this.classList.add('success');
+			this.title = '';
+		} else {
+			this.classList.add('error');
+			this.classList.remove('success');
+			this.title = 'Invalid regular expression (parser is falling back to the default value)';
+		}
+	});
+
+	// inject label, input and explanation link
+	const span = document.createElement('span');
+	span.className = 'col';
+	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}">${label}:</label>`);
+	span.append(' ', patternInput, ' ', explanationLink);
+	dom('credit-patterns').appendChild(span);
+
+	return patternInput;
+}
+
+/**
+ * Checks whether the value of the given input is a valid regular expression and returns it.
+ * @param {HTMLInputElement} input 
+ * @returns {RegExp|false}
+ */
+function getPattern(input) {
+	const patternMatch = input.value.match(/^\/(.+?)\/([gimsuy]*)$/);
+
+	if (patternMatch) {
+		try {
+			return new RegExp(patternMatch[1], patternMatch[2]);
+		} catch {
+			return false;
+		}
+	}
 }
