@@ -10,12 +10,14 @@ const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?
  * @param {string} text 
  * @param {object} [options]
  * @param {RegExp} options.nameRE Pattern which matches the name of a copyright holder.
+ * @param {RegExp} options.nameSeparatorRE Pattern which is used to split the names of multiple copyright holders.
  * @param {RegExp} options.terminatorRE Pattern which terminates a credit.
  */
 export function parseCopyrightNotice(text, options = {}) {
 	// provide default options
 	options = {
 		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
+		nameSeparatorRE: /\/(?=\s|\w{2})/,
 		terminatorRE: /(?<=\.)|$|(?=,|\.|\sunder\s)/,
 		...options,
 	};
@@ -40,7 +42,7 @@ export function parseCopyrightNotice(text, options = {}) {
 		'gm'));
 
 	for (const match of copyrightMatches) {
-		const names = match[3].split(/\/(?=\s|\w{2})/).map((name) => name.trim());
+		const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
 		const years = match[2]?.split(/[,&]/).map((year) => year.trim());
 		names.forEach((name) => {
