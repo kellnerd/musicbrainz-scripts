@@ -5,21 +5,23 @@ const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&
 
 const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
+/** @type {CreditParserOptions} */
+export const parserDefaults = {
+	nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
+	nameSeparatorRE: /\/(?=\s|\w{2})/,
+	terminatorRE: /(?<=\.)|$|(?=,|\.|\sunder\s)/,
+};
+
 /**
  * Extracts all copyright and legal information from the given text.
  * @param {string} text 
- * @param {object} [options]
- * @param {RegExp} options.nameRE Pattern which matches the name of a copyright holder.
- * @param {RegExp} options.nameSeparatorRE Pattern which is used to split the names of multiple copyright holders.
- * @param {RegExp} options.terminatorRE Pattern which terminates a credit.
+ * @param {Partial<CreditParserOptions>} [customOptions]
  */
-export function parseCopyrightNotice(text, options = {}) {
+export function parseCopyrightNotice(text, customOptions = {}) {
 	// provide default options
-	options = {
-		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
-		nameSeparatorRE: /\/(?=\s|\w{2})/,
-		terminatorRE: /(?<=\.)|$|(?=,|\.|\sunder\s)/,
-		...options,
+	const options = {
+		...parserDefaults,
+		...customOptions,
 	};
 
 	/** @type {CopyrightItem[]} */
@@ -79,10 +81,3 @@ function cleanType(type) {
 		[/(distributed|marketed)(\sby)?/, '$1 by'],
 	]);
 }
-
-/**
- * @typedef {Object} CopyrightItem
- * @property {string} name Name of the copyright owner (label or artist).
- * @property {string[]} types Types of copyright or legal information, will be mapped to relationship types.
- * @property {string|string[]} [year] Numeric year, has to be a string with four digits, otherwise MBS complains. Can be an array in case of multiple years.
- */
