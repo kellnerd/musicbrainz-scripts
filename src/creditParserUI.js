@@ -9,6 +9,10 @@ import {
 	persistCheckbox,
 	persistDetails,
 } from './persistElement.js';
+import {
+	escapeRegExp,
+	regexPattern,
+} from './regex.js';
 
 const creditParserUI =
 `<details id="credit-parser">
@@ -201,7 +205,7 @@ function addPatternInput(id, label, description) {
  * @returns {RegExp|false}
  */
 function getPattern(input) {
-	const patternMatch = input.value.match(/^\/(.+?)\/([gimsuy]*)$/);
+	const patternMatch = input.value.match(regexPattern);
 
 	if (patternMatch) {
 		try {
@@ -212,9 +216,4 @@ function getPattern(input) {
 	} else {
 		return new RegExp(escapeRegExp(input.value));
 	}
-}
-
-// taken from https://stackoverflow.com/a/6969486
-function escapeRegExp(string) {
-	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
