@@ -156,7 +156,7 @@ export function addParserButton(label, parser, description) {
  */
 function addPatternInput(id, label, description) {
 	/** @type {HTMLInputElement} */
-	const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" />`);
+	const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" placeholder="String or /RegExp/" />`);
 
 	const explanationLink = document.createElement('a');
 	explanationLink.innerText = 'help';
@@ -171,8 +171,10 @@ function addPatternInput(id, label, description) {
 
 	// validate pattern and update explanation link on change
 	patternInput.addEventListener('change', function () {
-		explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(this.value);
-		if (getPattern(this)) {
+		const pattern = getPattern(this);
+		explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
+
+		if (pattern) {
 			this.classList.remove('error');
 			this.classList.add('success');
 			this.title = '';
@@ -207,5 +209,12 @@ function getPattern(input) {
 		} catch {
 			return false;
 		}
+	} else {
+		return new RegExp(escapeRegExp(input.value));
 	}
+}
+
+// taken from https://stackoverflow.com/a/6969486
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
