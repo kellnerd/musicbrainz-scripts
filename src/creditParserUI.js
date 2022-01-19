@@ -49,6 +49,10 @@ form div.row span.col:not(:last-child)::after {
 }
 form div.row span.col label {
 	margin-right: 0;
+}
+#credit-parser label[title] {
+	border-bottom: 1px dotted;
+	cursor: help;
 }`;
 
 export function buildCreditParserUI() {
@@ -78,8 +82,8 @@ export function buildCreditParserUI() {
 		}
 	});
 
-	addPatternInput('credit-terminator', 'Credit terminator');
-	addPatternInput('name-separator', 'Name separator');
+	addPatternInput('credit-terminator', 'Credit terminator', 'Matches the end of a credit (default: end of line)');
+	addPatternInput('name-separator', 'Name separator', 'Splits the extracted name into multiple names (disabled by default)');
 }
 
 /**
@@ -147,15 +151,17 @@ export function addParserButton(label, parser, description) {
 /**
  * Adds an input field for regular expressions with a validation handler to the credit parser UI.
  * @param {string} id ID and name of the input element.
- * @param {string} label Label which should be used as description.
+ * @param {string} label
+ * @param {string} description Description which should be used as tooltip.
  */
-function addPatternInput(id, label) {
+function addPatternInput(id, label, description) {
 	/** @type {HTMLInputElement} */
 	const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" />`);
 
 	const explanationLink = document.createElement('a');
 	explanationLink.innerText = 'help';
 	explanationLink.target = '_blank';
+	explanationLink.title = 'Displays a diagram representation of this RegExp';
 
 	// auto-resize the pattern input on input
 	patternInput.addEventListener('input', function () {
@@ -173,14 +179,14 @@ function addPatternInput(id, label) {
 		} else {
 			this.classList.add('error');
 			this.classList.remove('success');
-			this.title = 'Invalid regular expression (parser is falling back to the default value)';
+			this.title = 'Invalid regular expression (the default value will be used)';
 		}
 	});
 
 	// inject label, input and explanation link
 	const span = document.createElement('span');
 	span.className = 'col';
-	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}">${label}:</label>`);
+	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${description}">${label}:</label>`);
 	span.append(' ', patternInput, ' ', explanationLink);
 	dom('credit-patterns').appendChild(span);
 
