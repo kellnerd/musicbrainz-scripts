@@ -93,14 +93,12 @@ export function buildCreditParserUI() {
 	});
 
 	addPatternInput({
-		id: 'credit-terminator',
 		label: 'Credit terminator',
 		description: 'Matches the end of a credit (default: end of line)',
 		defaultValue: parserDefaults.terminatorRE,
 	});
 
 	addPatternInput({
-		id: 'name-separator',
 		label: 'Name separator',
 		description: 'Splits the extracted name into multiple names (disabled by default)',
 		defaultValue: parserDefaults.nameSeparatorRE,
