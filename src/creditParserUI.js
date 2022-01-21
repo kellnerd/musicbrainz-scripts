@@ -219,10 +219,11 @@ function addPatternInput(config) {
 	span.append(' ', patternInput, ' ', explanationLink);
 	dom('credit-patterns').appendChild(span);
 
-	// initialize and persist the input value, trigger validation for the initial value
-	persistInput(patternInput, config.defaultValue);
-	automaticWidth(patternInput);
-	patternInput.dispatchEvent(new Event('change'));
+	// initialize and persist the input value, resize element and trigger validation for the initial value
+	persistInput(patternInput, config.defaultValue).then(() => {
+		automaticWidth.call(patternInput);
+		patternInput.dispatchEvent(new Event('change'));
+	});
 
 	return patternInput;
 }
