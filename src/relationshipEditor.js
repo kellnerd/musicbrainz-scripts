@@ -2,6 +2,7 @@ import { extractEntityFromURL } from './entity.js';
 import {
 	fetchEntity,
 } from './internalAPI.js';
+import { waitFor } from '../utils/async/polling.js';
 
 /**
  * Creates a dialog to add a relationship to the currently edited source entity.
@@ -106,4 +107,9 @@ export function openDialogAndTriggerAutocomplete(dialog, event) {
 export function getTargetEntity(dialog) {
 	return dialog.relationship().entities() // source and target entity
 		.find((entity) => entity.entityType === dialog.targetType());
+}
+
+/** Resolves after the release relationship editor has finished loading. */
+export function releaseLoadingFinished() {
+	return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
 }

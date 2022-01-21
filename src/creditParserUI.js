@@ -14,6 +14,7 @@ import {
 	escapeRegExp,
 	regexPattern,
 } from './regex.js';
+import { releaseLoadingFinished } from './relationshipEditor.js';
 import { slugify } from '../utils/string/casingStyle.js';
 
 const creditParserUI =
@@ -33,6 +34,8 @@ const creditParserUI =
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
 		<label class="inline" for="remove-parsed-lines">Remove parsed lines</label>
+		<input type="checkbox" name="parser-autofocus" id="parser-autofocus" />
+		<label class="inline" for="parser-autofocus">Autofocus the parser on page load</label>
 	</div>
 	<div class="row buttons">
 	</div>
@@ -69,13 +72,15 @@ export function buildCreditParserUI() {
 	// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
 	qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 	injectStylesheet(css, 'credit-parser');
+	const creditInput = dom('credit-input');
 
 	// persist the state of the UI
 	persistDetails('credit-parser');
 	persistCheckbox('remove-parsed-lines');
+	persistCheckbox('parser-autofocus');
 
 	// auto-resize the credit textarea on input (https://stackoverflow.com/a/25621277)
-	dom('credit-input').addEventListener('input', function () {
+	creditInput.addEventListener('input', function () {
 		this.style.height = 'auto';
 		this.style.height = this.scrollHeight + 'px';
 	});
@@ -98,6 +103,14 @@ export function buildCreditParserUI() {
 		id: 'name-separator',
 		label: 'Name separator',
 		description: 'Splits the extracted name into multiple names (disabled by default)',
+	});
+
+	// focus the credit parser input once all relationships have been loaded (and displayed)
+	releaseLoadingFinished().then(() => {
+		if (dom('parser-autofocus').checked) {
+			creditInput.scrollIntoView();
+			creditInput.focus();
+		}
 	});
 }
 
