@@ -199,7 +199,7 @@ function addPatternInput(config) {
 		this.title = '';
 
 		try {
-			const pattern = getPattern(this);
+			const pattern = getPattern(this.value);
 			explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
 
 			if (pattern instanceof RegExp) {

@@ -12,29 +12,27 @@ export function escapeRegExp(string) {
 }
 
 /**
- * Returns the value of the given pattern input as a regular expression if it is enclosed between slashes.
- * Otherwise it returns the raw input as a string or throws for invalid regular expressions.
- * @param {HTMLInputElement} input 
+ * Returns the value of the given pattern as a regular expression if it is enclosed between slashes.
+ * Otherwise it returns the input string or throws for invalid regular expressions.
+ * @param {string} pattern 
  * @returns {RegExp|string}
  */
-export function getPattern(input) {
-	const value = input.value;
-	const match = value.match(regexPattern);
-
+export function getPattern(pattern) {
+	const match = pattern.match(regexPattern);
 	if (match) {
 		return new RegExp(match[1], match[2]);
 	} else {
-		return value;
+		return pattern;
 	}
 }
 
 /**
- * Converts the value of the given pattern input into a regular expression and returns it.
- * @param {HTMLInputElement} input 
+ * Converts the value of the given pattern into a regular expression and returns it.
+ * @param {string} pattern 
  */
-export function getPatternAsRegExp(input) {
+export function getPatternAsRegExp(pattern) {
 	try {
-		const value = getPattern(input);
+		const value = getPattern(pattern);
 		if (typeof value === 'string') {
 			value = new RegExp(escapeRegExp(value));
 		}
