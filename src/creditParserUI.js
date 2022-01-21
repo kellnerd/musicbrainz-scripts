@@ -16,6 +16,7 @@ import {
 } from './regex.js';
 import { releaseLoadingFinished } from './relationshipEditor.js';
 import { slugify } from '../utils/string/casingStyle.js';
+import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
 
 const creditParserUI =
 `<details id="credit-parser">
@@ -79,11 +80,8 @@ export function buildCreditParserUI() {
 	persistCheckbox('remove-parsed-lines');
 	persistCheckbox('parser-autofocus');
 
-	// auto-resize the credit textarea on input (https://stackoverflow.com/a/25621277)
-	creditInput.addEventListener('input', function () {
-		this.style.height = 'auto';
-		this.style.height = this.scrollHeight + 'px';
-	});
+	// auto-resize the credit textarea on input
+	creditInput.addEventListener('input', automaticHeight);
 
 	addButton('Load annotation', (creditInput) => {
 		const annotation = MB.releaseRelationshipEditor.source.latest_annotation;
@@ -196,10 +194,7 @@ function addPatternInput(config) {
 	explanationLink.title = 'Displays a diagram representation of this RegExp';
 
 	// auto-resize the pattern input on input
-	patternInput.addEventListener('input', function () {
-		this.style.width = 'auto';
-		this.style.width = this.scrollWidth + 10 + 'px'; // account for border and padding
-	});
+	patternInput.addEventListener('input', automaticWidth);
 
 	// validate pattern and update explanation link on change
 	patternInput.addEventListener('change', function () {
