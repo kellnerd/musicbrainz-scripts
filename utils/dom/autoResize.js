@@ -1,19 +1,19 @@
 // adapted from https://stackoverflow.com/a/25621277
 
 /**
- * Resizes the given element to be as tall as necessary for its content.
- * @param {HTMLElement} element 
+ * Resizes the bound element to be as tall as necessary for its content.
+ * @this {HTMLElement}
  */
-export function automaticHeight(element) {
-	element.style.height = 'auto';
-	element.style.height = element.scrollHeight + 'px';
+export function automaticHeight() {
+	this.style.height = 'auto';
+	this.style.height = this.scrollHeight + 'px';
 }
 
 /**
- * Resizes the given element to be as wide as necessary for its content.
- * @param {HTMLElement} element 
+ * Resizes the bound element to be as wide as necessary for its content.
+ * @this {HTMLElement} this 
  */
-export function automaticWidth(element) {
-	element.style.width = 'auto';
-	element.style.width = element.scrollWidth + 10 + 'px'; // account for border and padding
+export function automaticWidth() {
+	this.style.width = 'auto';
+	this.style.width = this.scrollWidth + 10 + 'px'; // account for border and padding
 }
