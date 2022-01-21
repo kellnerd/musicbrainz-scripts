@@ -11,10 +11,7 @@ import {
 	persistDetails,
 	persistInput,
 } from './persistElement.js';
-import {
-	escapeRegExp,
-	regexPattern,
-} from './regex.js';
+import { getPattern } from './regex.js';
 import { releaseLoadingFinished } from './relationshipEditor.js';
 import { slugify } from '../utils/string/casingStyle.js';
 import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
@@ -229,37 +226,4 @@ function addPatternInput(config) {
 	});
 
 	return patternInput;
-}
-
-/**
- * Returns the value of the given pattern input as a regular expression if it is enclosed between slashes.
- * Otherwise it returns the raw input as a string or throws for invalid regular expressions.
- * @param {HTMLInputElement} input 
- * @returns {RegExp|string}
- */
-function getPattern(input) {
-	const value = input.value;
-	const match = value.match(regexPattern);
-
-	if (match) {
-		return new RegExp(match[1], match[2]);
-	} else {
-		return value;
-	}
-}
-
-/**
- * Converts the value of the given pattern input into a regular expression and returns it.
- * @param {HTMLInputElement} input 
- */
-export function getPatternAsRegExp(input) {
-	try {
-		const value = getPattern(input);
-		if (typeof value === 'string') {
-			value = new RegExp(escapeRegExp(value));
-		}
-		return value;
-	} catch {
-		return;
-	}
 }
