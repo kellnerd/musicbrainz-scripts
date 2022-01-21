@@ -7,6 +7,7 @@ import rollupImage from '@rollup/plugin-image';
 import rollupStrip from '@rollup/plugin-strip';
 import UglifyJS from 'uglify-js';
 
+import { sourceAndInstallButton, GitHubUserJS } from './tools/github.js';
 import { camelToTitleCase } from './utils/string/casingStyle.js';
 
 async function build(debug = false) {
@@ -277,43 +278,6 @@ function relevantSourceFile(fileName, basePath) {
 function zipObject(keys, values) {
 	return Object.fromEntries(keys.map((_, i) => [keys[i], values[i]]));
 }
-
-
-/**
- * Generates button-like links to install a userscript and to view its source code on GitHub.
- * @param {string} baseName Name of the userscript file (without extension).
- */
-function sourceAndInstallButton(baseName) {
-	const sourceButtonLink = 'https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github';
-	const installButtonLink = 'https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey';
-	return `\n[![Install](${installButtonLink})](${GitHubUserJS.path(baseName)}?raw=1)\n` +
-		`[![Source](${sourceButtonLink})](${GitHubUserJS.path(baseName)})\n`;
-}
-
-
-/**
- * Location of the userscripts on GitHub.
- */
-const GitHubUserJS = {
-	repository: 'kellnerd/musicbrainz-bookmarklets',
-	branch: 'main',
-	basePath: 'dist',
-	repoUrl: function () {
-		return `https://github.com/${this.repository}`;
-	},
-	path: function (baseName) {
-		return `${this.basePath}/${baseName}.user.js`;
-	},
-	rawUrl: function (baseName) {
-		return `https://raw.githubusercontent.com/${this.repository}/${this.branch}/${this.path(baseName)}`;
-	},
-	readmeUrl: function (baseName) {
-		return `${this.repoUrl()}#${slugify(camelToTitleCase(baseName))}`;
-	},
-	supportUrl: function () {
-		return `${this.repoUrl()}/issues`;
-	}
-};
 
 
 build();
