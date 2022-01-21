@@ -7,6 +7,8 @@ import rollupImage from '@rollup/plugin-image';
 import rollupStrip from '@rollup/plugin-strip';
 import UglifyJS from 'uglify-js';
 
+import { camelToTitleCase } from './utils/string/casingStyle.js';
+
 async function build(debug = false) {
 	// build userscripts
 	const userscriptBasePath = 'src/userscripts';
@@ -256,17 +258,6 @@ async function getMarkdownFiles(directory) {
 
 
 /**
- * Converts the name from camel case into title case.
- * @param {string} name
- */
-function camelToTitleCase(name) {
-	return name
-		.replace(/([a-z])([A-Z])/g, '$1 $2')
-		.replace(/^./, c => c.toUpperCase());
-}
-
-
-/**
  * Returns the path to the relevant source code file for the given script.
  * This is the module of the same name inside the source directory if it exists, otherwise it is the file itself.
  * @param {string} fileName File name of the script.
@@ -285,19 +276,6 @@ function relevantSourceFile(fileName, basePath) {
  */
 function zipObject(keys, values) {
 	return Object.fromEntries(keys.map((_, i) => [keys[i], values[i]]));
-}
-
-
-/**
- * Converts a string into an identifier that is compatible with Markdown's heading anchors.
- * @param {string} string
- */
-function slugify(string) {
-	return encodeURIComponent(
-		string.trim()
-			.toLowerCase()
-			.replace(/\s+/g, '-')
-	);
 }
 
 
