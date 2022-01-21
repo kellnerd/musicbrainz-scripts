@@ -6,7 +6,7 @@ import { delay } from './delay.js';
  * @param {number} pollingInterval
  */
 export function waitFor(pollingFunction, pollingInterval) {
-	return new Promise((resolve) => {
+	return new Promise(async (resolve) => {
 		while (pollingFunction() === false) {
 			await delay(pollingInterval);
 		}
