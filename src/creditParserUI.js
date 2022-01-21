@@ -8,11 +8,13 @@ import { addMessageToEditNote } from './editNote.js';
 import {
 	persistCheckbox,
 	persistDetails,
+	persistInput,
 } from './persistElement.js';
 import {
 	escapeRegExp,
 	regexPattern,
 } from './regex.js';
+import { slugify } from '../utils/string/casingStyle.js';
 
 const creditParserUI =
 `<details id="credit-parser">
@@ -86,8 +88,17 @@ export function buildCreditParserUI() {
 		}
 	});
 
-	addPatternInput('credit-terminator', 'Credit terminator', 'Matches the end of a credit (default: end of line)');
-	addPatternInput('name-separator', 'Name separator', 'Splits the extracted name into multiple names (disabled by default)');
+	addPatternInput({
+		id: 'credit-terminator',
+		label: 'Credit terminator',
+		description: 'Matches the end of a credit (default: end of line)',
+	});
+
+	addPatternInput({
+		id: 'name-separator',
+		label: 'Name separator',
+		description: 'Splits the extracted name into multiple names (disabled by default)',
+	});
 }
 
 /**
@@ -153,14 +164,18 @@ export function addParserButton(label, parser, description) {
 }
 
 /**
- * Adds an input field for regular expressions with a validation handler to the credit parser UI.
- * @param {string} id ID and name of the input element.
- * @param {string} label
- * @param {string} description Description which should be used as tooltip.
+ * Adds a persisted input field for regular expressions with a validation handler to the credit parser UI.
+ * @param {object} config
+ * @param {string} [config.id] ID and name of the input element (derived from `label` if missing).
+ * @param {string} config.label Content of the label (without punctuation).
+ * @param {string} config.description Description which should be used as tooltip.
+ * @param {string} config.defaultValue Default value of the input.
  */
-function addPatternInput(id, label, description) {
+function addPatternInput(config) {
+	const id = config.id || slugify(config.label);
 	/** @type {HTMLInputElement} */
 	const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" placeholder="String or /RegExp/" />`);
+	persistInput(patternInput, config.defaultValue);
 
 	const explanationLink = document.createElement('a');
 	explanationLink.innerText = 'help';
@@ -192,7 +207,7 @@ function addPatternInput(id, label, description) {
 	// inject label, input and explanation link
 	const span = document.createElement('span');
 	span.className = 'col';
-	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${description}">${label}:</label>`);
+	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
 	span.append(' ', patternInput, ' ', explanationLink);
 	dom('credit-patterns').appendChild(span);
 

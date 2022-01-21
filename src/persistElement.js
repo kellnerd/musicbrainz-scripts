@@ -5,8 +5,9 @@ import { dom } from './dom.js';
  * @param {HTMLElement} element 
  * @param {keyof HTMLElement} attribute 
  * @param {keyof HTMLElementEventMap} eventType
+ * @param {string|number|boolean} [defaultValue] Default value of the attribute.
  */
-async function persistElement(element, attribute, eventType) {
+async function persistElement(element, attribute, eventType, defaultValue) {
 	if (!element.id) {
 		throw new Error('Can not persist an element without ID');
 	}
@@ -14,7 +15,7 @@ async function persistElement(element, attribute, eventType) {
 	const key = ['persist', element.id, attribute].join('.');
 
 	// initialize attribute
-	const persistedValue = await GM.getValue(key);
+	const persistedValue = await GM.getValue(key, defaultValue);
 	if (persistedValue) {
 		element[attribute] = persistedValue;
 	}
@@ -39,4 +40,13 @@ export function persistCheckbox(id) {
  */
 export function persistDetails(id) {
 	return persistElement(dom(id), 'open', 'toggle');
+}
+
+/**
+ * Persists the value of the given input field across page loads and origins.
+ * @param {HTMLInputElement} element 
+ * @param {string} defaultValue
+ */
+export function persistInput(element, defaultValue) {
+	return persistElement(element, 'value', 'change', defaultValue);
 }
