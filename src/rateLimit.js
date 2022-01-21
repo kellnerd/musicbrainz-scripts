@@ -1,10 +1,6 @@
 // Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
-/**
- * Returns a promise that resolves after the given delay.
- * @param {number} ms Delay in milliseconds.
- */
-const delay = ms => new Promise((resolve, reject) => setTimeout(resolve, ms));
+import { delay } from '../utils/async/delay.js';
 
 function rateLimit1(operation, interval) {
 	let queue = Promise.resolve(); // empty queue is ready
