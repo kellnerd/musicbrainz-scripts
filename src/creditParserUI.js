@@ -94,13 +94,13 @@ export function buildCreditParserUI() {
 
 	addPatternInput({
 		label: 'Credit terminator',
-		description: 'Matches the end of a credit (default: end of line)',
+		description: 'Matches the end of a credit (default when empty: end of line)',
 		defaultValue: parserDefaults.terminatorRE,
 	});
 
 	addPatternInput({
 		label: 'Name separator',
-		description: 'Splits the extracted name into multiple names (disabled by default)',
+		description: 'Splits the extracted name into multiple names (disabled by default when empty)',
 		defaultValue: parserDefaults.nameSeparatorRE,
 	});
 
@@ -198,17 +198,20 @@ function addPatternInput(config) {
 
 	// validate pattern and update explanation link on change
 	patternInput.addEventListener('change', function () {
-		const pattern = getPattern(this);
-		explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
+		this.classList.remove('error', 'success');
+		this.title = '';
 
-		if (pattern) {
-			this.classList.remove('error');
-			this.classList.add('success');
-			this.title = '';
-		} else {
+		try {
+			const pattern = getPattern(this);
+			explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
+
+			if (pattern instanceof RegExp) {
+				this.classList.add('success');
+				this.title = 'Valid regular expression';
+			}
+		} catch (error) {
 			this.classList.add('error');
-			this.classList.remove('success');
-			this.title = 'Invalid regular expression (the default value will be used)';
+			this.title = `Invalid regular expression: ${error.message}\nThe default value will be used.`;
 		}
 	});
 
@@ -229,20 +232,34 @@ function addPatternInput(config) {
 }
 
 /**
- * Checks whether the value of the given input is a valid regular expression and returns it.
+ * Returns the value of the given pattern input as a regular expression if it is enclosed between slashes.
+ * Otherwise it returns the raw input as a string or throws for invalid regular expressions.
  * @param {HTMLInputElement} input 
- * @returns {RegExp|false}
+ * @returns {RegExp|string}
  */
 function getPattern(input) {
-	const patternMatch = input.value.match(regexPattern);
+	const value = input.value;
+	const match = value.match(regexPattern);
 
-	if (patternMatch) {
-		try {
-			return new RegExp(patternMatch[1], patternMatch[2]);
-		} catch {
-			return false;
-		}
+	if (match) {
+		return new RegExp(match[1], match[2]);
 	} else {
-		return new RegExp(escapeRegExp(input.value));
+		return value;
+	}
+}
+
+/**
+ * Converts the value of the given pattern input into a regular expression and returns it.
+ * @param {HTMLInputElement} input 
+ */
+export function getPatternAsRegExp(input) {
+	try {
+		const value = getPattern(input);
+		if (typeof value === 'string') {
+			value = new RegExp(escapeRegExp(value));
+		}
+		return value;
+	} catch {
+		return;
 	}
 }
