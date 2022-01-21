@@ -5,6 +5,7 @@ import {
 	qs,
 } from './dom.js';
 import { addMessageToEditNote } from './editNote.js';
+import { parserDefaults } from './parseCopyrightNotice.js';
 import {
 	persistCheckbox,
 	persistDetails,
@@ -95,12 +96,14 @@ export function buildCreditParserUI() {
 		id: 'credit-terminator',
 		label: 'Credit terminator',
 		description: 'Matches the end of a credit (default: end of line)',
+		defaultValue: parserDefaults.terminatorRE,
 	});
 
 	addPatternInput({
 		id: 'name-separator',
 		label: 'Name separator',
 		description: 'Splits the extracted name into multiple names (disabled by default)',
+		defaultValue: parserDefaults.nameSeparatorRE,
 	});
 
 	// focus the credit parser input once all relationships have been loaded (and displayed)
@@ -186,7 +189,6 @@ function addPatternInput(config) {
 	const id = config.id || slugify(config.label);
 	/** @type {HTMLInputElement} */
 	const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" placeholder="String or /RegExp/" />`);
-	persistInput(patternInput, config.defaultValue);
 
 	const explanationLink = document.createElement('a');
 	explanationLink.innerText = 'help';
@@ -218,6 +220,11 @@ function addPatternInput(config) {
 	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
 	span.append(' ', patternInput, ' ', explanationLink);
 	dom('credit-patterns').appendChild(span);
+
+	// initialize and persist the input value, trigger validation for the initial value
+	persistInput(patternInput, config.defaultValue);
+	automaticWidth(patternInput);
+	patternInput.dispatchEvent(new Event('change'));
 
 	return patternInput;
 }
