@@ -38,6 +38,15 @@ javascript:(function(){function e(e,a){$('input.partial-date-'+e).val(a).trigger
 - Useful to correct the dates for digital media releases with lots of release events which are using the wrong first
   release date of the release group.
 
+### [Clear Redundant Medium Titles](src/bookmarklets/clearRedundantMediumTitles.js)
+
+```js
+javascript:$('input[id^=medium-title]').val((e,t)=>t.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i,'').trim()).trigger('change'),void $('#edit-note-text').val((e,t)=>'Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n'+t).trigger('change');
+```
+
+- Clears medium titles if they are redundant and contain only the medium format and position.
+- Adds a link to the relevant guideline to the edit note.
+
 ### [Enumerate Track Titles](src/enumerateTrackTitles.js)
 
 ```js
