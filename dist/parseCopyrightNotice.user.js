@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.15
+// @version      2022.1.21
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -183,6 +183,28 @@
 	};
 
 	/**
+	 * Returns a promise that resolves after the given delay.
+	 * @param {number} ms Delay in milliseconds.
+	 */
+	function delay(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	/**
+	 * Periodically calls the given function until it returns `true` and resolves afterwards.
+	 * @param {(...params) => boolean} pollingFunction
+	 * @param {number} pollingInterval
+	 */
+	function waitFor(pollingFunction, pollingInterval) {
+		return new Promise(async (resolve) => {
+			while (pollingFunction() === false) {
+				await delay(pollingInterval);
+			}
+			resolve();
+		});
+	}
+
+	/**
 	 * Creates a dialog to add a relationship to the currently edited source entity.
 	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
 	 * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
@@ -248,6 +270,11 @@
 	function getTargetEntity(dialog) {
 		return dialog.relationship().entities() // source and target entity
 			.find((entity) => entity.entityType === dialog.targetType());
+	}
+
+	/** Resolves after the release relationship editor has finished loading. */
+	function releaseLoadingFinished() {
+		return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
 	}
 
 	/**
@@ -410,12 +437,117 @@
 	const separator = '\n—\n';
 
 	/**
+	 * Converts an array with a single element into a scalar.
+	 * @template T
+	 * @param {T|T[]} maybeArray 
+	 */
+	function preferScalar(maybeArray) {
+		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
+		return maybeArray;
+	}
+
+	/**
+	 * Transforms the given value using the given substitution rules.
+	 * @param {string} value 
+	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @returns {string}
+	 */
+	function transform(value, substitutionRules) {
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
+		});
+		return value;
+	}
+
+	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
+
+	const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
+
+	/** @type {CreditParserOptions} */
+	const parserDefaults = {
+		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
+		nameSeparatorRE: /[/|](?=\s|\w{2})/,
+		terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
+	};
+
+	/**
+	 * Extracts all copyright and legal information from the given text.
+	 * @param {string} text 
+	 * @param {Partial<CreditParserOptions>} [customOptions]
+	 */
+	function parseCopyrightNotice(text, customOptions = {}) {
+		// provide default options
+		const options = {
+			...parserDefaults,
+			...customOptions,
+		};
+
+		/** @type {CopyrightItem[]} */
+		const copyrightInfo = [];
+		const namePattern = options.nameRE.source;
+		const terminatorPattern = options.terminatorRE.source;
+
+		// standardize copyright notice
+		text = transform(text, [
+			[/\(C\)/gi, '©'],
+			[/\(P\)/gi, '℗'],
+			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
+			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
+			[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
+			[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
+		]);
+
+		const copyrightMatches = text.matchAll(new RegExp(
+			String.raw`${copyrightRE.source}(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
+			'gm'));
+
+		for (const match of copyrightMatches) {
+			const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
+			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
+			const years = match[2]?.split(/[,&]/).map((year) => year.trim());
+			names.forEach((name) => {
+				copyrightInfo.push({
+					name,
+					types,
+					year: preferScalar(years),
+				});
+			});
+		}
+
+		const legalInfoMatches = text.matchAll(new RegExp(
+			`${legalInfoRE.source}(${namePattern})(?:${terminatorPattern})`,
+			'gim'));
+
+		for (const match of legalInfoMatches) {
+			const types = match[1].split(/\sand\s/).map(cleanType);
+			copyrightInfo.push({
+				name: match[2],
+				types,
+			});
+		}
+
+		return copyrightInfo;
+	}
+
+	/**
+	 * Cleans and standardizes the given free text copyright/legal type.
+	 * @param {string} type 
+	 */
+	function cleanType(type) {
+		return transform(type.toLowerCase().trim(), [
+			[/licen[sc]ed?/g, 'licensed'],
+			[/(distributed|marketed)(\sby)?/, '$1 by'],
+		]);
+	}
+
+	/**
 	 * Persists the desired attribute of the given element across page loads and origins.
 	 * @param {HTMLElement} element 
 	 * @param {keyof HTMLElement} attribute 
 	 * @param {keyof HTMLElementEventMap} eventType
+	 * @param {string|number|boolean} [defaultValue] Default value of the attribute.
 	 */
-	async function persistElement(element, attribute, eventType) {
+	async function persistElement(element, attribute, eventType, defaultValue) {
 		if (!element.id) {
 			throw new Error('Can not persist an element without ID');
 		}
@@ -423,7 +555,7 @@
 		const key = ['persist', element.id, attribute].join('.');
 
 		// initialize attribute
-		const persistedValue = await GM.getValue(key);
+		const persistedValue = await GM.getValue(key, defaultValue);
 		if (persistedValue) {
 			element[attribute] = persistedValue;
 		}
@@ -450,6 +582,90 @@
 		return persistElement(dom(id), 'open', 'toggle');
 	}
 
+	/**
+	 * Persists the value of the given input field across page loads and origins.
+	 * @param {HTMLInputElement} element 
+	 * @param {string} defaultValue
+	 */
+	function persistInput(element, defaultValue) {
+		return persistElement(element, 'value', 'change', defaultValue);
+	}
+
+	/** Pattern to match an ES RegExp string representation. */
+	const regexPattern = /^\/(.+?)\/([gimsuy]*)$/;
+
+	/**
+	 * Escapes special characters in the given string to use it as part of a regular expression.
+	 * @param {string} string 
+	 * @link https://stackoverflow.com/a/6969486
+	 */
+	function escapeRegExp(string) {
+		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+	}
+
+	/**
+	 * Returns the value of the given pattern as a regular expression if it is enclosed between slashes.
+	 * Otherwise it returns the input string or throws for invalid regular expressions.
+	 * @param {string} pattern 
+	 * @returns {RegExp|string}
+	 */
+	function getPattern(pattern) {
+		const match = pattern.match(regexPattern);
+		if (match) {
+			return new RegExp(match[1], match[2]);
+		} else {
+			return pattern;
+		}
+	}
+
+	/**
+	 * Converts the value of the given pattern into a regular expression and returns it.
+	 * @param {string} pattern 
+	 */
+	function getPatternAsRegExp(pattern) {
+		try {
+			const value = getPattern(pattern);
+			if (typeof value === 'string') {
+				value = new RegExp(escapeRegExp(value));
+			}
+			return value;
+		} catch {
+			return;
+		}
+	}
+
+	/**
+	 * Converts a string into an identifier that is compatible with Markdown's heading anchors.
+	 * @param {string} string
+	 */
+	function slugify(string) {
+		return encodeURIComponent(
+			string.trim()
+				.toLowerCase()
+				.replace(/\s+/g, '-')
+		);
+	}
+
+	// adapted from https://stackoverflow.com/a/25621277
+
+	/**
+	 * Resizes the bound element to be as tall as necessary for its content.
+	 * @this {HTMLElement}
+	 */
+	function automaticHeight() {
+		this.style.height = 'auto';
+		this.style.height = this.scrollHeight + 'px';
+	}
+
+	/**
+	 * Resizes the bound element to be as wide as necessary for its content.
+	 * @this {HTMLElement} this 
+	 */
+	function automaticWidth() {
+		this.style.width = 'auto';
+		this.style.width = this.scrollWidth + 10 + 'px'; // account for border and padding
+	}
+
 	const creditParserUI =
 `<details id="credit-parser">
 <summary>
@@ -460,11 +676,15 @@
 		<textarea name="credit-input" id="credit-input" cols="120" rows="1" placeholder="Paste credits here…"></textarea>
 	</div>
 	<div class="row">
-		<p>Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).</p>
+		Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).
+	</div>
+	<div class="row" id="credit-patterns">
 	</div>
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
 		<label class="inline" for="remove-parsed-lines">Remove parsed lines</label>
+		<input type="checkbox" name="parser-autofocus" id="parser-autofocus" />
+		<label class="inline" for="parser-autofocus">Autofocus the parser on page load</label>
 	</div>
 	<div class="row buttons">
 	</div>
@@ -481,6 +701,16 @@ details#credit-parser > summary > h2 {
 }
 textarea#credit-input {
 	overflow-y: hidden;
+}
+form div.row span.col:not(:last-child)::after {
+	content: " | ";
+}
+form div.row span.col label {
+	margin-right: 0;
+}
+#credit-parser label[title] {
+	border-bottom: 1px dotted;
+	cursor: help;
 }`	;
 
 	function buildCreditParserUI() {
@@ -491,22 +721,41 @@ textarea#credit-input {
 		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
 		qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 		injectStylesheet(css, 'credit-parser');
+		const creditInput = dom('credit-input');
 
 		// persist the state of the UI
 		persistDetails('credit-parser');
 		persistCheckbox('remove-parsed-lines');
+		persistCheckbox('parser-autofocus');
 
-		// auto-resize the credit textarea on input (https://stackoverflow.com/a/25621277)
-		dom('credit-input').addEventListener('input', function () {
-			this.style.height = 'auto';
-			this.style.height = this.scrollHeight + 'px';
-		});
+		// auto-resize the credit textarea on input
+		creditInput.addEventListener('input', automaticHeight);
 
 		addButton('Load annotation', (creditInput) => {
 			const annotation = MB.releaseRelationshipEditor.source.latest_annotation;
 			if (annotation) {
 				creditInput.value = annotation.text;
 				creditInput.dispatchEvent(new Event('input'));
+			}
+		});
+
+		addPatternInput({
+			label: 'Credit terminator',
+			description: 'Matches the end of a credit (default when empty: end of line)',
+			defaultValue: parserDefaults.terminatorRE,
+		});
+
+		addPatternInput({
+			label: 'Name separator',
+			description: 'Splits the extracted name into multiple names (disabled by default when empty)',
+			defaultValue: parserDefaults.nameSeparatorRE,
+		});
+
+		// focus the credit parser input once all relationships have been loaded (and displayed)
+		releaseLoadingFinished().then(() => {
+			if (dom('parser-autofocus').checked) {
+				creditInput.scrollIntoView();
+				creditInput.focus();
 			}
 		});
 	}
@@ -574,103 +823,75 @@ textarea#credit-input {
 	}
 
 	/**
-	 * Converts an array with a single element into a scalar.
-	 * @template T
-	 * @param {T|T[]} maybeArray 
+	 * Adds a persisted input field for regular expressions with a validation handler to the credit parser UI.
+	 * @param {object} config
+	 * @param {string} [config.id] ID and name of the input element (derived from `label` if missing).
+	 * @param {string} config.label Content of the label (without punctuation).
+	 * @param {string} config.description Description which should be used as tooltip.
+	 * @param {string} config.defaultValue Default value of the input.
 	 */
-	function preferScalar(maybeArray) {
-		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
-		return maybeArray;
-	}
+	function addPatternInput(config) {
+		const id = config.id || slugify(config.label);
+		/** @type {HTMLInputElement} */
+		const patternInput = createElement(`<input type="text" class="pattern" name="${id}" id="${id}" placeholder="String or /RegExp/" />`);
 
-	/**
-	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value 
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
-	 * @returns {string}
-	 */
-	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, replaceValue]) => {
-			value = value.replace(searchValue, replaceValue);
+		const explanationLink = document.createElement('a');
+		explanationLink.innerText = 'help';
+		explanationLink.target = '_blank';
+		explanationLink.title = 'Displays a diagram representation of this RegExp';
+
+		// auto-resize the pattern input on input
+		patternInput.addEventListener('input', automaticWidth);
+
+		// validate pattern and update explanation link on change
+		patternInput.addEventListener('change', function () {
+			this.classList.remove('error', 'success');
+			this.title = '';
+
+			try {
+				const pattern = getPattern(this.value);
+				explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
+
+				if (pattern instanceof RegExp) {
+					this.classList.add('success');
+					this.title = 'Valid regular expression';
+				}
+			} catch (error) {
+				this.classList.add('error');
+				this.title = `Invalid regular expression: ${error.message}\nThe default value will be used.`;
+			}
 		});
-		return value;
+
+		// inject label, input and explanation link
+		const span = document.createElement('span');
+		span.className = 'col';
+		span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
+		span.append(' ', patternInput, ' ', explanationLink);
+		dom('credit-patterns').appendChild(span);
+
+		// initialize and persist the input value, resize element and trigger validation for the initial value
+		persistInput(patternInput, config.defaultValue).then(() => {
+			automaticWidth.call(patternInput);
+			patternInput.dispatchEvent(new Event('change'));
+		});
+
+		return patternInput;
 	}
-
-	const labelNamePattern = /(.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?)(?:(?<=\.)|$|(?=,|\.|\sunder\s))/;
-
-	const copyrightPattern = new RegExp(
-		/([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/.source
-		+ String.raw`(${labelNamePattern.source}(?:\s*/\s*${labelNamePattern.source})*)`, 'gm');
-
-	const legalInfoPattern = new RegExp(
-		/((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/.source + labelNamePattern.source, 'gim');
-
-	/**
-	 * Extracts all copyright and legal information from the given text.
-	 * @param {string} text 
-	 */
-	function parseCopyrightNotice(text) {
-		/** @type {CopyrightItem[]} */
-		const copyrightInfo = [];
-
-		// standardize copyright notice
-		text = transform(text, [
-			[/\(C\)/gi, '©'],
-			[/\(P\)/gi, '℗'],
-			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
-			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
-			[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
-			[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
-		]);
-
-		const copyrightMatches = text.matchAll(copyrightPattern);
-		for (const match of copyrightMatches) {
-			const names = match[3].split(/\/(?=\s|\w{2})/).map((name) => name.trim());
-			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
-			const years = match[2]?.split(/[,&]/).map((year) => year.trim());
-			names.forEach((name) => {
-				copyrightInfo.push({
-					name,
-					types,
-					year: preferScalar(years),
-				});
-			});
-		}
-
-		const legalInfoMatches = text.matchAll(legalInfoPattern);
-		for (const match of legalInfoMatches) {
-			const types = match[1].split(/\sand\s/).map(cleanType);
-			copyrightInfo.push({
-				name: match[2],
-				types,
-			});
-		}
-
-		return copyrightInfo;
-	}
-
-	/**
-	 * Cleans and standardizes the given free text copyright/legal type.
-	 * @param {string} type 
-	 */
-	function cleanType(type) {
-		return transform(type.toLowerCase().trim(), [
-			[/licen[sc]ed?/g, 'licensed'],
-			[/(distributed|marketed)(\sby)?/, '$1 by'],
-		]);
-	}
-
-	/**
-	 * @typedef {Object} CopyrightItem
-	 * @property {string} name Name of the copyright owner (label or artist).
-	 * @property {string[]} types Types of copyright or legal information, will be mapped to relationship types.
-	 * @property {string|string[]} [year] Numeric year, has to be a string with four digits, otherwise MBS complains. Can be an array in case of multiple years.
-	 */
 
 	function buildUI() {
 		buildCreditParserUI();
+
+		const terminatorInput = dom('credit-terminator');
+		const nameSeparatorInput = dom('name-separator');
+
 		addParserButton('Parse copyright notice', async (creditLine, event) => {
-			const copyrightInfo = parseCopyrightNotice(creditLine);
+			/** @type {CreditParserOptions} */
+			const customOptions = {
+				terminatorRE: getPatternAsRegExp(terminatorInput.value || '/$/'),
+				nameSeparatorRE: getPatternAsRegExp(nameSeparatorInput.value || '/$/'),
+			};
+
+			const copyrightInfo = parseCopyrightNotice(creditLine, customOptions);
 			if (copyrightInfo.length) {
 				const bypassCache = event.ctrlKey;
 				const result = await addCopyrightRelationships(copyrightInfo, bypassCache);
