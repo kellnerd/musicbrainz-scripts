@@ -9,7 +9,7 @@ const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?
 export const parserDefaults = {
 	nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
 	nameSeparatorRE: /[/|](?=\s|\w{2})/,
-	terminatorRE: /(?<=\.)\W|$|(?=,|\.(?:\W|$)|\sunder\s)/,
+	terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
 };
 
 /**
