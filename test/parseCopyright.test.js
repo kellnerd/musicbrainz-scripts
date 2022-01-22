@@ -110,6 +110,15 @@ const copyrightTestCases = [
 		name: 'Parlophone Records Ltd.',
 		types: ['marketed by', 'distributed by'],
 	}]],
+	['℗ «2006 Data Records|Ministry of Sound Recordings Ltd»', [{
+		name: 'Data Records',
+		types: ['℗'],
+		year: '2006',
+	}, {
+		name: 'Ministry of Sound Recordings Ltd',
+		types: ['℗'],
+		year: '2006',
+	}]],
 	/* only one label, name contains a slash */
 	['© «1983 Universal Music A/S»', [{
 		name: 'Universal Music A/S',
