@@ -20,14 +20,19 @@ function buildUI() {
 
 		const copyrightInfo = parseCopyrightNotice(creditLine, customOptions);
 		if (copyrightInfo.length) {
-			const bypassCache = event.ctrlKey;
-			const result = await addCopyrightRelationships(copyrightInfo, bypassCache);
+			const result = await addCopyrightRelationships(copyrightInfo, {
+				forceArtist: event.shiftKey,
+				bypassCache: event.ctrlKey,
+			});
 			nameToMBIDCache.store();
 			return result;
 		} else {
 			return false;
 		}
-	}, 'CTRL key to bypass the cache and force a search');
+	}, [
+		'SHIFT key to force names to be treated as artist names',
+		'CTRL key to bypass the cache and force a search',
+	].join('\n'));
 }
 
 nameToMBIDCache.load();

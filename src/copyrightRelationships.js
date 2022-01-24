@@ -12,12 +12,21 @@ import {
 
 /**
  * Creates and fills an "Add relationship" dialog for each piece of copyright information.
- * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
+ * Lets the user choose the appropriate target label or artist and waits for the dialog to close before continuing with the next one.
  * @param {CopyrightItem[]} copyrightInfo List of copyright items.
- * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
+ * @param {object} [customOptions]
+ * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
+ * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
  * @returns Whether a relationships has been added successfully.
  */
-export async function addCopyrightRelationships(copyrightInfo, bypassCache = false) {
+export async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
+	// provide default options
+	const options = {
+		bypassCache: false,
+		forceArtist: false,
+		...customOptions,
+	};
+
 	const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
 		.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 		.map(normalizeName);
@@ -26,7 +35,7 @@ export async function addCopyrightRelationships(copyrightInfo, bypassCache = fal
 
 	for (const copyrightItem of copyrightInfo) {
 		// detect artists who own the copyright of their own release
-		const entityType = releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
+		const entityType = options.forceArtist || releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
 		const releaseRelTypes = LINK_TYPES.release[entityType];
 		const recordingRelTypes = LINK_TYPES.recording[entityType];
 
@@ -35,7 +44,7 @@ export async function addCopyrightRelationships(copyrightInfo, bypassCache = fal
 		 * (1) Directly map the name to an MBID (if the name is already cached).
 		 * (2) Just fill in the name and let the user select an entity (in manual mode or when the cache is bypassed).
 		 */
-		const targetMBID = !bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
+		const targetMBID = !options.bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
 		let targetEntity = targetMBID
 			? await entityCache.get(targetMBID) // (1b)
 			: MB.entity({ name: copyrightItem.name, entityType }); // (2a)
