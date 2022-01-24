@@ -134,7 +134,7 @@ export function addButton(label, clickHandler, description) {
 /**
  * Adds a new parser button with the given label and handler to the credit parser UI.
  * @param {string} label 
- * @param {(creditLine: string, event: MouseEvent) => Promise<boolean> | boolean} parser
+ * @param {(creditLine: string, event: MouseEvent) => MaybePromise<CreditParserLineStatus>} parser
  * Handler which parses the given credit line and returns whether it was successful.
  * @param {string} [description] Description of the button, shown as tooltip.
  */
@@ -153,10 +153,12 @@ export function addParserButton(label, parser, description) {
 				continue;
 			}
 
-			const parserSucceeded = await parser(line, event);
-			if (parserSucceeded) {
+			// treat partially parsed lines as both skipped and parsed
+			const parserStatus = await parser(line, event);
+			if (parserStatus !== 'skipped') {
 				parsedLines.push(line);
-			} else {
+			}
+			if (parserStatus !== 'done') {
 				skippedLines.push(line);
 			}
 		}

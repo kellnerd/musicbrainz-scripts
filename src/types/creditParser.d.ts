@@ -15,3 +15,5 @@ type CreditParserOptions = {
 	/** Pattern which terminates a credit. */
 	terminatorRE: RegExp;
 };
+
+type CreditParserLineStatus = 'skipped' | 'partial' | 'done';

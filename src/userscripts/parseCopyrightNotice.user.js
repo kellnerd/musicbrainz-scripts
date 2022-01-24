@@ -25,7 +25,7 @@ function buildUI() {
 			nameToMBIDCache.store();
 			return result;
 		} else {
-			return false;
+			return 'skipped';
 		}
 	}, [
 		'SHIFT key to force names to be treated as artist names',

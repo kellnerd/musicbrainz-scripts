@@ -17,7 +17,7 @@ import {
  * @param {object} [customOptions]
  * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
  * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
- * @returns Whether a relationships has been added successfully.
+ * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
  */
 export async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
 	// provide default options
@@ -32,6 +32,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 		.map(normalizeName);
 	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 	let addedRelCount = 0;
+	let skippedDialogs = false;
 
 	for (const copyrightItem of copyrightInfo) {
 		// detect artists who own the copyright of their own release
@@ -62,7 +63,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 		}
 	}
 
-	return !!addedRelCount;
+	return addedRelCount > 0 ? (skippedDialogs ? 'partial' : 'done') : 'skipped';
 
 	/**
 	 * @param {MB.RE.Dialog} dialog 
@@ -94,6 +95,8 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 			if (targetEntity.gid) {
 				nameToMBIDCache.set([targetEntity.entityType, copyrightItem.name], targetEntity.gid);
 				addedRelCount++;
+			} else {
+				skippedDialogs = true;
 			}
 		}
 		return targetEntity;
