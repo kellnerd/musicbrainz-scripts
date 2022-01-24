@@ -103,7 +103,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 			// remember the entity which the user has chosen for the given name
 			targetEntity = getTargetEntity(dialog);
 			if (targetEntity.gid) {
-				nameToMBIDCache.set([targetEntity.entityType, copyrightItem.name], targetEntity.gid);
+				nameToMBIDCache.set([targetEntity.entityType, rel.entity0_credit() || targetEntity.name], targetEntity.gid);
 				addedRelCount++;
 			} else {
 				skippedDialogs = true;
