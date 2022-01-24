@@ -12,13 +12,11 @@ function buildUI() {
 	const nameSeparatorInput = dom('name-separator');
 
 	addParserButton('Parse copyright notice', async (creditLine, event) => {
-		/** @type {CreditParserOptions} */
-		const customOptions = {
+		const copyrightInfo = parseCopyrightNotice(creditLine, {
 			terminatorRE: getPatternAsRegExp(terminatorInput.value || '/$/'),
 			nameSeparatorRE: getPatternAsRegExp(nameSeparatorInput.value || '/$/'),
-		};
+		});
 
-		const copyrightInfo = parseCopyrightNotice(creditLine, customOptions);
 		if (copyrightInfo.length) {
 			const result = await addCopyrightRelationships(copyrightInfo, {
 				forceArtist: event.shiftKey,
