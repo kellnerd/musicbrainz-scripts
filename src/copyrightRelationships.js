@@ -1,7 +1,7 @@
 import { entityCache } from './entityCache.js';
 import { nameToMBIDCache } from './nameToMBIDCache.js';
 import { normalizeName } from './normalizeName.js';
-import { LINK_TYPES } from './relationshipData.js';
+import { getLinkTypeId } from './relationshipData.js';
 import {
 	closingDialog,
 	createAddRelationshipDialog,
@@ -37,8 +37,6 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 	for (const copyrightItem of copyrightInfo) {
 		// detect artists who own the copyright of their own release
 		const entityType = options.forceArtist || releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
-		const releaseRelTypes = LINK_TYPES.release[entityType];
-		const recordingRelTypes = LINK_TYPES.recording[entityType];
 
 		/**
 		 * There are multiple ways to fill the relationship's target entity:
@@ -52,13 +50,25 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 
 		for (const type of copyrightItem.types) {
 			// add all copyright rels to the release
-			const dialog = createAddRelationshipDialog(targetEntity);
-			targetEntity = await fillAndProcessDialog(dialog, copyrightItem, releaseRelTypes[type], targetEntity);
+			try {
+				const relTypeId = getLinkTypeId(entityType, 'release', type);
+				const dialog = createAddRelationshipDialog(targetEntity);
+				targetEntity = await fillAndProcessDialog(dialog, copyrightItem, relTypeId, targetEntity);
+			} catch (error) {
+				console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
+				skippedDialogs = true;
+			}
 
 			// also add phonographic copyright rels to all selected recordings
 			if (type === '℗' && selectedRecordings.length) {
-				const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
-				targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, recordingRelTypes[type], targetEntity);
+				try {
+					const relTypeId = getLinkTypeId(entityType, 'recording', type);
+					const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
+					targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, relTypeId, targetEntity);
+				} catch (error) {
+					console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
+					skippedDialogs = true;
+				}
 			}
 		}
 	}

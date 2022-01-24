@@ -24,3 +24,20 @@ export const LINK_TYPES = {
 		},
 	},
 };
+
+/**
+ * Returns the internal ID of the requested relationship link type.
+ * @param {MB.EntityType} sourceType Type of the source entity.
+ * @param {MB.EntityType} targetType Type of the target entity.
+ * @param {string} relType 
+ * @returns {number}
+ */
+export function getLinkTypeId(sourceType, targetType, relType) {
+	const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
+
+	if (linkTypeId) {
+		return linkTypeId;
+	} else {
+		throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
+	}
+}
