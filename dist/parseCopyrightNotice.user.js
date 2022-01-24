@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.21
+// @version      2022.1.24
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -183,6 +183,23 @@
 	};
 
 	/**
+	 * Returns the internal ID of the requested relationship link type.
+	 * @param {MB.EntityType} sourceType Type of the source entity.
+	 * @param {MB.EntityType} targetType Type of the target entity.
+	 * @param {string} relType 
+	 * @returns {number}
+	 */
+	function getLinkTypeId(sourceType, targetType, relType) {
+		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
+
+		if (linkTypeId) {
+			return linkTypeId;
+		} else {
+			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
+		}
+	}
+
+	/**
 	 * Returns a promise that resolves after the given delay.
 	 * @param {number} ms Delay in milliseconds.
 	 */
@@ -279,48 +296,68 @@
 
 	/**
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
-	 * Lets the user choose the appropriate target label and waits for the dialog to close before continuing with the next one.
+	 * Lets the user choose the appropriate target label or artist and waits for the dialog to close before continuing with the next one.
 	 * @param {CopyrightItem[]} copyrightInfo List of copyright items.
-	 * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
-	 * @returns Whether a relationships has been added successfully.
+	 * @param {object} [customOptions]
+	 * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
+	 * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
+	 * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
 	 */
-	async function addCopyrightRelationships(copyrightInfo, bypassCache = false) {
+	async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
+		// provide default options
+		const options = {
+			bypassCache: false,
+			forceArtist: false,
+			...customOptions,
+		};
+
 		const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
 			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 			.map(normalizeName);
 		const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 		let addedRelCount = 0;
+		let skippedDialogs = false;
 
 		for (const copyrightItem of copyrightInfo) {
 			// detect artists who own the copyright of their own release
-			const entityType = releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
-			const releaseRelTypes = LINK_TYPES.release[entityType];
-			const recordingRelTypes = LINK_TYPES.recording[entityType];
+			const entityType = options.forceArtist || releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
 
 			/**
 			 * There are multiple ways to fill the relationship's target entity:
 			 * (1) Directly map the name to an MBID (if the name is already cached).
 			 * (2) Just fill in the name and let the user select an entity (in manual mode or when the cache is bypassed).
 			 */
-			const targetMBID = !bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
+			const targetMBID = !options.bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
 			let targetEntity = targetMBID
 				? await entityCache.get(targetMBID) // (1b)
 				: MB.entity({ name: copyrightItem.name, entityType }); // (2a)
 
 			for (const type of copyrightItem.types) {
 				// add all copyright rels to the release
-				const dialog = createAddRelationshipDialog(targetEntity);
-				targetEntity = await fillAndProcessDialog(dialog, copyrightItem, releaseRelTypes[type], targetEntity);
+				try {
+					const relTypeId = getLinkTypeId(entityType, 'release', type);
+					const dialog = createAddRelationshipDialog(targetEntity);
+					targetEntity = await fillAndProcessDialog(dialog, copyrightItem, relTypeId, targetEntity);
+				} catch (error) {
+					console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
+					skippedDialogs = true;
+				}
 
 				// also add phonographic copyright rels to all selected recordings
 				if (type === '℗' && selectedRecordings.length) {
-					const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
-					targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, recordingRelTypes[type], targetEntity);
+					try {
+						const relTypeId = getLinkTypeId(entityType, 'recording', type);
+						const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
+						targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, relTypeId, targetEntity);
+					} catch (error) {
+						console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
+						skippedDialogs = true;
+					}
 				}
 			}
 		}
 
-		return !!addedRelCount;
+		return addedRelCount > 0 ? (skippedDialogs ? 'partial' : 'done') : 'skipped';
 
 		/**
 		 * @param {MB.RE.Dialog} dialog 
@@ -350,17 +387,15 @@
 				// remember the entity which the user has chosen for the given name
 				targetEntity = getTargetEntity(dialog);
 				if (targetEntity.gid) {
-					nameToMBIDCache.set([targetEntity.entityType, copyrightItem.name], targetEntity.gid);
+					nameToMBIDCache.set([targetEntity.entityType, rel.entity0_credit() || targetEntity.name], targetEntity.gid);
 					addedRelCount++;
+				} else {
+					skippedDialogs = true;
 				}
 			}
 			return targetEntity;
 		}
 	}
-
-	/**
-	 * @typedef {import('./parseCopyrightNotice.js').CopyrightItem} CopyrightItem
-	 */
 
 	/**
 	 * Creates a DOM element from the given HTML fragment.
@@ -784,7 +819,7 @@ form div.row span.col label {
 	/**
 	 * Adds a new parser button with the given label and handler to the credit parser UI.
 	 * @param {string} label 
-	 * @param {(creditLine: string, event: MouseEvent) => Promise<boolean> | boolean} parser
+	 * @param {(creditLine: string, event: MouseEvent) => MaybePromise<CreditParserLineStatus>} parser
 	 * Handler which parses the given credit line and returns whether it was successful.
 	 * @param {string} [description] Description of the button, shown as tooltip.
 	 */
@@ -803,10 +838,12 @@ form div.row span.col label {
 					continue;
 				}
 
-				const parserSucceeded = await parser(line, event);
-				if (parserSucceeded) {
+				// treat partially parsed lines as both skipped and parsed
+				const parserStatus = await parser(line, event);
+				if (parserStatus !== 'skipped') {
 					parsedLines.push(line);
-				} else {
+				}
+				if (parserStatus !== 'done') {
 					skippedLines.push(line);
 				}
 			}
@@ -885,22 +922,25 @@ form div.row span.col label {
 		const nameSeparatorInput = dom('name-separator');
 
 		addParserButton('Parse copyright notice', async (creditLine, event) => {
-			/** @type {CreditParserOptions} */
-			const customOptions = {
+			const copyrightInfo = parseCopyrightNotice(creditLine, {
 				terminatorRE: getPatternAsRegExp(terminatorInput.value || '/$/'),
 				nameSeparatorRE: getPatternAsRegExp(nameSeparatorInput.value || '/$/'),
-			};
+			});
 
-			const copyrightInfo = parseCopyrightNotice(creditLine, customOptions);
 			if (copyrightInfo.length) {
-				const bypassCache = event.ctrlKey;
-				const result = await addCopyrightRelationships(copyrightInfo, bypassCache);
+				const result = await addCopyrightRelationships(copyrightInfo, {
+					forceArtist: event.shiftKey,
+					bypassCache: event.ctrlKey,
+				});
 				nameToMBIDCache.store();
 				return result;
 			} else {
-				return false;
+				return 'skipped';
 			}
-		}, 'CTRL key to bypass the cache and force a search');
+		}, [
+			'SHIFT key to force names to be treated as artist names',
+			'CTRL key to bypass the cache and force a search',
+		].join('\n'));
 	}
 
 	nameToMBIDCache.load();
