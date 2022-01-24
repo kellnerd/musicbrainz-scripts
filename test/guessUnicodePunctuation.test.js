@@ -58,6 +58,7 @@ const punctuationTestCases = [
 
 	/* ignored cases */
 	['Death on Two Legs (Dedicated to......', 'Death on Two Legs (Dedicated to......'],
+	['Royal Days -another version-', 'Royal Days -another version-'], // dashes used as brackets (Japanese)
 ];
 
 export default function testPunctuationRules() {

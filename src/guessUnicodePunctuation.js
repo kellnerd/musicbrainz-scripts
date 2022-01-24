@@ -33,7 +33,7 @@ export const transformationRules = [
 	[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 
 	/* hyphens */
-	[/-/g, '‐'], // ... and finally the hyphens should be remaining
+	[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
 
 	/* rare cases where it is difficult to define precise rules: em dash, minus */
 ];
