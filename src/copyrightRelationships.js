@@ -90,7 +90,3 @@ export async function addCopyrightRelationships(copyrightInfo, bypassCache = fal
 		return targetEntity;
 	}
 }
-
-/**
- * @typedef {import('./parseCopyrightNotice.js').CopyrightItem} CopyrightItem
- */
