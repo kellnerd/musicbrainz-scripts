@@ -21,6 +21,7 @@ function buildUI() {
 			const result = await addCopyrightRelationships(copyrightInfo, {
 				forceArtist: event.shiftKey,
 				bypassCache: event.ctrlKey,
+				useAllYears: event.altKey,
 			});
 			nameToMBIDCache.store();
 			return result;
@@ -30,6 +31,7 @@ function buildUI() {
 	}, [
 		'SHIFT key to force names to be treated as artist names',
 		'CTRL key to bypass the cache and force a search',
+		'ALT key to add multiple relationships for multiple years',
 	].join('\n'));
 }
 

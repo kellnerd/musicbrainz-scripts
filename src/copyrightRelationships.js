@@ -1,3 +1,4 @@
+import { preferArray } from './array.js';
 import { entityCache } from './entityCache.js';
 import { nameToMBIDCache } from './nameToMBIDCache.js';
 import { normalizeName } from './normalizeName.js';
@@ -17,6 +18,7 @@ import {
  * @param {object} [customOptions]
  * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
  * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
+ * @param {boolean} [customOptions.useAllYears] Adds one (release) relationship for each given year instead of a single undated relationship, disabled by default.
  * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
  */
 export async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
@@ -24,6 +26,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 	const options = {
 		bypassCache: false,
 		forceArtist: false,
+		useAllYears: false,
 		...customOptions,
 	};
 
@@ -52,8 +55,17 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 			// add all copyright rels to the release
 			try {
 				const relTypeId = getLinkTypeId(entityType, 'release', type);
-				const dialog = createAddRelationshipDialog(targetEntity);
-				targetEntity = await fillAndProcessDialog(dialog, copyrightItem, relTypeId, targetEntity);
+				let years = preferArray(copyrightItem.year);
+
+				// do not use all years if there are multiple unspecific ones (unless enabled)
+				if (years.length !== 1 && !options.useAllYears) {
+					years = [undefined]; // prefer a single undated relationship
+				}
+
+				for (const year of years) {
+					const dialog = createAddRelationshipDialog(targetEntity);
+					targetEntity = await fillAndProcessDialog(dialog, { ...copyrightItem, year }, relTypeId, targetEntity);
+				}
 			} catch (error) {
 				console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
 				skippedDialogs = true;
