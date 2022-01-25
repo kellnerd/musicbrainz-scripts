@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.24
+// @version      2022.1.25
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -16,6 +16,26 @@
 
 (function () {
 	'use strict';
+
+	/**
+	 * Converts an array with a single element into a scalar.
+	 * @template T
+	 * @param {T|T[]} maybeArray 
+	 */
+	function preferScalar(maybeArray) {
+		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
+		return maybeArray;
+	}
+
+	/**
+	 * Converts a scalar into an array with a single element.
+	 * @template T
+	 * @param {T|T[]} maybeArray 
+	 */
+	function preferArray(maybeArray) {
+		if (!Array.isArray(maybeArray)) return [maybeArray];
+		return maybeArray;
+	}
 
 	/**
 	 * @template Params
@@ -301,6 +321,7 @@
 	 * @param {object} [customOptions]
 	 * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
 	 * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
+	 * @param {boolean} [customOptions.useAllYears] Adds one (release) relationship for each given year instead of a single undated relationship, disabled by default.
 	 * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
 	 */
 	async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
@@ -308,6 +329,7 @@
 		const options = {
 			bypassCache: false,
 			forceArtist: false,
+			useAllYears: false,
 			...customOptions,
 		};
 
@@ -336,8 +358,17 @@
 				// add all copyright rels to the release
 				try {
 					const relTypeId = getLinkTypeId(entityType, 'release', type);
-					const dialog = createAddRelationshipDialog(targetEntity);
-					targetEntity = await fillAndProcessDialog(dialog, copyrightItem, relTypeId, targetEntity);
+					let years = preferArray(copyrightItem.year);
+
+					// do not use all years if there are multiple unspecific ones (unless enabled)
+					if (years.length !== 1 && !options.useAllYears) {
+						years = [undefined]; // prefer a single undated relationship
+					}
+
+					for (const year of years) {
+						const dialog = createAddRelationshipDialog(targetEntity);
+						targetEntity = await fillAndProcessDialog(dialog, { ...copyrightItem, year }, relTypeId, targetEntity);
+					}
 				} catch (error) {
 					console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
 					skippedDialogs = true;
@@ -470,16 +501,6 @@
 	}
 
 	const separator = '\n—\n';
-
-	/**
-	 * Converts an array with a single element into a scalar.
-	 * @template T
-	 * @param {T|T[]} maybeArray 
-	 */
-	function preferScalar(maybeArray) {
-		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
-		return maybeArray;
-	}
 
 	/**
 	 * Transforms the given value using the given substitution rules.
@@ -931,6 +952,7 @@ form div.row span.col label {
 				const result = await addCopyrightRelationships(copyrightInfo, {
 					forceArtist: event.shiftKey,
 					bypassCache: event.ctrlKey,
+					useAllYears: event.altKey,
 				});
 				nameToMBIDCache.store();
 				return result;
@@ -940,6 +962,7 @@ form div.row span.col label {
 		}, [
 			'SHIFT key to force names to be treated as artist names',
 			'CTRL key to bypass the cache and force a search',
+			'ALT key to add multiple relationships for multiple years',
 		].join('\n'));
 	}
 
