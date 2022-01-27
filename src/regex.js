@@ -32,7 +32,7 @@ export function getPattern(pattern) {
  */
 export function getPatternAsRegExp(pattern) {
 	try {
-		const value = getPattern(pattern);
+		let value = getPattern(pattern);
 		if (typeof value === 'string') {
 			value = new RegExp(escapeRegExp(value));
 		}
