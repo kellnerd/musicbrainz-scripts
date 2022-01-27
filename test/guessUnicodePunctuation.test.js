@@ -1,6 +1,6 @@
 import { transformationRules } from '../src/guessUnicodePunctuation.js';
 import { transform } from '../src/transformInputValues.js';
-import { assertFunction } from '../tools/test.js';
+import { assertFunction } from '../utils/test/assertFunction.js';
 
 const punctuationTestCases = [
 	/* single and double quotes */

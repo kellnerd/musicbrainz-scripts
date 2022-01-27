@@ -1,5 +1,5 @@
 import { parseCopyrightNotice } from '../src/parseCopyrightNotice.js';
-import { assertFunction } from '../tools/test.js';
+import { assertFunction } from '../utils/test/assertFunction.js';
 
 /** @type {Array<[string, import('../src/parseCopyrightNotice.js').CopyrightItem[]]>} */
 const copyrightTestCases = [
