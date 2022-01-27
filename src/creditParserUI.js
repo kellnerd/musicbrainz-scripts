@@ -192,6 +192,9 @@ function addPatternInput(config) {
 	explanationLink.target = '_blank';
 	explanationLink.title = 'Displays a diagram representation of this RegExp';
 
+	const resetButton = createElement(`<button type="button" title="Reset the input to its default value">Reset</button>`);
+	resetButton.addEventListener('click', () => setInput(patternInput, config.defaultValue));
+
 	// auto-resize the pattern input on input
 	patternInput.addEventListener('input', automaticWidth);
 
@@ -214,18 +217,26 @@ function addPatternInput(config) {
 		}
 	});
 
-	// inject label, input and explanation link
+	// inject label, input, reset button and explanation link
 	const span = document.createElement('span');
 	span.className = 'col';
 	span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
-	span.append(' ', patternInput, ' ', explanationLink);
+	span.append(' ', patternInput, ' ', resetButton, ' ', explanationLink);
 	dom('credit-patterns').appendChild(span);
 
-	// initialize and persist the input value, resize element and trigger validation for the initial value
-	persistInput(patternInput, config.defaultValue).then(() => {
-		automaticWidth.call(patternInput);
-		patternInput.dispatchEvent(new Event('change'));
-	});
+	// persist the input and calls the setter for the initial value (persisted value or the default)
+	persistInput(patternInput, config.defaultValue).then(setInput);
 
 	return patternInput;
+}
+
+/**
+ * Sets the input to the given value (optional), resizes it and triggers persister and validation.
+ * @param {HTMLInputElement} input 
+ * @param {string} [value] 
+ */
+function setInput(input, value) {
+	if (value) input.value = value;
+	automaticWidth.call(input);
+	input.dispatchEvent(new Event('change'));
 }

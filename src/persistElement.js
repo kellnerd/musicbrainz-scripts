@@ -24,6 +24,8 @@ async function persistElement(element, attribute, eventType, defaultValue) {
 	element.addEventListener(eventType, () => {
 		GM.setValue(key, element[attribute]);
 	});
+
+	return element;
 }
 
 /**
