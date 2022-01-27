@@ -1,10 +1,12 @@
-import DOM from '../dom.js';
 import {
 	guessUnicodePunctuation,
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
 import { detectReleaseLanguage } from '../languages.js';
-import { transformInputValues, defaultHighlightClass } from '../transformInputValues.js';
+import { createElement, injectStylesheet } from '../../utils/dom/create.js';
+import { qs, qsa } from '../../utils/dom/select.js';
+import { transformInputValues, defaultHighlightClass } from '../../utils/dom/transformInputValues.js';
+
 import guessPunctuationIcon from './icons/guessPunctuation.png';
 
 const buttonTemplate = {
@@ -27,11 +29,13 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
  * @returns {HTMLButtonElement} DOM button element.
  */
 function insertIconButtonAfter(targetInput) {
-	const target = DOM.qs(targetInput);
+	const target = qs(targetInput);
 	if (!target) return null;
-	const button = DOM.el(buttonTemplate.icon);
+
+	const button = createElement(buttonTemplate.icon);
 	target.classList.add('with-guesscase') // make input smaller to create space for up to two icon buttons
 	target.parentNode.append(' ', button); // insert white space and button to the right of the input field
+
 	return button;
 }
 
@@ -44,14 +48,17 @@ function insertIconButtonAfter(targetInput) {
 function insertACButton(event) {
 	// remove this function from the event listeners after the first event to avoid duplicate buttons
 	if (event) {
-		DOM.qsa('.open-ac').forEach((button) => button.removeEventListener(event.type, insertACButton));
+		qsa('.open-ac').forEach((button) => button.removeEventListener(event.type, insertACButton));
 	}
-	const acBubbleButtons = DOM.qs('#artist-credit-bubble .buttons');
+
+	const acBubbleButtons = qs('#artist-credit-bubble .buttons');
+
 	if (!acBubbleButtons) {
 		setTimeout(insertACButton, 50); // wait for the AC bubble to appear in the DOM
 		return;
 	}
-	const button = DOM.el(buttonTemplate.standard);
+
+	const button = createElement(buttonTemplate.standard);
 	button.addEventListener('click', () => guessUnicodePunctuation(acInputs, null, new Event('blur')));
 	acBubbleButtons.append(button);
 }
@@ -61,11 +68,12 @@ const acInputs = [
 ];
 
 
-DOM.css(styles, 'guess-punctuation');
+injectStylesheet(styles, 'guess-punctuation');
 
 // parse the path of the current page
 const path = window.location.pathname.split('/');
 let entityType = path[1], pageType = path[path.length - 1];
+
 if (entityType == 'artist' && path[3] == 'credit') {
 	entityType = 'artist-credit';
 }
@@ -73,9 +81,9 @@ if (entityType == 'artist' && path[3] == 'credit') {
 // insert "Guess punctuation" buttons on all entity edit and creation pages
 if (pageType == 'edit_annotation') { // annotation edit page
 	// insert button for entity annotations after the "Preview" button
-	const button = DOM.el(buttonTemplate.standard);
+	const button = createElement(buttonTemplate.standard);
 	button.addEventListener('click', () => transformInputValues('textarea[name$=text]', transformationRulesToPreserveMarkup));
-	DOM.qs('.buttons').append(button);
+	qs('.buttons').append(button);
 } else if (entityType == 'release') { // release editor
 	const releaseInputs = [
 		'input#name', // release title
@@ -85,54 +93,61 @@ if (pageType == 'edit_annotation') { // annotation edit page
 		'input.track-name', // all track titles
 		'input[id^=medium-title]', // all medium titles
 	];
+
 	// button for the release information tab (after disambiguation comment input field)
 	insertIconButtonAfter(releaseInputs[1])
 		.addEventListener('click', () => {
 			guessUnicodePunctuation(releaseInputs, detectReleaseLanguage());
 			transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 		});
+
 	// button for the tracklist tab (after the guess case button)
-	const tracklistButton = DOM.el(buttonTemplate.standard);
+	const tracklistButton = createElement(buttonTemplate.standard);
 	tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, detectReleaseLanguage()));
-	DOM.qs('.guesscase .buttons').append(tracklistButton);
+	qs('.guesscase .buttons').append(tracklistButton);
+
 	// global button (next to the release editor navigation buttons)
-	const globalButton = DOM.el(buttonTemplate.global);
+	const globalButton = createElement(buttonTemplate.global);
 	globalButton.addEventListener('click', () => {
 		guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], detectReleaseLanguage()); // both release info and tracklist data
 		transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 		// exclude annotations from the global action as the changes are hard to verify
 	});
-	DOM.qs('#release-editor > .buttons').append(globalButton);
+	qs('#release-editor > .buttons').append(globalButton);
 } else if (entityType != 'artist-credit') { // edit pages for all other entity types (except ACs)
 	const entityInputs = [
 		'input[name$=name]', // entity name
 		'input[name$=comment]', // entity disambiguation comment
 	];
+
 	// on artist edit pages we need a different event to trigger the artist credit renamer on name changes
 	const event = (entityType === 'artist') ? new Event('input', { bubbles: true }) : undefined;
+
 	// button after the disambiguation comment input field
 	// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 	// TODO: use lyrics language to localize quotes?
 	insertIconButtonAfter(entityInputs[1]) // skipped for url entities as there is no disambiguation input
 		?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, null, event));
+
 	// global button after the "Enter edit" button
-	const button = DOM.el(buttonTemplate.global)
+	const button = createElement(buttonTemplate.global)
 	button.addEventListener('click', () => {
 		guessUnicodePunctuation(entityInputs, null, event);
 		transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 	});
-	DOM.qs('button.submit').parentNode.append(button);
+	qs('button.submit').parentNode.append(button);
 }
 
 // handle edit pages with artist credit bubbles
 if (['artist-credit', 'release', 'release-group', 'recording'].includes(entityType)) {
 	// wait a moment until the button which opens the AC bubble is available
-	setTimeout(() => DOM.qsa('.open-ac').forEach((button) => {
+	setTimeout(() => qsa('.open-ac').forEach((button) => {
 		// wait for the artist credit bubble to be opened before inserting the guess button
 		button.addEventListener('click', insertACButton);
+
 		if (entityType === 'release') {
 			// remove old highlights that might be from a different AC which has been edited previously
-			button.addEventListener('click', () => DOM.qsa(acInputs.join()).forEach(
+			button.addEventListener('click', () => qsa(acInputs.join()).forEach(
 				(input) => input.classList.remove(defaultHighlightClass)
 			));
 		}

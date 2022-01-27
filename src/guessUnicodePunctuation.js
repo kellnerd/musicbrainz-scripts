@@ -1,4 +1,5 @@
-import { transform, transformInputValues } from './transformInputValues.js';
+import { transformInputValues } from '../utils/dom/transformInputValues.js';
+import { transform } from '../utils/string/transform.js';
 
 export const transformationRules = [
 	/* quoted text */

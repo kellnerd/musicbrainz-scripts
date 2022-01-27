@@ -9,7 +9,7 @@ import {
 	markdownToAnnotation,
 	convertEntityLinks,
 } from '../annotationConverter.js';
-import { $transformInputValues } from '../transformInputValues.js';
+import { $transformInputValues } from '../../utils/dom/transformInputValues.js';
 
 const annotationInput = [
 	'textarea[name$=text]', // entity annotation

@@ -12,7 +12,7 @@ import {
 	transformationRules,
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
-import { $transformInputValues } from '../transformInputValues.js';
+import { $transformInputValues } from '../../utils/dom/transformInputValues.js';
 
 const titleInputSelectors = [
 	'input#name', // release title (release editor)

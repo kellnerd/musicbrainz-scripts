@@ -1,4 +1,4 @@
-import { dom } from './dom.js';
+import { dom } from '../dom/select.js';
 
 /**
  * Persists the desired attribute of the given element across page loads and origins.

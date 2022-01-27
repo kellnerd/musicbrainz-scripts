@@ -1,7 +1,5 @@
-import { preferArray } from './array.js';
 import { entityCache } from './entityCache.js';
 import { nameToMBIDCache } from './nameToMBIDCache.js';
-import { normalizeName } from './normalizeName.js';
 import { getLinkTypeId } from './relationshipData.js';
 import {
 	closingDialog,
@@ -10,6 +8,8 @@ import {
 	getTargetEntity,
 	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
+import { preferArray } from '../utils/array/scalar.js';
+import { simplifyName } from '../utils/string/simplify.js';
 
 /**
  * Creates and fills an "Add relationship" dialog for each piece of copyright information.
@@ -32,14 +32,14 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 
 	const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
 		.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
-		.map(normalizeName);
+		.map(simplifyName);
 	const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 	let addedRelCount = 0;
 	let skippedDialogs = false;
 
 	for (const copyrightItem of copyrightInfo) {
 		// detect artists who own the copyright of their own release
-		const entityType = options.forceArtist || releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
+		const entityType = options.forceArtist || releaseArtistNames.includes(simplifyName(copyrightItem.name)) ? 'artist' : 'label';
 
 		/**
 		 * There are multiple ways to fill the relationship's target entity:

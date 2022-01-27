@@ -1,6 +1,6 @@
 // Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
-import { delay } from '../utils/async/delay.js';
+import { delay } from './delay.js';
 
 function rateLimit1(operation, interval) {
 	let queue = Promise.resolve(); // empty queue is ready

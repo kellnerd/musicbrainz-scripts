@@ -1,9 +1,9 @@
 import { addCopyrightRelationships } from '../copyrightRelationships.js';
 import { addParserButton, buildCreditParserUI } from '../creditParserUI.js';
-import { dom } from '../dom.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
-import { getPatternAsRegExp } from '../regex.js';
+import { dom } from '../../utils/dom/select.js';
+import { getPatternAsRegExp } from '../../utils/regex/parse.js';
 
 function buildUI() {
 	buildCreditParserUI();

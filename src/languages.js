@@ -1,4 +1,4 @@
-import { dom } from './dom.js';
+import { dom } from '../utils/dom/select.js';
 
 // MB languages as of 2021-10-04, extracted from the HTML source code of the release editor's language select menu
 export const frequentLanguageIDs = {
@@ -23,6 +23,7 @@ export const frequentLanguageIDs = {
 	403: 'Swedish',
 	433: 'Turkish',
 };
+
 export const otherLanguageIDs = {
 	24: '[Artificial (Other)]',
 	2: 'Abkhazian',
@@ -458,6 +459,7 @@ export const otherLanguageIDs = {
 	470: 'Zulu',
 	471: 'Zuni',
 };
+
 export const languageIDs = {
 	...frequentLanguageIDs,
 	...otherLanguageIDs,

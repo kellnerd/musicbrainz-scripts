@@ -1,4 +1,4 @@
-import { FunctionCache } from './cache.js';
+import { FunctionCache } from '../utils/cache/FunctionCache.js';
 
 /**
  * Dummy function to make the cache fail without actually running an expensive function.

@@ -1,4 +1,5 @@
-import { qsa } from './dom.js';
+import { qsa } from './select.js';
+import { transform } from '../string/transform.js';
 
 export const defaultHighlightClass = 'content-changed';
 
@@ -24,19 +25,6 @@ export function transformInputValues(inputSelector, substitutionRules, event = n
 			input.classList.add(highlightClass);
 		}
 	});
-}
-
-/**
- * Transforms the given value using the given substitution rules.
- * @param {string} value 
- * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
- * @returns {string}
- */
-export function transform(value, substitutionRules) {
-	substitutionRules.forEach(([searchValue, replaceValue]) => {
-		value = value.replace(searchValue, replaceValue);
-	});
-	return value;
 }
 
 /**

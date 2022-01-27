@@ -1,5 +1,5 @@
-import { preferScalar } from './array.js';
-import { transform } from './transformInputValues.js';
+import { preferScalar } from '../utils/array/scalar.js';
+import { transform } from '../utils/string/transform.js';
 
 const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
 

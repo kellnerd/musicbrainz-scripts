@@ -1,5 +1,5 @@
 import { useUnicodePunctuation } from './guessUnicodePunctuation.js';
-import { rateLimit } from './rateLimit.js';
+import { rateLimit } from '../utils/async/rateLimit.js';
 import 'cross-fetch/dist/node-polyfill.js';
 
 /**

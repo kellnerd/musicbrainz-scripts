@@ -1,20 +1,16 @@
-import {
-	createElement,
-	dom,
-	injectStylesheet,
-	qs,
-} from './dom.js';
 import { addMessageToEditNote } from './editNote.js';
 import { parserDefaults } from './parseCopyrightNotice.js';
+import { releaseLoadingFinished } from './relationshipEditor.js';
+import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
+import { createElement, injectStylesheet } from '../utils/dom/create.js';
+import { dom, qs } from '../utils/dom/select.js';
+import { getPattern, getPatternAsRegExp } from '../utils/regex/parse.js';
+import { slugify } from '../utils/string/casingStyle.js';
 import {
 	persistCheckbox,
 	persistDetails,
 	persistInput,
-} from './persistElement.js';
-import { getPattern, getPatternAsRegExp } from './regex.js';
-import { releaseLoadingFinished } from './relationshipEditor.js';
-import { slugify } from '../utils/string/casingStyle.js';
-import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
+} from '../utils/userscript/persistElement.js';
 
 const creditParserUI =
 `<details id="credit-parser">

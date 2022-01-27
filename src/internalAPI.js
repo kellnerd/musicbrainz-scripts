@@ -1,4 +1,4 @@
-import { createRecordMapper } from './createRecordMapper.js';
+import { createRecordMapper } from '../utils/object/createRecordMapper.js';
 
 /**
  * Fetches the entity with the given MBID from the internal API ws/js.
