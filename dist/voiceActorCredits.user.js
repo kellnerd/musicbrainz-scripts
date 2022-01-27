@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.4
+// @version      2022.1.27
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -55,7 +55,7 @@
 	 * @returns {{ type: MB.EntityType, mbid: MB.MBID } | undefined} Type and ID.
 	 */
 	function extractEntityFromURL$1(url) {
-		const entity = url.match(/(area|artist|event|genre|instrument|label|place|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
+		const entity = url.match(/(area|artist|event|genre|instrument|label|place|recording|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
 		return entity ? {
 			type: entity[1],
 			mbid: entity[2]
@@ -211,7 +211,7 @@
 		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 
 		/* hyphens */
-		[/-/g, '‐'], // ... and finally the hyphens should be remaining
+		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
 
 		/* rare cases where it is difficult to define precise rules: em dash, minus */
 	];
@@ -225,13 +225,15 @@
 		return transform(text, transformationRules);
 	}
 
-	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
-
 	/**
 	 * Returns a promise that resolves after the given delay.
 	 * @param {number} ms Delay in milliseconds.
 	 */
-	const delay = ms => new Promise((resolve, reject) => setTimeout(resolve, ms));
+	function delay(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
 	function rateLimit1(operation, interval) {
 		let queue = Promise.resolve(); // empty queue is ready
@@ -316,7 +318,7 @@
 				// drop bracketed numeric suffixes for ambiguous artist names
 				parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-				parsedArtist.anv = useUnicodePunctuation(artist.anv || artist.name);
+				parsedArtist.anv = useUnicodePunctuation(artist.anv || parsedArtist.name);
 
 				// split roles with credited role names in square brackets (for convenience)
 				const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
@@ -450,7 +452,6 @@
 	 * @param {Partial<MB.InternalArtist>} [artistData] Data of the performing artist (optional).
 	 * @param {string} [roleName] Credited name of the voice actor's role (optional).
 	 * @param {string} [artistCredit] Credited name of the performing artist (optional).
-	 * @returns MusicBrainz "Add relationship" dialog.
 	 */
 	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 		const viewModel = MB.releaseRelationshipEditor;
@@ -511,24 +512,24 @@
 	}
 
 	/**
-	 * Creates an URL to seed the editor of the given artist with the given external link.
-	 * @param {MB.MBID} mbid MBID of the artist.
+	 * Creates an URL to seed the editor of the given entity with the given external link.
+	 * @param {MB.EntityType} type Type of the target entity.
+	 * @param {MB.MBID} mbid MBID of the target entity.
 	 * @param {string} url External link.
 	 * @param {number} linkTypeID
 	 * @param {string} [editNote]
 	 */
-
-	function seedURLForArtist(mbid, url, linkTypeID, editNote) {
+	function seedURLForEntity(type, mbid, url, linkTypeID, editNote) {
 		const seedingParams = new URLSearchParams({
-			'edit-artist.url.0.text': url,
-			'edit-artist.url.0.link_type_id': linkTypeID
+			[`edit-${type}.url.0.text`]: url,
+			[`edit-${type}.url.0.link_type_id`]: linkTypeID,
 		});
 
 		if (editNote) {
-			seedingParams.set('edit-artist.edit_note', buildEditNote(editNote));
+			seedingParams.set(`edit-${type}.edit_note`, buildEditNote(editNote));
 		}
 
-		return `https://musicbrainz.org/artist/${mbid}/edit?${seedingParams}`;
+		return `${buildEntityURL$1(type, mbid)}/edit?${seedingParams}`;
 	}
 
 	/**
@@ -653,7 +654,7 @@
 						'Please add the external link',
 						`<a href="${match.externalURL}" target="_blank">${match.externalName}</a>`,
 						'to the matched entity:',
-						`<a href="${seedURLForArtist(match.MBID, match.externalURL, 180, artistSeedNote)}" target="_blank">${match.name}</a>`,
+						`<a href="${seedURLForEntity('artist', match.MBID, match.externalURL, 180, artistSeedNote)}" target="_blank">${match.name}</a>`,
 						match.comment ? `<span class="comment">(<bdi>${match.comment}</bdi>)</span>` : '',
 					].join(' '));
 
