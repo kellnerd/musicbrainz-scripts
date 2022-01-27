@@ -42,6 +42,6 @@ namespace Discogs {
 	 */
 	type ParsedArtist = Artist & {
 		/** Role name as credited. */
-		roleCredit: string;
+		roleCredit?: string;
 	};
 }

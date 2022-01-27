@@ -80,8 +80,8 @@ export async function fetchVoiceActors(releaseURL) {
 		.filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role))
 		.flatMap((artist) => {
 			// split artists with multiple roles into multiple credits
-			const roles = artist.roleCredit.split('/');
-			if (roles.length === 1) return artist;
+			const roles = artist.roleCredit?.split('/');
+			if (!roles || roles.length === 1) return artist;
 			return roles.map((role) => ({ ...artist, roleCredit: role.trim() }));
 		});
 }
