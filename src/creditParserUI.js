@@ -11,7 +11,7 @@ import {
 	persistDetails,
 	persistInput,
 } from './persistElement.js';
-import { getPattern } from './regex.js';
+import { getPattern, getPatternAsRegExp } from './regex.js';
 import { releaseLoadingFinished } from './relationshipEditor.js';
 import { slugify } from '../utils/string/casingStyle.js';
 import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
@@ -200,14 +200,12 @@ function addPatternInput(config) {
 
 	// validate pattern and update explanation link on change
 	patternInput.addEventListener('change', function () {
+		explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(getPatternAsRegExp(this.value) ?? this.value);
 		this.classList.remove('error', 'success');
 		this.title = '';
 
 		try {
-			const pattern = getPattern(this.value);
-			explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
-
-			if (pattern instanceof RegExp) {
+			if (getPattern(this.value) instanceof RegExp) {
 				this.classList.add('success');
 				this.title = 'Valid regular expression';
 			}
