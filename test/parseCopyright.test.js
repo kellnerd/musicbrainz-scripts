@@ -141,9 +141,9 @@ const copyrightTestCases = [
 		types: ['℗'],
 		year: ['2014', '2017', '2018', '2019', '2020'],
 	}]],
-	// failing, TODO: GMR (rights society) probably indicates a work level copyright
+	// GMR (rights society) indicates an unsupported work level copyright
 	['© 1974, 1975, 1978, 1980 Bruce Springsteen (GMR)', [{
-		name: 'Bruce Springsteen',
+		name: 'Bruce Springsteen (GMR)',
 		types: ['©'],
 		year: ['1974', '1975', '1978', '1980'],
 	}]],
