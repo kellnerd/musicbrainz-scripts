@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.27
+// @version      2022.1.27.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -343,8 +343,8 @@
 			.filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role))
 			.flatMap((artist) => {
 				// split artists with multiple roles into multiple credits
-				const roles = artist.roleCredit.split('/');
-				if (roles.length === 1) return artist;
+				const roles = artist.roleCredit?.split('/');
+				if (!roles || roles.length === 1) return artist;
 				return roles.map((role) => ({ ...artist, roleCredit: role.trim() }));
 			});
 	}
