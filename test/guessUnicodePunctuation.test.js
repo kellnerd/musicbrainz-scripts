@@ -1,4 +1,4 @@
-import { transformationRules } from '../src/guessUnicodePunctuation.js';
+import { punctuationRules } from '../utils/string/punctuation.js';
 import { transform } from '../utils/string/transform.js';
 import { assertFunction } from '../utils/test/assertFunction.js';
 
@@ -63,5 +63,5 @@ const punctuationTestCases = [
 
 export default function testPunctuationRules() {
 	console.log('Testing punctuation transformation rules for titles...');
-	return assertFunction(transform, punctuationTestCases, transformationRules);
+	return assertFunction(transform, punctuationTestCases, punctuationRules);
 }

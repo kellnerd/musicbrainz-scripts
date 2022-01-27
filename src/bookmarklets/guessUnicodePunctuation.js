@@ -8,11 +8,9 @@
  * - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
  */
 
-import {
-	transformationRules,
-	transformationRulesToPreserveMarkup,
-} from '../guessUnicodePunctuation.js';
+import { transformationRulesToPreserveMarkup } from '../guessUnicodePunctuation.js';
 import { $transformInputValues } from '../../utils/dom/transformInputValues.js';
+import { punctuationRules } from '../../utils/string/punctuation.js';
 
 const titleInputSelectors = [
 	'input#name', // release title (release editor)
@@ -30,5 +28,5 @@ const textareaSelectors = [
 	'.edit-note', // edit note (edit pages)
 ];
 
-$transformInputValues(titleInputSelectors.join(), transformationRules);
+$transformInputValues(titleInputSelectors.join(), punctuationRules);
 $transformInputValues(textareaSelectors.join(), transformationRulesToPreserveMarkup);
