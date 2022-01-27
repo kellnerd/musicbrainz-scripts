@@ -119,6 +119,15 @@ const copyrightTestCases = [
 		types: ['℗'],
 		year: '2006',
 	}]],
+	['℗ & © «2014 Round Hill Records - Zuma Rock Records»', [{
+		name: 'Round Hill Records',
+		types: ['℗', '©'],
+		year: '2014',
+	}, {
+		name: 'Zuma Rock Records',
+		types: ['℗', '©'],
+		year: '2014',
+	}]],
 	/* only one label, name contains a slash */
 	['© «1983 Universal Music A/S»', [{
 		name: 'Universal Music A/S',
