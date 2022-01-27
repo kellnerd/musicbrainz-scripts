@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2022.1.1
+// @version      2022.1.27
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -148,7 +148,7 @@
 		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
 
 		/* hyphens */
-		[/-/g, '‐'], // ... and finally the hyphens should be remaining
+		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
 
 		/* rare cases where it is difficult to define precise rules: em dash, minus */
 	];
