@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.25
+// @version      2022.1.27
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -522,7 +522,7 @@
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
 		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
-		nameSeparatorRE: /[/|](?=\s|\w{2})/,
+		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
 		terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
 	};
 
@@ -620,6 +620,8 @@
 		element.addEventListener(eventType, () => {
 			GM.setValue(key, element[attribute]);
 		});
+
+		return element;
 	}
 
 	/**
@@ -680,7 +682,7 @@
 	 */
 	function getPatternAsRegExp(pattern) {
 		try {
-			const value = getPattern(pattern);
+			let value = getPattern(pattern);
 			if (typeof value === 'string') {
 				value = new RegExp(escapeRegExp(value));
 			}
@@ -898,19 +900,20 @@ form div.row span.col label {
 		explanationLink.target = '_blank';
 		explanationLink.title = 'Displays a diagram representation of this RegExp';
 
+		const resetButton = createElement(`<button type="button" title="Reset the input to its default value">Reset</button>`);
+		resetButton.addEventListener('click', () => setInput(patternInput, config.defaultValue));
+
 		// auto-resize the pattern input on input
 		patternInput.addEventListener('input', automaticWidth);
 
 		// validate pattern and update explanation link on change
 		patternInput.addEventListener('change', function () {
+			explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(getPatternAsRegExp(this.value) ?? this.value);
 			this.classList.remove('error', 'success');
 			this.title = '';
 
 			try {
-				const pattern = getPattern(this.value);
-				explanationLink.href = 'https://kellnerd.github.io/regexper/#' + encodeURIComponent(pattern || this.value);
-
-				if (pattern instanceof RegExp) {
+				if (getPattern(this.value) instanceof RegExp) {
 					this.classList.add('success');
 					this.title = 'Valid regular expression';
 				}
@@ -920,20 +923,28 @@ form div.row span.col label {
 			}
 		});
 
-		// inject label, input and explanation link
+		// inject label, input, reset button and explanation link
 		const span = document.createElement('span');
 		span.className = 'col';
 		span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
-		span.append(' ', patternInput, ' ', explanationLink);
+		span.append(' ', patternInput, ' ', resetButton, ' ', explanationLink);
 		dom('credit-patterns').appendChild(span);
 
-		// initialize and persist the input value, resize element and trigger validation for the initial value
-		persistInput(patternInput, config.defaultValue).then(() => {
-			automaticWidth.call(patternInput);
-			patternInput.dispatchEvent(new Event('change'));
-		});
+		// persist the input and calls the setter for the initial value (persisted value or the default)
+		persistInput(patternInput, config.defaultValue).then(setInput);
 
 		return patternInput;
+	}
+
+	/**
+	 * Sets the input to the given value (optional), resizes it and triggers persister and validation.
+	 * @param {HTMLInputElement} input 
+	 * @param {string} [value] 
+	 */
+	function setInput(input, value) {
+		if (value) input.value = value;
+		automaticWidth.call(input);
+		input.dispatchEvent(new Event('change'));
 	}
 
 	function buildUI() {
