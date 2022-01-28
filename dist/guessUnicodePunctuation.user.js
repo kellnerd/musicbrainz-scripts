@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2022.1.28
+// @version      2022.1.28.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -47,7 +47,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -63,7 +63,7 @@
 	 * Transforms the values of the selected input fields using the given substitution rules.
 	 * Highlights all updated input fields in order to allow the user to review the changes.
 	 * @param {string} inputSelector CSS selector of the input fields.
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @param {Event} [event] Event which should be triggered for changed input fields (optional, defaults to 'change').
 	 * @param {string} [highlightClass] CSS class which should be applied to changed input fields (optional, defaults to `defaultHighlightClass`).
 	 */
@@ -83,6 +83,10 @@
 		});
 	}
 
+	/**
+	 * Default punctuation rules.
+	 * @type {SubstitutionRule[]}
+	 */
 	const punctuationRules = [
 		/* quoted text */
 		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
@@ -123,12 +127,12 @@
 
 	/**
 	 * Language-specific double and single quotes (RegEx replace values).
-	 * @type {Record<string,string[]>}
+	 * @type {Record<string, string[]>}
 	 */
 	const languageSpecificQuotes = {
-		German: ['„$1“', '‚$1‘'],
 		English: ['“$1”', '‘$1’'],
 		French: ['« $1 »', '‹ $1 ›'],
+		German: ['„$1“', '‚$1‘'],
 	};
 
 	/**
@@ -137,17 +141,36 @@
 	const quotationRuleIndices = [0, 2];
 
 	/**
-	 * Creates language-specific punctuation guessing transformation rules.
+	 * Additional punctuation rules for certain languages, will be appended to the default rules.
+	 * @type {Record<string, SubstitutionRule[]>}
+	 */
+	const languageSpecificRules = {
+		German: [
+			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
+		],
+		Japanese: [
+			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
+		],
+	};
+
+	/**
+	 * Creates language-specific punctuation guessing substitution rules.
 	 * @param {string} [language] Name of the language (in English).
 	 */
 	function punctuationRulesForLanguage(language) {
-		const replaceValueIndex = 1;
-		let rules = punctuationRules;
+		// create a deep copy to prevent modifications of the default rules
+		let rules = [...punctuationRules]; 
 
 		// overwrite replace values for quotation rules with language-specific values (if they are existing)
+		const replaceValueIndex = 1;
 		languageSpecificQuotes[language]?.forEach((value, index) => {
 			const ruleIndex = quotationRuleIndices[index];
 			rules[ruleIndex][replaceValueIndex] = value;
+		});
+
+		// append language-specific rules (if they are existing)
+		languageSpecificRules[language]?.forEach((rule) => {
+				rules.push(rule);
 		});
 
 		return rules;

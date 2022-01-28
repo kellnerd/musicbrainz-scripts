@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.28
+// @version      2022.1.28.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -113,7 +113,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -123,6 +123,10 @@
 		return value;
 	}
 
+	/**
+	 * Default punctuation rules.
+	 * @type {SubstitutionRule[]}
+	 */
 	const punctuationRules = [
 		/* quoted text */
 		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
@@ -162,12 +166,64 @@
 	];
 
 	/**
+	 * Language-specific double and single quotes (RegEx replace values).
+	 * @type {Record<string, string[]>}
+	 */
+	const languageSpecificQuotes = {
+		English: ['“$1”', '‘$1’'],
+		French: ['« $1 »', '‹ $1 ›'],
+		German: ['„$1“', '‚$1‘'],
+	};
+
+	/**
+	 * Indices of the quotation rules (double and single quotes) in `punctuationRules`.
+	 */
+	const quotationRuleIndices = [0, 2];
+
+	/**
+	 * Additional punctuation rules for certain languages, will be appended to the default rules.
+	 * @type {Record<string, SubstitutionRule[]>}
+	 */
+	const languageSpecificRules = {
+		German: [
+			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
+		],
+		Japanese: [
+			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
+		],
+	};
+
+	/**
+	 * Creates language-specific punctuation guessing substitution rules.
+	 * @param {string} [language] Name of the language (in English).
+	 */
+	function punctuationRulesForLanguage(language) {
+		// create a deep copy to prevent modifications of the default rules
+		let rules = [...punctuationRules]; 
+
+		// overwrite replace values for quotation rules with language-specific values (if they are existing)
+		const replaceValueIndex = 1;
+		languageSpecificQuotes[language]?.forEach((value, index) => {
+			const ruleIndex = quotationRuleIndices[index];
+			rules[ruleIndex][replaceValueIndex] = value;
+		});
+
+		// append language-specific rules (if they are existing)
+		languageSpecificRules[language]?.forEach((rule) => {
+				rules.push(rule);
+		});
+
+		return rules;
+	}
+
+	/**
 	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string} text
+	 * @param {string} [language] Language of the text (English name, optional).
 	 */
-	function useUnicodePunctuation(text) {
-		return transform(text, punctuationRules);
+	function guessUnicodePunctuation(text, language) {
+		return transform(text, punctuationRulesForLanguage(language));
 	}
 
 	/**
@@ -223,13 +279,13 @@
 				// drop bracketed numeric suffixes for ambiguous artist names
 				parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-				parsedArtist.anv = useUnicodePunctuation(artist.anv || parsedArtist.name);
+				parsedArtist.anv = guessUnicodePunctuation(artist.anv || parsedArtist.name);
 
 				// split roles with credited role names in square brackets (for convenience)
 				const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
 				if (roleWithCredit) {
 					parsedArtist.role = roleWithCredit[1];
-					parsedArtist.roleCredit = useUnicodePunctuation(roleWithCredit[2]);
+					parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
 				}
 
 				return parsedArtist;
