@@ -1,8 +1,7 @@
-import { punctuationRules } from '../utils/string/punctuation.js';
-import { transform } from '../utils/string/transform.js';
+import { guessUnicodePunctuation } from '../utils/string/punctuation.js';
 import { assertFunction } from '../utils/test/assertFunction.js';
 
-const punctuationTestCases = [
+const standardTestCases = [
 	/* single and double quotes */
 	['Are \'Friends\' Electric?', 'Are ‘Friends’ Electric?'],
 	['Axel F (from "Beverly Hills Cop" soundtrack)', 'Axel F (from “Beverly Hills Cop” soundtrack)'],
@@ -54,14 +53,32 @@ const punctuationTestCases = [
 	['Is This the World We Created...?', 'Is This the World We Created…?'], // before another punctuation symbol
 
 	/* non-Latin scripts */
-	['Όσο Και Να Σ\' Αγαπάω (Υπ\' Ευθύνη Μου)',	'Όσο Και Να Σ’ Αγαπάω (Υπ’ Ευθύνη Μου)'],
+	['Όσο Και Να Σ\' Αγαπάω (Υπ\' Ευθύνη Μου)', 'Όσο Και Να Σ’ Αγαπάω (Υπ’ Ευθύνη Μου)'],
 
 	/* ignored cases */
 	['Death on Two Legs (Dedicated to......', 'Death on Two Legs (Dedicated to......'],
-	['Royal Days -another version-', 'Royal Days -another version-'], // dashes used as brackets (Japanese)
+	['Royal Days -another version-', 'Royal Days -another version-'], // dashes used as brackets (only handled for Japanese)
 ];
 
+const languageSpecificTestCases = {
+	German: [
+		/** hyphens for abbreviated compound words */
+		['Rock- und Pop-Balladen', 'Rock‐ und Pop‐Balladen'],
+		['Sonnenaufgang und -untergang', 'Sonnenaufgang und ‐untergang'],
+		['Sonnenauf- und -untergang', 'Sonnenauf‐ und ‐untergang'],
+	],
+	Japanese: [
+		/** dashes used as brackets */
+		['Royal Days -another version-', 'Royal Days –another version–'],
+	],
+};
+
 export default function testPunctuationRules() {
-	console.log('Testing punctuation substitution rules for titles...');
-	return assertFunction(transform, punctuationTestCases, punctuationRules);
+	console.log('Testing standard punctuation substitution rules for titles...');
+	const standardFailures = assertFunction(guessUnicodePunctuation, standardTestCases);
+
+	return Object.entries(languageSpecificTestCases).map(([language, testCases]) => {
+		console.log(`Testing ${language} punctuation substitution rules for titles...`);
+		return assertFunction(guessUnicodePunctuation, testCases, language);
+	}).reduce((totalFailures, failures) => totalFailures + failures, standardFailures);
 }

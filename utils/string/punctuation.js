@@ -58,17 +58,36 @@ const languageSpecificQuotes = {
 const quotationRuleIndices = [0, 2];
 
 /**
+ * Additional punctuation rules for certain languages, will be appended to the default rules.
+ * @type {Record<string, SubstitutionRule[]>}
+ */
+const languageSpecificRules = {
+	German: [
+		[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
+	],
+	Japanese: [
+		[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
+	],
+};
+
+/**
  * Creates language-specific punctuation guessing substitution rules.
  * @param {string} [language] Name of the language (in English).
  */
 export function punctuationRulesForLanguage(language) {
-	const replaceValueIndex = 1;
-	let rules = punctuationRules;
+	// create a deep copy to prevent modifications of the default rules
+	let rules = [...punctuationRules]; 
 
 	// overwrite replace values for quotation rules with language-specific values (if they are existing)
+	const replaceValueIndex = 1;
 	languageSpecificQuotes[language]?.forEach((value, index) => {
 		const ruleIndex = quotationRuleIndices[index];
 		rules[ruleIndex][replaceValueIndex] = value;
+	});
+
+	// append language-specific rules (if they are existing)
+	languageSpecificRules[language]?.forEach((rule) => {
+			rules.push(rule);
 	});
 
 	return rules;
