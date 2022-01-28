@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2022.1.27
+// @version      2022.1.28
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -17,30 +17,6 @@
 
 (function () {
 	'use strict';
-
-	/**
-	 * Creates a DOM element from the given HTML fragment.
-	 * @param {string} html HTML fragment.
-	 */
-	function createElement(html) {
-		const template = document.createElement('template');
-		template.innerHTML = html;
-		return template.content.firstElementChild;
-	}
-
-	/**
-	 * Creates a style element from the given CSS fragment and injects it into the document's head.
-	 * @param {string} css CSS fragment.
-	 * @param {string} userscriptName Name of the userscript, used to generate an ID for the style element.
-	 */
-	function injectStylesheet(css, userscriptName) {
-		const style = document.createElement('style');
-		if (userscriptName) {
-			style.id = [userscriptName, 'userscript-css'].join('-');
-		}
-		style.innerText = css;
-		document.head.append(style);
-	}
 
 	/**
 	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
@@ -68,13 +44,18 @@
 		return node.querySelectorAll(selectors);
 	}
 
-	var DOM = {
-		css: injectStylesheet,
-		el: createElement,
-		id: dom,
-		qs,
-		qsa,
-	};
+	/**
+	 * Transforms the given value using the given substitution rules.
+	 * @param {string} value
+	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @returns {string}
+	 */
+	function transform(value, substitutionRules) {
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
+		});
+		return value;
+	}
 
 	const defaultHighlightClass = 'content-changed';
 
@@ -102,20 +83,7 @@
 		});
 	}
 
-	/**
-	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value 
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
-	 * @returns {string}
-	 */
-	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, replaceValue]) => {
-			value = value.replace(searchValue, replaceValue);
-		});
-		return value;
-	}
-
-	const transformationRules = [
+	const punctuationRules = [
 		/* quoted text */
 		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
 		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
@@ -154,6 +122,38 @@
 	];
 
 	/**
+	 * Language-specific double and single quotes (RegEx replace values).
+	 * @type {Record<string,string[]>}
+	 */
+	const languageSpecificQuotes = {
+		German: ['„$1“', '‚$1‘'],
+		English: ['“$1”', '‘$1’'],
+		French: ['« $1 »', '‹ $1 ›'],
+	};
+
+	/**
+	 * Indices of the quotation rules (double and single quotes) in `punctuationRules`.
+	 */
+	const quotationRuleIndices = [0, 2];
+
+	/**
+	 * Creates language-specific punctuation guessing transformation rules.
+	 * @param {string} [language] Name of the language (in English).
+	 */
+	function punctuationRulesForLanguage(language) {
+		const replaceValueIndex = 1;
+		let rules = punctuationRules;
+
+		// overwrite replace values for quotation rules with language-specific values (if they are existing)
+		languageSpecificQuotes[language]?.forEach((value, index) => {
+			const ruleIndex = quotationRuleIndices[index];
+			rules[ruleIndex][replaceValueIndex] = value;
+		});
+
+		return rules;
+	}
+
+	/**
 	 * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
 	 * by temporarily changing them to characters that will not be touched by the transformation rules.
 	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
@@ -166,7 +166,7 @@
 		[/'''/g, '<b>'], // bold text
 		[/''/g, '<i>'], // italic text
 
-		...transformationRules,
+		...punctuationRules,
 
 		[/<b>/g, "'''"],
 		[/<i>/g, "''"],
@@ -177,36 +177,6 @@
 	];
 
 	/**
-	 * Language-specific double and single quotes (RegEx replace values).
-	 * @type {Record<string,string[]>}
-	 */
-	const languageSpecificQuotes = {
-		German: ['„$1“', '‚$1‘'],
-		English: ['“$1”', '‘$1’'],
-		French: ['« $1 »', '‹ $1 ›'],
-	};
-
-	/**
-	 * Indices of the quotation rules (double and single quotes) in `transformationRules`.
-	 */
-	const quotationRuleIndices = [0, 2];
-
-	/**
-	 * Creates language-specific punctuation guessing transformation rules.
-	 * @param {string} [language] Name of the language (in English).
-	 */
-	function transformationRulesForLanguage(language) {
-		const replaceValueIndex = 1;
-		let rules = transformationRules;
-		// overwrite replace values for quotation rules with language-specific values (if they are existing)
-		languageSpecificQuotes[language]?.forEach((value, index) => {
-			const ruleIndex = quotationRuleIndices[index];
-			rules[ruleIndex][replaceValueIndex] = value;
-		});
-		return rules;
-	}
-
-	/**
 	 * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
@@ -214,7 +184,7 @@
 	 * @param {Event} [event] Event which should be triggered for changed input fields (optional).
 	 */
 	function guessUnicodePunctuation(inputSelectors, language, event) {
-		transformInputValues(inputSelectors.join(), transformationRulesForLanguage(language), event);
+		transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(language), event);
 	}
 
 	// MB languages as of 2021-10-04, extracted from the HTML source code of the release editor's language select menu
@@ -254,6 +224,30 @@
 		}
 	}
 
+	/**
+	 * Creates a DOM element from the given HTML fragment.
+	 * @param {string} html HTML fragment.
+	 */
+	function createElement(html) {
+		const template = document.createElement('template');
+		template.innerHTML = html;
+		return template.content.firstElementChild;
+	}
+
+	/**
+	 * Creates a style element from the given CSS fragment and injects it into the document's head.
+	 * @param {string} css CSS fragment.
+	 * @param {string} userscriptName Name of the userscript, used to generate an ID for the style element.
+	 */
+	function injectStylesheet(css, userscriptName) {
+		const style = document.createElement('style');
+		if (userscriptName) {
+			style.id = [userscriptName, 'userscript-css'].join('-');
+		}
+		style.innerText = css;
+		document.head.append(style);
+	}
+
 	var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAHYgAAB2IBOHqZ2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFpSURBVDiNpZOxjwFBGMV/e5FspZeoFETlL9Bug0RDL5FolVpRUqxCr1iNUelUEhmFZqlEVAolFRuxsswVl9uzWVfceeX73nvzfTPzaUIIxRuIAJTL5X+ZR6MRH++cDrwOOBwOdLtdbrdbqDafzxmPx78H2LZNtVplt9txPp993vM8TNOk1WoFeIQQ6htSSmUYhur3++rxePi853mq0WioUqmkttutzwshVOS57U6nQy6Xo1KpBLoaDAYsl0t6vR6pVOr1HViWheM4IfPlcmE4HJLNZkPmQMBqtSIajbJYLFiv175gs9lwvV653+/MZjOOx2MgwB/BdV1OpxPtdhuAYrFIvV73X0JKiZQSXdcxTZN0Oh3sIBaLBZInkwlKqRDvui7T6TQ8gmEYAWE8HkfTNBKJBMlkMlQLjVAoFHAcB9u20XWdWq3mi5rNJpZlsd/vyWQy5PP5n7Tnf/BXCCHU27sQga+t+i8+AYUS9lO02Bg3AAAAAElFTkSuQmCC";
 
 	const buttonTemplate = {
@@ -276,11 +270,13 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	 * @returns {HTMLButtonElement} DOM button element.
 	 */
 	function insertIconButtonAfter(targetInput) {
-		const target = DOM.qs(targetInput);
+		const target = qs(targetInput);
 		if (!target) return null;
-		const button = DOM.el(buttonTemplate.icon);
+
+		const button = createElement(buttonTemplate.icon);
 		target.classList.add('with-guesscase'); // make input smaller to create space for up to two icon buttons
 		target.parentNode.append(' ', button); // insert white space and button to the right of the input field
+
 		return button;
 	}
 
@@ -293,14 +289,17 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	function insertACButton(event) {
 		// remove this function from the event listeners after the first event to avoid duplicate buttons
 		if (event) {
-			DOM.qsa('.open-ac').forEach((button) => button.removeEventListener(event.type, insertACButton));
+			qsa('.open-ac').forEach((button) => button.removeEventListener(event.type, insertACButton));
 		}
-		const acBubbleButtons = DOM.qs('#artist-credit-bubble .buttons');
+
+		const acBubbleButtons = qs('#artist-credit-bubble .buttons');
+
 		if (!acBubbleButtons) {
 			setTimeout(insertACButton, 50); // wait for the AC bubble to appear in the DOM
 			return;
 		}
-		const button = DOM.el(buttonTemplate.standard);
+
+		const button = createElement(buttonTemplate.standard);
 		button.addEventListener('click', () => guessUnicodePunctuation(acInputs, null, new Event('blur')));
 		acBubbleButtons.append(button);
 	}
@@ -310,11 +309,12 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	];
 
 
-	DOM.css(styles, 'guess-punctuation');
+	injectStylesheet(styles, 'guess-punctuation');
 
 	// parse the path of the current page
 	const path = window.location.pathname.split('/');
 	let entityType = path[1], pageType = path[path.length - 1];
+
 	if (entityType == 'artist' && path[3] == 'credit') {
 		entityType = 'artist-credit';
 	}
@@ -322,9 +322,9 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	// insert "Guess punctuation" buttons on all entity edit and creation pages
 	if (pageType == 'edit_annotation') { // annotation edit page
 		// insert button for entity annotations after the "Preview" button
-		const button = DOM.el(buttonTemplate.standard);
+		const button = createElement(buttonTemplate.standard);
 		button.addEventListener('click', () => transformInputValues('textarea[name$=text]', transformationRulesToPreserveMarkup));
-		DOM.qs('.buttons').append(button);
+		qs('.buttons').append(button);
 	} else if (entityType == 'release') { // release editor
 		const releaseInputs = [
 			'input#name', // release title
@@ -334,54 +334,61 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 			'input.track-name', // all track titles
 			'input[id^=medium-title]', // all medium titles
 		];
+
 		// button for the release information tab (after disambiguation comment input field)
 		insertIconButtonAfter(releaseInputs[1])
 			.addEventListener('click', () => {
 				guessUnicodePunctuation(releaseInputs, detectReleaseLanguage());
 				transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 			});
+
 		// button for the tracklist tab (after the guess case button)
-		const tracklistButton = DOM.el(buttonTemplate.standard);
+		const tracklistButton = createElement(buttonTemplate.standard);
 		tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, detectReleaseLanguage()));
-		DOM.qs('.guesscase .buttons').append(tracklistButton);
+		qs('.guesscase .buttons').append(tracklistButton);
+
 		// global button (next to the release editor navigation buttons)
-		const globalButton = DOM.el(buttonTemplate.global);
+		const globalButton = createElement(buttonTemplate.global);
 		globalButton.addEventListener('click', () => {
 			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], detectReleaseLanguage()); // both release info and tracklist data
 			transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 			// exclude annotations from the global action as the changes are hard to verify
 		});
-		DOM.qs('#release-editor > .buttons').append(globalButton);
+		qs('#release-editor > .buttons').append(globalButton);
 	} else if (entityType != 'artist-credit') { // edit pages for all other entity types (except ACs)
 		const entityInputs = [
 			'input[name$=name]', // entity name
 			'input[name$=comment]', // entity disambiguation comment
 		];
+
 		// on artist edit pages we need a different event to trigger the artist credit renamer on name changes
 		const event = (entityType === 'artist') ? new Event('input', { bubbles: true }) : undefined;
+
 		// button after the disambiguation comment input field
 		// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 		// TODO: use lyrics language to localize quotes?
 		insertIconButtonAfter(entityInputs[1]) // skipped for url entities as there is no disambiguation input
 			?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, null, event));
+
 		// global button after the "Enter edit" button
-		const button = DOM.el(buttonTemplate.global);
+		const button = createElement(buttonTemplate.global);
 		button.addEventListener('click', () => {
 			guessUnicodePunctuation(entityInputs, null, event);
 			transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 		});
-		DOM.qs('button.submit').parentNode.append(button);
+		qs('button.submit').parentNode.append(button);
 	}
 
 	// handle edit pages with artist credit bubbles
 	if (['artist-credit', 'release', 'release-group', 'recording'].includes(entityType)) {
 		// wait a moment until the button which opens the AC bubble is available
-		setTimeout(() => DOM.qsa('.open-ac').forEach((button) => {
+		setTimeout(() => qsa('.open-ac').forEach((button) => {
 			// wait for the artist credit bubble to be opened before inserting the guess button
 			button.addEventListener('click', insertACButton);
+
 			if (entityType === 'release') {
 				// remove old highlights that might be from a different AC which has been edited previously
-				button.addEventListener('click', () => DOM.qsa(acInputs.join()).forEach(
+				button.addEventListener('click', () => qsa(acInputs.join()).forEach(
 					(input) => input.classList.remove(defaultHighlightClass)
 				));
 			}

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.27.2
+// @version      2022.1.28
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -71,103 +71,48 @@
 	}
 
 	/**
+	 * Returns a promise that resolves after the given delay.
+	 * @param {number} ms Delay in milliseconds.
+	 */
+	function delay(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
+
+	function rateLimit1(operation, interval) {
+		let queue = Promise.resolve(); // empty queue is ready
+		return (...args) => {
+			const result = queue.then(() => operation(...args)); // queue the next operation
+			queue = queue.then(() => delay(interval)); // start the next delay
+			return result;
+		};
+	}
+
+	/**
+	 * Limits the number of requests for the given operation within a time interval.
 	 * @template Params
 	 * @template Result
+	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
+	 * @param {number} interval Time interval (in ms).
+	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
+	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
 	 */
-	class FunctionCache {
-		/**
-		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
-		 * @param {Object} options
-		 * @param {(...params: Params) => string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
-		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
-		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-		 * @param {Record<string, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
-		 */
-		constructor(expensiveFunction, options) {
-			this.expensiveFunction = expensiveFunction;
-			this.keyMapper = options.keyMapper;
-			this.name = options.name ?? `defaultCache`;
-			this.storage = options.storage;
-			this.data = options.data ?? {};
+	function rateLimit(operation, interval, requestsPerInterval = 1) {
+		if (requestsPerInterval == 1) {
+			return rateLimit1(operation, interval);
 		}
-
-		/**
-		 * Looks up the result for the given parameters and returns it.
-		 * If the result is not cached, it will be calculated and added to the cache.
-		 * @param {Params} params 
-		 */
-		async get(...params) {
-			const keys = this.keyMapper(...params);
-			const lastKey = keys.pop();
-			if (!lastKey) return;
-
-			const record = this._get(keys);
-			if (record[lastKey] === undefined) {
-				// create a new entry to cache the result of the expensive function
-				const newEntry = await this.expensiveFunction(...params);
-				if (newEntry !== undefined) {
-					record[lastKey] = newEntry;
-				}
-			}
-
-			return record[lastKey];
-		}
-
-		/**
-		 * Manually sets the cache value for the given key.
-		 * @param {string[]} keys Components of the key.
-		 * @param {Result} value 
-		 */
-		set(keys, value) {
-			const lastKey = keys.pop();
-			this._get(keys)[lastKey] = value;
-		}
-
-		/**
-		 * Loads the persisted cache entries.
-		 */
-		load() {
-			const storedData = this.storage?.getItem(this.name);
-			if (storedData) {
-				this.data = JSON.parse(storedData);
-			}
-		}
-
-		/**
-		 * Persists all entries of the cache.
-		 */
-		store() {
-			this.storage?.setItem(this.name, JSON.stringify(this.data));
-		}
-
-		/**
-		 * Clears all entries of the cache and persists the changes.
-		 */
-		clear() {
-			this.data = {};
-			this.store();
-		}
-
-		/**
-		 * Returns the cache record which is indexed by the key.
-		 * @param {string[]} keys Components of the key
-		 */
-		_get(keys) {
-			let record = this.data;
-			keys.forEach((key) => {
-				if (record[key] === undefined) {
-					// create an empty record for all missing keys
-					record[key] = {};
-				}
-				record = record[key];
-			});
-			return record;
-		}
+		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
+		let queueIndex = 0;
+		return (...args) => {
+			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
+			return queues[queueIndex](...args); // return the rate-limited operation
+		};
 	}
 
 	/**
 	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value 
+	 * @param {string} value
 	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
@@ -178,7 +123,7 @@
 		return value;
 	}
 
-	const transformationRules = [
+	const punctuationRules = [
 		/* quoted text */
 		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
 		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
@@ -222,47 +167,7 @@
 	 * @param {string} text
 	 */
 	function useUnicodePunctuation(text) {
-		return transform(text, transformationRules);
-	}
-
-	/**
-	 * Returns a promise that resolves after the given delay.
-	 * @param {number} ms Delay in milliseconds.
-	 */
-	function delay(ms) {
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
-	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
-
-	function rateLimit1(operation, interval) {
-		let queue = Promise.resolve(); // empty queue is ready
-		return (...args) => {
-			const result = queue.then(() => operation(...args)); // queue the next operation
-			queue = queue.then(() => delay(interval)); // start the next delay
-			return result;
-		};
-	}
-
-	/**
-	 * Limits the number of requests for the given operation within a time interval.
-	 * @template Params
-	 * @template Result
-	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
-	 * @param {number} interval Time interval (in ms).
-	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
-	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
-	 */
-	function rateLimit(operation, interval, requestsPerInterval = 1) {
-		if (requestsPerInterval == 1) {
-			return rateLimit1(operation, interval);
-		}
-		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
-		let queueIndex = 0;
-		return (...args) => {
-			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
-			return queues[queueIndex](...args); // return the rate-limited operation
-		};
+		return transform(text, punctuationRules);
 	}
 
 	/**
@@ -404,6 +309,101 @@
 			return response.json();
 		} else {
 			throw response;
+		}
+	}
+
+	/**
+	 * @template Params
+	 * @template Result
+	 */
+	class FunctionCache {
+		/**
+		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
+		 * @param {Object} options
+		 * @param {(...params: Params) => string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
+		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
+		 * @param {Record<string, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		 */
+		constructor(expensiveFunction, options) {
+			this.expensiveFunction = expensiveFunction;
+			this.keyMapper = options.keyMapper;
+			this.name = options.name ?? `defaultCache`;
+			this.storage = options.storage;
+			this.data = options.data ?? {};
+		}
+
+		/**
+		 * Looks up the result for the given parameters and returns it.
+		 * If the result is not cached, it will be calculated and added to the cache.
+		 * @param {Params} params 
+		 */
+		async get(...params) {
+			const keys = this.keyMapper(...params);
+			const lastKey = keys.pop();
+			if (!lastKey) return;
+
+			const record = this._get(keys);
+			if (record[lastKey] === undefined) {
+				// create a new entry to cache the result of the expensive function
+				const newEntry = await this.expensiveFunction(...params);
+				if (newEntry !== undefined) {
+					record[lastKey] = newEntry;
+				}
+			}
+
+			return record[lastKey];
+		}
+
+		/**
+		 * Manually sets the cache value for the given key.
+		 * @param {string[]} keys Components of the key.
+		 * @param {Result} value 
+		 */
+		set(keys, value) {
+			const lastKey = keys.pop();
+			this._get(keys)[lastKey] = value;
+		}
+
+		/**
+		 * Loads the persisted cache entries.
+		 */
+		load() {
+			const storedData = this.storage?.getItem(this.name);
+			if (storedData) {
+				this.data = JSON.parse(storedData);
+			}
+		}
+
+		/**
+		 * Persists all entries of the cache.
+		 */
+		store() {
+			this.storage?.setItem(this.name, JSON.stringify(this.data));
+		}
+
+		/**
+		 * Clears all entries of the cache and persists the changes.
+		 */
+		clear() {
+			this.data = {};
+			this.store();
+		}
+
+		/**
+		 * Returns the cache record which is indexed by the key.
+		 * @param {string[]} keys Components of the key
+		 */
+		_get(keys) {
+			let record = this.data;
+			keys.forEach((key) => {
+				if (record[key] === undefined) {
+					// create an empty record for all missing keys
+					record[key] = {};
+				}
+				record = record[key];
+			});
+			return record;
 		}
 	}
 

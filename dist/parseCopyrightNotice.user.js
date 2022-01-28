@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.27
+// @version      2022.1.28
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -18,23 +18,13 @@
 	'use strict';
 
 	/**
-	 * Converts an array with a single element into a scalar.
-	 * @template T
-	 * @param {T|T[]} maybeArray 
+	 * Fetches the entity with the given MBID from the internal API ws/js.
+	 * @param {MB.MBID} gid MBID of the entity.
+	 * @returns {Promise<MB.RE.TargetEntity>}
 	 */
-	function preferScalar(maybeArray) {
-		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
-		return maybeArray;
-	}
-
-	/**
-	 * Converts a scalar into an array with a single element.
-	 * @template T
-	 * @param {T|T[]} maybeArray 
-	 */
-	function preferArray(maybeArray) {
-		if (!Array.isArray(maybeArray)) return [maybeArray];
-		return maybeArray;
+	async function fetchEntity(gid) {
+		const result = await fetch(`/ws/js/entity/${gid}`);
+		return MB.entity(await result.json()); // automatically caches entities
 	}
 
 	/**
@@ -133,16 +123,6 @@
 	}
 
 	/**
-	 * Fetches the entity with the given MBID from the internal API ws/js.
-	 * @param {MB.MBID} gid MBID of the entity.
-	 * @returns {Promise<MB.RE.TargetEntity>}
-	 */
-	async function fetchEntity(gid) {
-		const result = await fetch(`/ws/js/entity/${gid}`);
-		return MB.entity(await result.json()); // automatically caches entities
-	}
-
-	/**
 	 * Temporary cache for fetched entities from the ws/js API, shared with MBS.
 	 */
 	const entityCache = new FunctionCache(fetchEntity, {
@@ -165,16 +145,6 @@
 		name: 'nameToMBIDCache',
 		storage: window.localStorage
 	});
-
-	/**
-	 * Normalizes the given name to ease matching of names.
-	 * @param {string} name 
-	 */
-	function normalizeName(name) {
-		return name.normalize('NFKD') // Unicode NFKD compatibility decomposition
-			.replace(/[^\p{L}\d]/ug, '') // keep only letters and numbers, remove combining diacritical marks of decompositions
-			.toLowerCase();
-	}
 
 	/** MBS relationship link type IDs (incomplete). */
 	const LINK_TYPES = {
@@ -315,6 +285,36 @@
 	}
 
 	/**
+	 * Converts an array with a single element into a scalar.
+	 * @template T
+	 * @param {T|T[]} maybeArray 
+	 */
+	function preferScalar(maybeArray) {
+		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
+		return maybeArray;
+	}
+
+	/**
+	 * Converts a scalar into an array with a single element.
+	 * @template T
+	 * @param {T|T[]} maybeArray 
+	 */
+	function preferArray(maybeArray) {
+		if (!Array.isArray(maybeArray)) return [maybeArray];
+		return maybeArray;
+	}
+
+	/**
+	 * Simplifies the given name to ease matching of strings.
+	 * @param {string} name 
+	 */
+	function simplifyName(name) {
+		return name.normalize('NFKD') // Unicode NFKD compatibility decomposition
+			.replace(/[^\p{L}\d]/ug, '') // keep only letters and numbers, remove e.g. combining diacritical marks of decompositions
+			.toLowerCase();
+	}
+
+	/**
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
 	 * Lets the user choose the appropriate target label or artist and waits for the dialog to close before continuing with the next one.
 	 * @param {CopyrightItem[]} copyrightInfo List of copyright items.
@@ -335,14 +335,14 @@
 
 		const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
 			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
-			.map(normalizeName);
+			.map(simplifyName);
 		const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
 		let addedRelCount = 0;
 		let skippedDialogs = false;
 
 		for (const copyrightItem of copyrightInfo) {
 			// detect artists who own the copyright of their own release
-			const entityType = options.forceArtist || releaseArtistNames.includes(normalizeName(copyrightItem.name)) ? 'artist' : 'label';
+			const entityType = options.forceArtist || releaseArtistNames.includes(simplifyName(copyrightItem.name)) ? 'artist' : 'label';
 
 			/**
 			 * There are multiple ways to fill the relationship's target entity:
@@ -429,47 +429,6 @@
 	}
 
 	/**
-	 * Creates a DOM element from the given HTML fragment.
-	 * @param {string} html HTML fragment.
-	 */
-	function createElement(html) {
-		const template = document.createElement('template');
-		template.innerHTML = html;
-		return template.content.firstElementChild;
-	}
-
-	/**
-	 * Creates a style element from the given CSS fragment and injects it into the document's head.
-	 * @param {string} css CSS fragment.
-	 * @param {string} userscriptName Name of the userscript, used to generate an ID for the style element.
-	 */
-	function injectStylesheet(css, userscriptName) {
-		const style = document.createElement('style');
-		if (userscriptName) {
-			style.id = [userscriptName, 'userscript-css'].join('-');
-		}
-		style.innerText = css;
-		document.head.append(style);
-	}
-
-	/**
-	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
-	 * @param {string} elementId String that specifies the ID value.
-	 */
-	function dom(elementId) {
-		return document.getElementById(elementId);
-	}
-
-	/**
-	 * Returns the first element that is a descendant of node that matches selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qs(selectors, node = document) {
-		return node.querySelector(selectors);
-	}
-
-	/**
 	 * Adds the given message and a footer for the active userscript to the edit note.
 	 * @param {string} message Edit note message.
 	 */
@@ -504,7 +463,7 @@
 
 	/**
 	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value 
+	 * @param {string} value
 	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
@@ -596,57 +555,65 @@
 		]);
 	}
 
+	// adapted from https://stackoverflow.com/a/25621277
+
 	/**
-	 * Persists the desired attribute of the given element across page loads and origins.
-	 * @param {HTMLElement} element 
-	 * @param {keyof HTMLElement} attribute 
-	 * @param {keyof HTMLElementEventMap} eventType
-	 * @param {string|number|boolean} [defaultValue] Default value of the attribute.
+	 * Resizes the bound element to be as tall as necessary for its content.
+	 * @this {HTMLElement}
 	 */
-	async function persistElement(element, attribute, eventType, defaultValue) {
-		if (!element.id) {
-			throw new Error('Can not persist an element without ID');
+	function automaticHeight() {
+		this.style.height = 'auto';
+		this.style.height = this.scrollHeight + 'px';
+	}
+
+	/**
+	 * Resizes the bound element to be as wide as necessary for its content.
+	 * @this {HTMLElement} this 
+	 */
+	function automaticWidth() {
+		this.style.width = 'auto';
+		this.style.width = this.scrollWidth + 10 + 'px'; // account for border and padding
+	}
+
+	/**
+	 * Creates a DOM element from the given HTML fragment.
+	 * @param {string} html HTML fragment.
+	 */
+	function createElement(html) {
+		const template = document.createElement('template');
+		template.innerHTML = html;
+		return template.content.firstElementChild;
+	}
+
+	/**
+	 * Creates a style element from the given CSS fragment and injects it into the document's head.
+	 * @param {string} css CSS fragment.
+	 * @param {string} userscriptName Name of the userscript, used to generate an ID for the style element.
+	 */
+	function injectStylesheet(css, userscriptName) {
+		const style = document.createElement('style');
+		if (userscriptName) {
+			style.id = [userscriptName, 'userscript-css'].join('-');
 		}
-
-		const key = ['persist', element.id, attribute].join('.');
-
-		// initialize attribute
-		const persistedValue = await GM.getValue(key, defaultValue);
-		if (persistedValue) {
-			element[attribute] = persistedValue;
-		}
-
-		// persist attribute once the event occurs
-		element.addEventListener(eventType, () => {
-			GM.setValue(key, element[attribute]);
-		});
-
-		return element;
+		style.innerText = css;
+		document.head.append(style);
 	}
 
 	/**
-	 * Persists the state of the checkbox with the given ID across page loads and origins.
-	 * @param {string} id 
+	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
+	 * @param {string} elementId String that specifies the ID value.
 	 */
-	function persistCheckbox(id) {
-		return persistElement(dom(id), 'checked', 'change');
+	function dom(elementId) {
+		return document.getElementById(elementId);
 	}
 
 	/**
-	 * Persists the state of the collapsible details container with the given ID across page loads and origins.
-	 * @param {string} id 
+	 * Returns the first element that is a descendant of node that matches selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
 	 */
-	function persistDetails(id) {
-		return persistElement(dom(id), 'open', 'toggle');
-	}
-
-	/**
-	 * Persists the value of the given input field across page loads and origins.
-	 * @param {HTMLInputElement} element 
-	 * @param {string} defaultValue
-	 */
-	function persistInput(element, defaultValue) {
-		return persistElement(element, 'value', 'change', defaultValue);
+	function qs(selectors, node = document) {
+		return node.querySelector(selectors);
 	}
 
 	/** Pattern to match an ES RegExp string representation. */
@@ -704,24 +671,57 @@
 		);
 	}
 
-	// adapted from https://stackoverflow.com/a/25621277
-
 	/**
-	 * Resizes the bound element to be as tall as necessary for its content.
-	 * @this {HTMLElement}
+	 * Persists the desired attribute of the given element across page loads and origins.
+	 * @param {HTMLElement} element 
+	 * @param {keyof HTMLElement} attribute 
+	 * @param {keyof HTMLElementEventMap} eventType
+	 * @param {string|number|boolean} [defaultValue] Default value of the attribute.
 	 */
-	function automaticHeight() {
-		this.style.height = 'auto';
-		this.style.height = this.scrollHeight + 'px';
+	async function persistElement(element, attribute, eventType, defaultValue) {
+		if (!element.id) {
+			throw new Error('Can not persist an element without ID');
+		}
+
+		const key = ['persist', element.id, attribute].join('.');
+
+		// initialize attribute
+		const persistedValue = await GM.getValue(key, defaultValue);
+		if (persistedValue) {
+			element[attribute] = persistedValue;
+		}
+
+		// persist attribute once the event occurs
+		element.addEventListener(eventType, () => {
+			GM.setValue(key, element[attribute]);
+		});
+
+		return element;
 	}
 
 	/**
-	 * Resizes the bound element to be as wide as necessary for its content.
-	 * @this {HTMLElement} this 
+	 * Persists the state of the checkbox with the given ID across page loads and origins.
+	 * @param {string} id 
 	 */
-	function automaticWidth() {
-		this.style.width = 'auto';
-		this.style.width = this.scrollWidth + 10 + 'px'; // account for border and padding
+	function persistCheckbox(id) {
+		return persistElement(dom(id), 'checked', 'change');
+	}
+
+	/**
+	 * Persists the state of the collapsible details container with the given ID across page loads and origins.
+	 * @param {string} id 
+	 */
+	function persistDetails(id) {
+		return persistElement(dom(id), 'open', 'toggle');
+	}
+
+	/**
+	 * Persists the value of the given input field across page loads and origins.
+	 * @param {HTMLInputElement} element 
+	 * @param {string} defaultValue
+	 */
+	function persistInput(element, defaultValue) {
+		return persistElement(element, 'value', 'change', defaultValue);
 	}
 
 	const creditParserUI =
