@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.28
+// @version      2022.1.28.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -520,7 +520,11 @@
 			const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
 			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
 			const years = match[2]?.split(/[,&]/).map((year) => year.trim());
+
 			names.forEach((name) => {
+				// skip fake copyrights which contain the release label
+				if (/an?\s(.+?)\srelease/i.test(name)) return;
+
 				copyrightInfo.push({
 					name,
 					types,
