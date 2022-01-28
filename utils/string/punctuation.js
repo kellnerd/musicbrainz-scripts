@@ -78,7 +78,8 @@ export function punctuationRulesForLanguage(language) {
  * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string} text
+ * @param {string} [language] Language of the text (English name, optional).
  */
-export function useUnicodePunctuation(text) {
-	return transform(text, punctuationRules);
+export function guessUnicodePunctuation(text, language) {
+	return transform(text, punctuationRulesForLanguage(language));
 }

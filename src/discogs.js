@@ -1,5 +1,5 @@
 import { rateLimit } from '../utils/async/rateLimit.js';
-import { useUnicodePunctuation } from '../utils/string/punctuation.js';
+import { guessUnicodePunctuation } from '../utils/string/punctuation.js';
 import 'cross-fetch/dist/node-polyfill.js';
 
 /**
@@ -55,13 +55,13 @@ export async function fetchCredits(releaseURL) {
 			// drop bracketed numeric suffixes for ambiguous artist names
 			parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-			parsedArtist.anv = useUnicodePunctuation(artist.anv || parsedArtist.name);
+			parsedArtist.anv = guessUnicodePunctuation(artist.anv || parsedArtist.name);
 
 			// split roles with credited role names in square brackets (for convenience)
 			const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
 			if (roleWithCredit) {
 				parsedArtist.role = roleWithCredit[1];
-				parsedArtist.roleCredit = useUnicodePunctuation(roleWithCredit[2]);
+				parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
 			}
 
 			return parsedArtist;
