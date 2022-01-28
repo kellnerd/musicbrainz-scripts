@@ -1,5 +1,9 @@
 import { transform } from './transform.js';
 
+/**
+ * Default punctuation rules.
+ * @type {SubstitutionRule[]}
+ */
 export const punctuationRules = [
 	/* quoted text */
 	[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
@@ -40,12 +44,12 @@ export const punctuationRules = [
 
 /**
  * Language-specific double and single quotes (RegEx replace values).
- * @type {Record<string,string[]>}
+ * @type {Record<string, string[]>}
  */
 const languageSpecificQuotes = {
-	German: ['„$1“', '‚$1‘'],
 	English: ['“$1”', '‘$1’'],
 	French: ['« $1 »', '‹ $1 ›'],
+	German: ['„$1“', '‚$1‘'],
 };
 
 /**
@@ -54,7 +58,7 @@ const languageSpecificQuotes = {
 const quotationRuleIndices = [0, 2];
 
 /**
- * Creates language-specific punctuation guessing transformation rules.
+ * Creates language-specific punctuation guessing substitution rules.
  * @param {string} [language] Name of the language (in English).
  */
 export function punctuationRulesForLanguage(language) {

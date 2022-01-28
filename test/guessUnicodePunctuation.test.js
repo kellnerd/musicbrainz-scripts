@@ -62,6 +62,6 @@ const punctuationTestCases = [
 ];
 
 export default function testPunctuationRules() {
-	console.log('Testing punctuation transformation rules for titles...');
+	console.log('Testing punctuation substitution rules for titles...');
 	return assertFunction(transform, punctuationTestCases, punctuationRules);
 }
