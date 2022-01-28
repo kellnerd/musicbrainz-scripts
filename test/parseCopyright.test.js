@@ -265,6 +265,8 @@ const copyrightTestCases = [
 		name: 'Parlophone Records Limited',
 		types: ['licensed to'],
 	}]],
+	/* fake copyright which contains the release label */
+	['℗ 2017 «A Virgin EMI Records Release»', []],
 ];
 
 export default function testCopyrightParser() {
