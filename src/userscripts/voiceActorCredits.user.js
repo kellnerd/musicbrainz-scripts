@@ -1,6 +1,6 @@
 import { addMessageToEditNote } from '../editNote.js';
 import { buildEntityURL } from '../entity.js';
-import { discogsToMBIDCache } from '../entityMapping.js';
+import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 import {
 	fetchEntity,
 } from '../publicAPI.js';

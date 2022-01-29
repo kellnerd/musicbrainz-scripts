@@ -1,6 +1,6 @@
-import { buildEntityURL as buildDiscogsEntityURL } from './discogs.js';
-import { getEntityForResourceURL } from './publicAPI.js';
-import { FunctionCache } from '../utils/cache/FunctionCache.js';
+import { buildEntityURL as buildDiscogsEntityURL } from './entity.js';
+import { getEntityForResourceURL } from '../publicAPI.js';
+import { FunctionCache } from '../../utils/cache/FunctionCache.js';
 
 const DISCOGS_ENTITY_TYPES = {
 	artist: 'artist',

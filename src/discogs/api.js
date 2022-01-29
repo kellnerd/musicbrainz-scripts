@@ -1,5 +1,6 @@
-import { rateLimit } from '../utils/async/rateLimit.js';
-import { guessUnicodePunctuation } from '../utils/string/punctuation.js';
+import { buildApiURL, extractEntityFromURL } from './entity.js';
+import { rateLimit } from '../../utils/async/rateLimit.js';
+import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
 import 'cross-fetch/dist/node-polyfill.js';
 
 /**
@@ -9,30 +10,12 @@ import 'cross-fetch/dist/node-polyfill.js';
 const callAPI = rateLimit(fetch, 60 * 1000, 25);
 
 /**
- * Extracts the entity type and ID from a Discogs URL.
- * @param {string} url URL of a Discogs entity page.
- * @returns {[Discogs.EntityType,string]|undefined} Type and ID.
- */
-function extractEntityFromURL(url) {
-	return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);
-}
-
-/**
- * @param {Discogs.EntityType} entityType 
- * @param {number} entityId 
- */
-export function buildEntityURL(entityType, entityId) {
-	return `https://www.discogs.com/${entityType}/${entityId}`;
-}
-
-/**
  * Requests the given entity from the Discogs API.
  * @param {Discogs.EntityType} entityType 
  * @param {number} entityId 
  */
 async function fetchEntityFromAPI(entityType, entityId) {
-	const url = `https://api.discogs.com/${entityType}s/${entityId}`;
-	const response = await callAPI(url);
+	const response = await callAPI(buildApiURL(entityType, entityId));
 	if (response.ok) {
 		return response.json();
 	} else {

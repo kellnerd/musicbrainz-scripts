@@ -1,19 +1,13 @@
-import {
-	buildEntityURL as buildDiscogsURL,
-	fetchVoiceActors as fetchVoiceActorsFromDiscogs,
-} from './discogs.js';
-import {
-	entityCache,
-} from './entityCache.js';
-import {
-	discogsToMBIDCache,
-} from './entityMapping.js';
+import { entityCache } from './entityCache.js';
 import {
 	closingDialog,
 	createVoiceActorDialog,
 	getTargetEntity,
 	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
+import { fetchVoiceActors as fetchVoiceActorsFromDiscogs } from './discogs/api.js';
+import { buildEntityURL as buildDiscogsURL } from './discogs/entity.js';
+import { discogsToMBIDCache } from './discogs/entityMapping.js';
 
 /**
  * Imports all existing voice actor credits from the given Discogs release.
