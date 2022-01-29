@@ -8,6 +8,7 @@ import {
  * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
  * by temporarily changing them to characters that will not be touched by the transformation rules.
  * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
+ * @type {SubstitutionRule[]}
  */
 export const transformationRulesToPreserveMarkup = [
 	/* Base64 encode URLs */
@@ -31,9 +32,10 @@ export const transformationRulesToPreserveMarkup = [
  * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string[]} inputSelectors CSS selectors of the input fields.
- * @param {string} [language] Language of the input fields' text (English name, optional).
- * @param {Event} [event] Event which should be triggered for changed input fields (optional).
+ * @param {object} options
+ * @param {string} [options.language] Language of the input fields' text (English name, optional).
+ * @param {Event} [options.event] Event which should be triggered for changed input fields (optional).
  */
-export function guessUnicodePunctuation(inputSelectors, language, event) {
-	transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(language), event);
+export function guessUnicodePunctuation(inputSelectors, options = {}) {
+	transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(options.language), options.event);
 }

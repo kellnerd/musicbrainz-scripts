@@ -59,7 +59,7 @@ function insertACButton(event) {
 	}
 
 	const button = createElement(buttonTemplate.standard);
-	button.addEventListener('click', () => guessUnicodePunctuation(acInputs, null, new Event('blur')));
+	button.addEventListener('click', () => guessUnicodePunctuation(acInputs, { event: new Event('blur') }));
 	acBubbleButtons.append(button);
 }
 
@@ -97,19 +97,20 @@ if (pageType == 'edit_annotation') { // annotation edit page
 	// button for the release information tab (after disambiguation comment input field)
 	insertIconButtonAfter(releaseInputs[1])
 		.addEventListener('click', () => {
-			guessUnicodePunctuation(releaseInputs, detectReleaseLanguage());
+			guessUnicodePunctuation(releaseInputs, { language: detectReleaseLanguage() });
 			transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 		});
 
 	// button for the tracklist tab (after the guess case button)
 	const tracklistButton = createElement(buttonTemplate.standard);
-	tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, detectReleaseLanguage()));
+	tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectReleaseLanguage() }));
 	qs('.guesscase .buttons').append(tracklistButton);
 
 	// global button (next to the release editor navigation buttons)
 	const globalButton = createElement(buttonTemplate.global);
 	globalButton.addEventListener('click', () => {
-		guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], detectReleaseLanguage()); // both release info and tracklist data
+		// both release info and tracklist data
+		guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], { language: detectReleaseLanguage() });
 		transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 		// exclude annotations from the global action as the changes are hard to verify
 	});
@@ -127,12 +128,12 @@ if (pageType == 'edit_annotation') { // annotation edit page
 	// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 	// TODO: use lyrics language to localize quotes?
 	insertIconButtonAfter(entityInputs[1]) // skipped for url entities as there is no disambiguation input
-		?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, null, event));
+		?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, { event }));
 
 	// global button after the "Enter edit" button
 	const button = createElement(buttonTemplate.global)
 	button.addEventListener('click', () => {
-		guessUnicodePunctuation(entityInputs, null, event);
+		guessUnicodePunctuation(entityInputs, { event });
 		transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 	});
 	qs('button.submit').parentNode.append(button);
