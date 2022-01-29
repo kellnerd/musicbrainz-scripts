@@ -59,7 +59,11 @@ form div.row span.col label {
 	cursor: help;
 }`;
 
-export function buildCreditParserUI() {
+/**
+ * Injects the basic UI of the credit parser and waits until the UI has been expanded before it continues with the build tasks.
+ * @param {...(() => void)} buildTasks Handlers which can be registered for additional UI build tasks.
+ */
+export function buildCreditParserUI(...buildTasks) {
 	// possibly called by multiple userscripts, do not inject the UI again
 	if (dom('credit-parser')) return;
 
@@ -67,10 +71,27 @@ export function buildCreditParserUI() {
 	// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
 	qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 	injectStylesheet(css, 'credit-parser');
+
+	// continue initialization of the UI once it has been opened
+	persistDetails('credit-parser', true).then((UI) => {
+		if (UI.open) {
+			initializeUI(buildTasks);
+		} else {
+			UI.addEventListener('toggle', function toggleHandler(event) {
+				UI.removeEventListener(event.type, toggleHandler);
+				initializeUI(buildTasks);
+			});			
+		}
+	});
+}
+
+/**
+ * @param {Array<() => void>} buildTasks
+ */
+function initializeUI(buildTasks) {
 	const creditInput = dom('credit-input');
 
 	// persist the state of the UI
-	persistDetails('credit-parser');
 	persistCheckbox('remove-parsed-lines');
 	persistCheckbox('parser-autofocus');
 
@@ -96,6 +117,10 @@ export function buildCreditParserUI() {
 		description: 'Splits the extracted name into multiple names (disabled by default when empty)',
 		defaultValue: parserDefaults.nameSeparatorRE,
 	});
+
+	for (const task of buildTasks) {
+		task();
+	}
 
 	// focus the credit parser input once all relationships have been loaded (and displayed)
 	releaseLoadingFinished().then(() => {

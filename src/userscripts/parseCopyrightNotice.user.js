@@ -5,11 +5,11 @@ import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
 import { dom } from '../../utils/dom/select.js';
 import { getPatternAsRegExp } from '../../utils/regex/parse.js';
 
-function buildUI() {
-	buildCreditParserUI();
-
+function buildCopyrightParserUI() {
 	const terminatorInput = dom('credit-terminator');
 	const nameSeparatorInput = dom('name-separator');
+
+	nameToMBIDCache.load();
 
 	addParserButton('Parse copyright notice', async (creditLine, event) => {
 		const copyrightInfo = parseCopyrightNotice(creditLine, {
@@ -35,5 +35,4 @@ function buildUI() {
 	].join('\n'));
 }
 
-nameToMBIDCache.load();
-buildUI();
+buildCreditParserUI(buildCopyrightParserUI);
