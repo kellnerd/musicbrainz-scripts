@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.28.2
+// @version      2022.1.29
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -71,6 +71,31 @@
 	}
 
 	/**
+	 * Extracts the entity type and ID from a Discogs URL.
+	 * @param {string} url URL of a Discogs entity page.
+	 * @returns {[Discogs.EntityType,string]|undefined} Type and ID.
+	 */
+	function extractEntityFromURL(url) {
+		return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);
+	}
+
+	/**
+	 * @param {Discogs.EntityType} entityType
+	 * @param {number} entityId
+	 */
+	function buildEntityURL(entityType, entityId) {
+		return `https://www.discogs.com/${entityType}/${entityId}`;
+	}
+
+	/**
+	 * @param {Discogs.EntityType} entityType
+	 * @param {number} entityId
+	 */
+	function buildApiURL(entityType, entityId) {
+		return `https://api.discogs.com/${entityType}s/${entityId}`;
+	}
+
+	/**
 	 * Returns a promise that resolves after the given delay.
 	 * @param {number} ms Delay in milliseconds.
 	 */
@@ -111,210 +136,10 @@
 	}
 
 	/**
-	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value
-	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
-	 * @returns {string}
-	 */
-	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, replaceValue]) => {
-			value = value.replace(searchValue, replaceValue);
-		});
-		return value;
-	}
-
-	/**
-	 * Default punctuation rules.
-	 * @type {SubstitutionRule[]}
-	 */
-	const punctuationRules = [
-		/* quoted text */
-		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
-		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
-		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
-		// ... which is enclosed by non-word characters or at the beginning/end of the title
-		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
-
-		/* primes */
-		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
-		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
-
-		/* apostrophes */
-		[/'/g, '’'], // ... and finally the apostrophes should be remaining
-
-		/* ellipses */
-		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
-
-		/* dashes */
-		[/ - /g, ' – '], // en dash as separator
-
-		/* hyphens for (partial) ISO 8601 dates, e.g. 1987‐07–30 or 2016-04 */
-		[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g, (potentialDate) => {
-			if (Number.isNaN(Date.parse(potentialDate))) return potentialDate; // skip invalid date strings, e.g. 1989-90
-			return potentialDate.replaceAll('-', '‐');
-		}],
-
-		/* figure dashes: separate three or more groups of digits (two groups could be range) */
-		[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
-
-		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
-
-		/* hyphens */
-		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
-
-		/* rare cases where it is difficult to define precise rules: em dash, minus */
-	];
-
-	/**
-	 * Language-specific double and single quotes (RegEx replace values).
-	 * @type {Record<string, string[]>}
-	 */
-	const languageSpecificQuotes = {
-		English: ['“$1”', '‘$1’'],
-		French: ['« $1 »', '‹ $1 ›'],
-		German: ['„$1“', '‚$1‘'],
-	};
-
-	/**
-	 * Indices of the quotation rules (double and single quotes) in `punctuationRules`.
-	 */
-	const quotationRuleIndices = [0, 2];
-
-	/**
-	 * Additional punctuation rules for certain languages, will be appended to the default rules.
-	 * @type {Record<string, SubstitutionRule[]>}
-	 */
-	const languageSpecificRules = {
-		German: [
-			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
-		],
-		Japanese: [
-			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
-		],
-	};
-
-	/**
-	 * Creates language-specific punctuation guessing substitution rules.
-	 * @param {string} [language] Name of the language (in English).
-	 */
-	function punctuationRulesForLanguage(language) {
-		// create a deep copy to prevent modifications of the default rules
-		let rules = [...punctuationRules]; 
-
-		// overwrite replace values for quotation rules with language-specific values (if they are existing)
-		const replaceValueIndex = 1;
-		languageSpecificQuotes[language]?.forEach((value, index) => {
-			const ruleIndex = quotationRuleIndices[index];
-			rules[ruleIndex][replaceValueIndex] = value;
-		});
-
-		// append language-specific rules (if they are existing)
-		languageSpecificRules[language]?.forEach((rule) => {
-				rules.push(rule);
-		});
-
-		return rules;
-	}
-
-	/**
-	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
-	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
-	 * @param {string} text
-	 * @param {string} [language] Language of the text (English name, optional).
-	 */
-	function guessUnicodePunctuation(text, language) {
-		return transform(text, punctuationRulesForLanguage(language));
-	}
-
-	/**
-	 * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
-	 * https://www.discogs.com/developers/
-	 */
-	const callAPI$1 = rateLimit(fetch, 60 * 1000, 25);
-
-	/**
-	 * Extracts the entity type and ID from a Discogs URL.
-	 * @param {string} url URL of a Discogs entity page.
-	 * @returns {[Discogs.EntityType,string]|undefined} Type and ID.
-	 */
-	function extractEntityFromURL(url) {
-		return url.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);
-	}
-
-	/**
-	 * @param {Discogs.EntityType} entityType 
-	 * @param {number} entityId 
-	 */
-	function buildEntityURL(entityType, entityId) {
-		return `https://www.discogs.com/${entityType}/${entityId}`;
-	}
-
-	/**
-	 * Requests the given entity from the Discogs API.
-	 * @param {Discogs.EntityType} entityType 
-	 * @param {number} entityId 
-	 */
-	async function fetchEntityFromAPI(entityType, entityId) {
-		const url = `https://api.discogs.com/${entityType}s/${entityId}`;
-		const response = await callAPI$1(url);
-		if (response.ok) {
-			return response.json();
-		} else {
-			throw response;
-		}
-	}
-
-	/**
-	 * Fetches the extra artists (credits) for the given release.
-	 * @param {string} releaseURL URL of a Discogs release page.
-	 */
-	async function fetchCredits(releaseURL) {
-		const entity = extractEntityFromURL(releaseURL);
-		if (entity && entity[0] === 'release') {
-			/** @type {Discogs.Release} */
-			const release = await fetchEntityFromAPI(...entity);
-			return release.extraartists.map((artist) => {
-				/** @type {Discogs.ParsedArtist} */
-				const parsedArtist = { ...artist };
-				// drop bracketed numeric suffixes for ambiguous artist names
-				parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
-
-				parsedArtist.anv = guessUnicodePunctuation(artist.anv || parsedArtist.name);
-
-				// split roles with credited role names in square brackets (for convenience)
-				const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
-				if (roleWithCredit) {
-					parsedArtist.role = roleWithCredit[1];
-					parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
-				}
-
-				return parsedArtist;
-			});
-		} else {
-			throw new Error('Invalid Discogs URL');
-		}
-	}
-
-	/**
-	 * Fetches the voice actor and narrator credits for the given release.
-	 * @param {string} releaseURL URL of a Discogs release page.
-	 */
-	async function fetchVoiceActors(releaseURL) {
-		return (await fetchCredits(releaseURL))
-			.filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role))
-			.flatMap((artist) => {
-				// split artists with multiple roles into multiple credits
-				const roles = artist.roleCredit?.split('/');
-				if (!roles || roles.length === 1) return artist;
-				return roles.map((role) => ({ ...artist, roleCredit: role.trim() }));
-			});
-	}
-
-	/**
 	 * Calls to the MusicBrainz API are limited to one request per second.
 	 * https://musicbrainz.org/doc/MusicBrainz_API
 	 */
-	const callAPI = rateLimit(fetch, 1000);
+	const callAPI$1 = rateLimit(fetch, 1000);
 
 	/**
 	 * Requests the given entity from the MusicBrainz API.
@@ -360,7 +185,7 @@
 			'Accept': 'application/json',
 			// 'User-Agent': 'Application name/<version> ( contact-url )',
 		};
-		const response = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+		const response = await callAPI$1(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
 		if (response.ok) {
 			return response.json();
 		} else {
@@ -376,10 +201,10 @@
 		/**
 		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
 		 * @param {Object} options
-		 * @param {(...params: Params) => string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+		 * @param {(...params: Params) => Key[]} options.keyMapper Maps the function parameters to the components of the cache's key.
 		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
 		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-		 * @param {Record<string, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		 * @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
 		 */
 		constructor(expensiveFunction, options) {
 			this.expensiveFunction = expensiveFunction;
@@ -413,7 +238,7 @@
 
 		/**
 		 * Manually sets the cache value for the given key.
-		 * @param {string[]} keys Components of the key.
+		 * @param {Key[]} keys Components of the key.
 		 * @param {Result} value 
 		 */
 		set(keys, value) {
@@ -448,7 +273,7 @@
 
 		/**
 		 * Returns the cache record which is indexed by the key.
-		 * @param {string[]} keys Components of the key
+		 * @param {Key[]} keys Components of the key.
 		 */
 		_get(keys) {
 			let record = this.data;
@@ -595,6 +420,194 @@
 		keyMapper: (gid) => [gid],
 		data: MB.entityCache,
 	});
+
+	/**
+	 * Transforms the given value using the given substitution rules.
+	 * @param {string} value
+	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @returns {string}
+	 */
+	function transform(value, substitutionRules) {
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
+		});
+		return value;
+	}
+
+	/**
+	 * Default punctuation rules.
+	 * @type {SubstitutionRule[]}
+	 */
+	const punctuationRules = [
+		/* quoted text */
+		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
+		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
+		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
+		// ... which is enclosed by non-word characters or at the beginning/end of the title
+		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
+
+		/* primes */
+		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
+		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
+
+		/* apostrophes */
+		[/'/g, '’'], // ... and finally the apostrophes should be remaining
+
+		/* ellipses */
+		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
+
+		/* dashes */
+		[/ - /g, ' – '], // en dash as separator
+
+		/* hyphens for (partial) ISO 8601 dates, e.g. 1987‐07–30 or 2016-04 */
+		[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g, (potentialDate) => {
+			if (Number.isNaN(Date.parse(potentialDate))) return potentialDate; // skip invalid date strings, e.g. 1989-90
+			return potentialDate.replaceAll('-', '‐');
+		}],
+
+		/* figure dashes: separate three or more groups of digits (two groups could be range) */
+		[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
+
+		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
+
+		/* hyphens */
+		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
+
+		/* rare cases where it is difficult to define precise rules: em dash, minus */
+	];
+
+	/**
+	 * Language-specific double and single quotes (RegEx replace values).
+	 * @type {Record<string, string[]>}
+	 */
+	const languageSpecificQuotes = {
+		English: ['“$1”', '‘$1’'],
+		French: ['« $1 »', '‹ $1 ›'],
+		German: ['„$1“', '‚$1‘'],
+	};
+
+	/**
+	 * Indices of the quotation rules (double and single quotes) in `punctuationRules`.
+	 */
+	const quotationRuleIndices = [0, 2];
+
+	/**
+	 * Additional punctuation rules for certain languages, will be appended to the default rules.
+	 * @type {Record<string, SubstitutionRule[]>}
+	 */
+	const languageSpecificRules = {
+		German: [
+			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
+		],
+		Japanese: [
+			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
+		],
+	};
+
+	/**
+	 * Creates language-specific punctuation guessing substitution rules.
+	 * @param {string} [language] Name of the language (in English).
+	 */
+	function punctuationRulesForLanguage(language) {
+		// create a deep copy to prevent modifications of the default rules
+		let rules = [...punctuationRules]; 
+
+		// overwrite replace values for quotation rules with language-specific values (if they are existing)
+		const replaceValueIndex = 1;
+		languageSpecificQuotes[language]?.forEach((value, index) => {
+			const ruleIndex = quotationRuleIndices[index];
+			rules[ruleIndex][replaceValueIndex] = value;
+		});
+
+		// append language-specific rules (if they are existing)
+		languageSpecificRules[language]?.forEach((rule) => {
+				rules.push(rule);
+		});
+
+		return rules;
+	}
+
+	/**
+	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
+	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
+	 * @param {string} text
+	 * @param {string} [language] Language of the text (English name, optional).
+	 */
+	function guessUnicodePunctuation(text, language) {
+		return transform(text, punctuationRulesForLanguage(language));
+	}
+
+	/**
+	 * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
+	 * https://www.discogs.com/developers/
+	 */
+	const callAPI = rateLimit(fetch, 60 * 1000, 25);
+
+	/**
+	 * Requests the given entity from the Discogs API.
+	 * @param {Discogs.EntityType} entityType 
+	 * @param {number} entityId 
+	 */
+	async function fetchEntityFromAPI(entityType, entityId) {
+		const response = await callAPI(buildApiURL(entityType, entityId));
+		if (response.ok) {
+			return response.json();
+		} else {
+			throw response;
+		}
+	}
+
+	/**
+	 * Fetches the extra artists (credits) for the given release.
+	 * @param {string} releaseURL URL of a Discogs release page.
+	 */
+	async function fetchCredits(releaseURL) {
+		const entity = extractEntityFromURL(releaseURL);
+		if (entity && entity[0] === 'release') {
+			/** @type {Discogs.Release} */
+			const release = await fetchEntityFromAPI(...entity);
+			return release.extraartists.flatMap((artist) => {
+				// drop bracketed numeric suffixes for ambiguous artist names
+				artist.name = artist.name.replace(/ \(\d+\)$/, '');
+
+				artist.anv = guessUnicodePunctuation(artist.anv || artist.name);
+
+				// split multiple roles into multiple credits (separated by commas which are not inside square brackets)
+				return artist.role.split(/,\s*(?![^[\]]*\])/).map((role) => {
+					/** @type {Discogs.ParsedArtist} */
+					const parsedArtist = { ...artist };
+
+					// use a separate attribute for credited role names in square brackets
+					const roleWithCredit = role.match(/(.+?) \[(.+)\]$/);
+					if (roleWithCredit) {
+						parsedArtist.role = roleWithCredit[1];
+						parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
+					} else {
+						parsedArtist.role = role;
+					}
+
+					return parsedArtist;
+				});
+			});
+		} else {
+			throw new Error('Invalid Discogs URL');
+		}
+	}
+
+	/**
+	 * Fetches the voice actor and narrator credits for the given release.
+	 * @param {string} releaseURL URL of a Discogs release page.
+	 */
+	async function fetchVoiceActors(releaseURL) {
+		return (await fetchCredits(releaseURL))
+			.filter((artist) => ['Voice Actor', 'Narrator'].includes(artist.role))
+			.flatMap((artist) => {
+				// split artists with multiple roles into multiple credits
+				const roles = artist.roleCredit?.split('/');
+				if (!roles || roles.length === 1) return artist;
+				return roles.map((role) => ({ ...artist, roleCredit: role.trim() }));
+			});
+	}
 
 	/**
 	 * Imports all existing voice actor credits from the given Discogs release.
