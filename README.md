@@ -126,6 +126,14 @@ javascript:(function(){const t=prompt('MBIDs of entities which should be related
 - Relates the currently edited entity to multiple entities given by their MBIDs.
 - Automatically uses the default relationship type between the two entity types.
 
+### [View Discogs Entity Via API](src/bookmarklets/viewDiscogsEntityViaAPI.js)
+
+```js
+javascript:(function(){var a,e=window.location.href.match(/(artist|label|master|release)\/(\d+)/)?.slice(1);e&&open(([e,a]=[...e],`https://api.discogs.com/${e}s/`+a))})();
+```
+
+- Views the API response for the currently visited Discogs entity (in a new tab).
+
 ### [Voice Actor Credits](src/voiceActorCredits.js)
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
