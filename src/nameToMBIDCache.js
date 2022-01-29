@@ -1,17 +1,7 @@
-import { FunctionCache } from '../utils/cache/FunctionCache.js';
+import { SimpleCache } from '../utils/cache/SimpleCache.js';
 
-/**
- * Dummy function to make the cache fail without actually running an expensive function.
- * @param {MB.EntityType} entityType
- * @param {string} name
- * @returns {string}
- */
-function _nameToMBID(entityType, name) {
-	return undefined;
-}
-
-export const nameToMBIDCache = new FunctionCache(_nameToMBID, {
-	keyMapper: (entityType, name) => [entityType, name],
+/** @type {SimpleCache<[entityType: MB.EntityType, name: string], MB.MBID>} */
+export const nameToMBIDCache = new SimpleCache({
 	name: 'nameToMBIDCache',
-	storage: window.localStorage
+	storage: window.localStorage,
 });
