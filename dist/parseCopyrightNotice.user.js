@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.28.2
+// @version      2022.1.29
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -35,10 +35,10 @@
 		/**
 		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
 		 * @param {Object} options
-		 * @param {(...params: Params) => string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+		 * @param {(...params: Params) => Key[]} options.keyMapper Maps the function parameters to the components of the cache's key.
 		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
 		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-		 * @param {Record<string, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		 * @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
 		 */
 		constructor(expensiveFunction, options) {
 			this.expensiveFunction = expensiveFunction;
@@ -72,7 +72,7 @@
 
 		/**
 		 * Manually sets the cache value for the given key.
-		 * @param {string[]} keys Components of the key.
+		 * @param {Key[]} keys Components of the key.
 		 * @param {Result} value 
 		 */
 		set(keys, value) {
@@ -107,7 +107,7 @@
 
 		/**
 		 * Returns the cache record which is indexed by the key.
-		 * @param {string[]} keys Components of the key
+		 * @param {Key[]} keys Components of the key.
 		 */
 		_get(keys) {
 			let record = this.data;
@@ -131,19 +131,30 @@
 	});
 
 	/**
-	 * Dummy function to make the cache fail without actually running an expensive function.
-	 * @param {MB.EntityType} entityType
-	 * @param {string} name
-	 * @returns {string}
+	 * @template Params
+	 * @template Result
+	 * @extends {FunctionCache<Params,Result>}
 	 */
-	function _nameToMBID(entityType, name) {
-		return undefined;
+	class SimpleCache extends FunctionCache {
+		/**
+		* @param {Object} options
+		* @param {string} [options.name] Name of the cache, used as storage key (optional).
+		* @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
+		* @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		*/
+		constructor(options) {
+			// use a dummy function to make the function cache fail without actually running an expensive function
+			super((...params) => undefined, {
+				...options,
+				keyMapper: (...params) => params,
+			});
+		}
 	}
 
-	const nameToMBIDCache = new FunctionCache(_nameToMBID, {
-		keyMapper: (entityType, name) => [entityType, name],
+	/** @type {SimpleCache<[entityType: MB.EntityType, name: string], MB.MBID>} */
+	const nameToMBIDCache = new SimpleCache({
 		name: 'nameToMBIDCache',
-		storage: window.localStorage
+		storage: window.localStorage,
 	});
 
 	/** MBS relationship link type IDs (incomplete). */
@@ -464,7 +475,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {(string|RegExp)[][]} substitutionRules Pairs of values for search & replace.
+	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -706,23 +717,28 @@
 	/**
 	 * Persists the state of the checkbox with the given ID across page loads and origins.
 	 * @param {string} id 
+	 * @param {boolean} [checkedByDefault]
+	 * @returns {Promise<HTMLInputElement>}
 	 */
-	function persistCheckbox(id) {
-		return persistElement(dom(id), 'checked', 'change');
+	function persistCheckbox(id, checkedByDefault) {
+		return persistElement(dom(id), 'checked', 'change', checkedByDefault);
 	}
 
 	/**
 	 * Persists the state of the collapsible details container with the given ID across page loads and origins.
 	 * @param {string} id 
+	 * @param {boolean} [openByDefault]
+	 * @returns {Promise<HTMLDetailsElement>}
 	 */
-	function persistDetails(id) {
-		return persistElement(dom(id), 'open', 'toggle');
+	function persistDetails(id, openByDefault) {
+		return persistElement(dom(id), 'open', 'toggle', openByDefault);
 	}
 
 	/**
 	 * Persists the value of the given input field across page loads and origins.
 	 * @param {HTMLInputElement} element 
-	 * @param {string} defaultValue
+	 * @param {string} [defaultValue]
+	 * @returns {Promise<HTMLInputElement>}
 	 */
 	function persistInput(element, defaultValue) {
 		return persistElement(element, 'value', 'change', defaultValue);
@@ -775,7 +791,11 @@ form div.row span.col label {
 	cursor: help;
 }`	;
 
-	function buildCreditParserUI() {
+	/**
+	 * Injects the basic UI of the credit parser and waits until the UI has been expanded before it continues with the build tasks.
+	 * @param {...(() => void)} buildTasks Handlers which can be registered for additional UI build tasks.
+	 */
+	function buildCreditParserUI(...buildTasks) {
 		// possibly called by multiple userscripts, do not inject the UI again
 		if (dom('credit-parser')) return;
 
@@ -783,10 +803,27 @@ form div.row span.col label {
 		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
 		qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 		injectStylesheet(css, 'credit-parser');
+
+		// continue initialization of the UI once it has been opened
+		persistDetails('credit-parser', true).then((UI) => {
+			if (UI.open) {
+				initializeUI(buildTasks);
+			} else {
+				UI.addEventListener('toggle', function toggleHandler(event) {
+					UI.removeEventListener(event.type, toggleHandler);
+					initializeUI(buildTasks);
+				});			
+			}
+		});
+	}
+
+	/**
+	 * @param {Array<() => void>} buildTasks
+	 */
+	function initializeUI(buildTasks) {
 		const creditInput = dom('credit-input');
 
 		// persist the state of the UI
-		persistDetails('credit-parser');
 		persistCheckbox('remove-parsed-lines');
 		persistCheckbox('parser-autofocus');
 
@@ -812,6 +849,10 @@ form div.row span.col label {
 			description: 'Splits the extracted name into multiple names (disabled by default when empty)',
 			defaultValue: parserDefaults.nameSeparatorRE,
 		});
+
+		for (const task of buildTasks) {
+			task();
+		}
 
 		// focus the credit parser input once all relationships have been loaded (and displayed)
 		releaseLoadingFinished().then(() => {
@@ -951,11 +992,11 @@ form div.row span.col label {
 		input.dispatchEvent(new Event('change'));
 	}
 
-	function buildUI() {
-		buildCreditParserUI();
-
+	function buildCopyrightParserUI() {
 		const terminatorInput = dom('credit-terminator');
 		const nameSeparatorInput = dom('name-separator');
+
+		nameToMBIDCache.load();
 
 		addParserButton('Parse copyright notice', async (creditLine, event) => {
 			const copyrightInfo = parseCopyrightNotice(creditLine, {
@@ -981,7 +1022,6 @@ form div.row span.col label {
 		].join('\n'));
 	}
 
-	nameToMBIDCache.load();
-	buildUI();
+	buildCreditParserUI(buildCopyrightParserUI);
 
 })();
