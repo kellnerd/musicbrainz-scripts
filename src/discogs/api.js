@@ -32,22 +32,28 @@ export async function fetchCredits(releaseURL) {
 	if (entity && entity[0] === 'release') {
 		/** @type {Discogs.Release} */
 		const release = await fetchEntityFromAPI(...entity);
-		return release.extraartists.map((artist) => {
-			/** @type {Discogs.ParsedArtist} */
-			const parsedArtist = { ...artist };
+		return release.extraartists.flatMap((artist) => {
 			// drop bracketed numeric suffixes for ambiguous artist names
-			parsedArtist.name = artist.name.replace(/ \(\d+\)$/, '');
+			artist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-			parsedArtist.anv = guessUnicodePunctuation(artist.anv || parsedArtist.name);
+			artist.anv = guessUnicodePunctuation(artist.anv || artist.name);
 
-			// split roles with credited role names in square brackets (for convenience)
-			const roleWithCredit = artist.role.match(/(.+?) \[(.+)\]$/);
-			if (roleWithCredit) {
-				parsedArtist.role = roleWithCredit[1];
-				parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
-			}
+			// split multiple roles into multiple credits (separated by commas which are not inside square brackets)
+			return artist.role.split(/,\s*(?![^[\]]*\])/).map((role) => {
+				/** @type {Discogs.ParsedArtist} */
+				const parsedArtist = { ...artist };
 
-			return parsedArtist;
+				// use a separate attribute for credited role names in square brackets
+				const roleWithCredit = role.match(/(.+?) \[(.+)\]$/);
+				if (roleWithCredit) {
+					parsedArtist.role = roleWithCredit[1];
+					parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
+				} else {
+					parsedArtist.role = role;
+				}
+
+				return parsedArtist;
+			});
 		});
 	} else {
 		throw new Error('Invalid Discogs URL');
