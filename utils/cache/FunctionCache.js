@@ -6,10 +6,10 @@ export class FunctionCache {
 	/**
 	 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
 	 * @param {Object} options
-	 * @param {(...params: Params) => string[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+	 * @param {(...params: Params) => Key[]} options.keyMapper Maps the function parameters to the components of the cache's key.
 	 * @param {string} [options.name] Name of the cache, used as storage key (optional).
 	 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-	 * @param {Record<string, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+	 * @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
 	 */
 	constructor(expensiveFunction, options) {
 		this.expensiveFunction = expensiveFunction;
@@ -43,7 +43,7 @@ export class FunctionCache {
 
 	/**
 	 * Manually sets the cache value for the given key.
-	 * @param {string[]} keys Components of the key.
+	 * @param {Key[]} keys Components of the key.
 	 * @param {Result} value 
 	 */
 	set(keys, value) {
@@ -78,7 +78,7 @@ export class FunctionCache {
 
 	/**
 	 * Returns the cache record which is indexed by the key.
-	 * @param {string[]} keys Components of the key
+	 * @param {Key[]} keys Components of the key.
 	 */
 	_get(keys) {
 		let record = this.data;

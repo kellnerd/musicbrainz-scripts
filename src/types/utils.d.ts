@@ -16,6 +16,8 @@ type CreateGetterSetters<Record> = {
 
 type MaybePromise<T> = T | Promise<T>;
 
+type Key = string | number;
+
 /** Parameters for `String.replace()` (custom definition, `Parameters<String['replace']>` uses the wrong overload). */
 type SubstitutionRule = [
 	searchValue: string | RegExp,
