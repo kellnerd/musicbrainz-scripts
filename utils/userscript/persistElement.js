@@ -31,23 +31,28 @@ async function persistElement(element, attribute, eventType, defaultValue) {
 /**
  * Persists the state of the checkbox with the given ID across page loads and origins.
  * @param {string} id 
+ * @param {boolean} [checkedByDefault]
+ * @returns {Promise<HTMLInputElement>}
  */
-export function persistCheckbox(id) {
-	return persistElement(dom(id), 'checked', 'change');
+export function persistCheckbox(id, checkedByDefault) {
+	return persistElement(dom(id), 'checked', 'change', checkedByDefault);
 }
 
 /**
  * Persists the state of the collapsible details container with the given ID across page loads and origins.
  * @param {string} id 
+ * @param {boolean} [openByDefault]
+ * @returns {Promise<HTMLDetailsElement>}
  */
-export function persistDetails(id) {
-	return persistElement(dom(id), 'open', 'toggle');
+export function persistDetails(id, openByDefault) {
+	return persistElement(dom(id), 'open', 'toggle', openByDefault);
 }
 
 /**
  * Persists the value of the given input field across page loads and origins.
  * @param {HTMLInputElement} element 
- * @param {string} defaultValue
+ * @param {string} [defaultValue]
+ * @returns {Promise<HTMLInputElement>}
  */
 export function persistInput(element, defaultValue) {
 	return persistElement(element, 'value', 'change', defaultValue);
