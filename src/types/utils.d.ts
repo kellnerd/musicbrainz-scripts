@@ -14,6 +14,8 @@ type CreateGetterSetters<Record> = {
 	GetterSetter<Record[Key]>; // primitive types
 };
 
+type MaybeArray<T> = T | Array<T>;
+
 type MaybePromise<T> = T | Promise<T>;
 
 type Key = string | number;
