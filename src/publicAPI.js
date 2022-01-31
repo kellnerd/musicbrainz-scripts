@@ -52,7 +52,7 @@ export async function fetchFromAPI(endpoint, query = {}, inc = []) {
 		'Accept': 'application/json',
 		// 'User-Agent': 'Application name/<version> ( contact-url )',
 	};
-	const response = await callAPI(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+	const response = await callAPI(`https://musicbrainz.org/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
 	if (response.ok) {
 		return response.json();
 	} else {
