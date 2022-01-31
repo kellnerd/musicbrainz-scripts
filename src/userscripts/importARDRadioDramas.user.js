@@ -10,7 +10,7 @@ const releaseId = releaseURL.searchParams.get('dukey');
 releaseURL.search = new URLSearchParams({ dukey: releaseId });
 
 // extract data
-const author = qs('.hspaut').textContent.trim();
+const authors = Array.from(qsa('.hspaut a')).map((a) => a.textContent.trim());
 const title = qs('.hsprhti').textContent.trim();
 const seriesTitle = qs('.hsprti')?.textContent.trim();
 
@@ -34,7 +34,7 @@ sidebarText.forEach((line) => {
 
 	const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
 	if (productionMatch) {
-		broadcasters.push(productionMatch[1]);
+		broadcasters.push(...productionMatch[1].split(/\s+\/\s+/));
 		productionYear = productionMatch[2];
 	}
 
@@ -70,12 +70,13 @@ if (title.startsWith(seriesTitle)) {
 const release = {
 	name: standardizedFullTitle,
 	artist_credit: {
-		names: [{
+		names: authors.map((author, index) => ({
 			name: author,
 			artist: {
 				name: author,
 			},
-		}],
+			join_phrase: index === authors.length - 1 ? '' : ', ',
+		})),
 	},
 	type: ['Broadcast', 'Audio drama'],
 	events: [{
