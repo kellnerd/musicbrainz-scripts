@@ -12,6 +12,7 @@ releaseURL.search = new URLSearchParams({ dukey: releaseId });
 // extract data
 const authors = Array.from(qsa('.hspaut a')).map((a) => a.textContent.trim());
 const title = qs('.hsprhti').textContent.trim();
+const subtitle = qs('.hspunti')?.textContent.trim();
 const seriesTitle = qs('.hsprti')?.textContent.trim();
 
 const productionCredits = Array.from(qsa('.vollinfoblock p > span.prefix')).map((span) => {
@@ -51,18 +52,18 @@ let episodeTitle = title;
 let standardizedFullTitle = title;
 let disambiguationComment;
 
-if (title.startsWith(seriesTitle)) {
-	const episodeMatch = title.match(/\((?:(\d+)\.\s+(Folge|Teil)(?:\s+\((.+?)\))?:\s+)?(.+?)\)$/);
-	if (episodeMatch) {
-		episodeTitle = episodeMatch[4];
-		disambiguationComment = episodeMatch[3];
-		standardizedFullTitle = seriesTitle;
+const episodeMatch = title.match(/(.+?)\s+\((?:(\d+)\.\s+(Folge|Teil)(?:\s+\((.+?)\))?(?::\s+)?)?(.*)?\)$/);
+if (episodeMatch) {
+	standardizedFullTitle = episodeMatch[1]; // main title or series title
 
-		const episodeNumber = episodeMatch[1];
-		if (episodeNumber) {
-			standardizedFullTitle += `, ${episodeMatch[2]} ${episodeNumber}`;
-		}
+	const episodeNumber = episodeMatch[2];
+	if (episodeNumber) {
+		standardizedFullTitle += `, ${episodeMatch[3]} ${episodeNumber}`;
+	}
 
+	disambiguationComment = episodeMatch[4];
+	episodeTitle = episodeMatch[5];
+	if (episodeTitle) {
 		standardizedFullTitle += ': ' + episodeTitle;
 	}
 }
@@ -94,7 +95,7 @@ const release = {
 		format: 'Digital Media',
 		track: [{
 			number: 1,
-			name: episodeTitle,
+			name: episodeTitle ?? standardizedFullTitle,
 			length: duration,
 		}],
 	}],
