@@ -1,5 +1,26 @@
 import { buildEditNote } from './editNote.js';
 import { buildEntityURL } from './entity.js';
+import { createHiddenForm } from '../utils/dom/form.js';
+import { flatten } from '../utils/object/flatten.js';
+
+/**
+ * Creates a form with hidden inputs and a submit button to seed a new release on MusicBrainz.
+ * @param {MB.ReleaseSeed} releaseData Data of the release.
+ */
+export function createReleaseSeederForm(releaseData) {
+	const form = createHiddenForm(flatten(releaseData, ['type']));
+	form.action = buildEntityURL('release', 'add')
+	form.method = 'POST';
+	form.target = '_blank';
+	form.name = 'musicbrainz-release-seeder';
+
+	const importButton = document.createElement('button');
+	importButton.textContent = 'Import into MusicBrainz';
+	importButton.title = 'Import this release into MusicBrainz (open a new tab)'
+	form.appendChild(importButton);
+
+	return form;
+}
 
 /**
  * Creates an URL to seed the editor of the given entity with the given external link.
