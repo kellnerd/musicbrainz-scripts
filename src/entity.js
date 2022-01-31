@@ -18,3 +18,13 @@ export function extractEntityFromURL(url) {
 export function buildEntityURL(entityType, mbid) {
 	return `https://musicbrainz.org/${entityType}/${mbid}`;
 }
+
+/**
+ * Constructs a tooltip for the given entity.
+ * @param {MB.Entity} entity 
+ */
+export function getEntityTooltip(entity) {
+	let tooltip = `${entity.type}: ${entity['sort-name'] ?? entity.title}`; // fallback for releases
+	if (entity.disambiguation) tooltip += ` (${entity.disambiguation})`;
+	return tooltip;
+}
