@@ -1,12 +1,4 @@
-import type {
-	primaryTypeIds,
-	secondaryTypeIds,
-} from '../../data/releaseGroup.js';
-import type {
-	statusTypeIds,
-	packagingTypeIds,
-	urlTypeIds,
-} from '../../data/release.js';
+/// <reference path="editData.d.ts" />
 
 namespace MB {
 	// adapted from https://musicbrainz.org/doc/Development/Release_Editor_Seeding
@@ -18,7 +10,7 @@ namespace MB {
 		 * The MBID of an existing release group.
 		 * Alternatively we can create a new release group which will have the name of the release by listing its type(s).
 		 */
-		release_group: string;
+		release_group: MBID;
 		/**
 		 * The type(s) of the release group that will be created.
 		 * The possible values are the names of the release group types, in English (see the documentation).
@@ -43,7 +35,7 @@ namespace MB {
 		 */
 		script: string;
 		/** The status of the release, as defined by MusicBrainz. */
-		status: ReleaseSeed.Status;
+		status: ReleaseSeed.Status; // TODO: definitions inside a file with type imports invisible!?
 		/** The type of packaging of the release. The possible values are the names of the release group types, in English (see the documentation). */
 		packaging: ReleaseSeed.Packaging;
 
@@ -53,11 +45,7 @@ namespace MB {
 		 */
 		events: Array<Partial<{
 			/** The date of the release event. Each field is an integer. */
-			date: Partial<{
-				year: number;
-				month: number;
-				day: number;
-			}>;
+			date: Partial<Date>;
 			/** The country of the release event. May be any valid country ISO code (for example: `GB`, `US`, `FR`). */
 			country: string;
 		}>>;
@@ -65,7 +53,7 @@ namespace MB {
 		/** Releases may be associated with multiple labels and catalog numbers. */
 		labels: Array<Partial<{
 			/** The MBID of the label. */
-			mbid: string;
+			mbid: MBID;
 			/** The catalog number of this release, for the current label. */
 			catalog_number: string;
 			/**
@@ -82,7 +70,12 @@ namespace MB {
 		mediums: Array<Partial<{
 			/** Any valid medium format name. The possible values are the names of the medium formats, in English (see the documentation). */
 			format: string;
+			/**
+			 * The position of this medium in the list of mediums.
+			 * If omitted, it will be inferred from the order of all mediums passed in (which is normally what you want).
+			 */
 			position: number;
+			/** The name of the medium (for example “Live & Unreleased”). */
 			name: string;
 
 			track: Array<Partial<{
@@ -91,7 +84,7 @@ namespace MB {
 				/** The free-form track number. */
 				number: string;
 				/** The MBID of an existing recording in the database which should be associated with the track. */
-				recording: string;
+				recording: MBID;
 				/** The tracks duration, in MM:SS form or a single integer as milliseconds. */
 				length: string | number;
 				artist_credit: ArtistCreditSeed;
@@ -122,7 +115,7 @@ namespace MB {
 			 * The MBID of the artist.
 			 * If omitted you will be able to either create the artist in the release editor, or search MusicBrainz for this artist.
 			 */
-			mbid: string;
+			mbid: MBID;
 			/** The name of the artist, as credited on the release. Optional, if omitted it will default to the artist’s current name. */
 			name: string;
 			artist: {
@@ -139,20 +132,4 @@ namespace MB {
 			join_phrase: string;
 		}>>;
 	};
-
-	namespace ReleaseSeed {
-		type Status = Lowercase<keyof typeof statusTypeIds>;
-
-		type Packaging = keyof typeof packagingTypeIds;
-
-		type UrlLinkTypeId = typeof urlTypeIds[keyof typeof urlTypeIds];
-	}
-
-	namespace ReleaseGroupSeed {
-		type PrimaryType = keyof typeof primaryTypeIds;
-
-		type SecondaryType = keyof typeof secondaryTypeIds;
-
-		type Type = PrimaryType | SecondaryType;
-	}
 }
