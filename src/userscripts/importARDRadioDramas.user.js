@@ -1,7 +1,7 @@
 import { urlTypeIds } from '../data/release.js';
 import { buildEditNote } from '../editNote.js';
+import { createReleaseSeederForm } from '../seeding.js';
 import { qs, qsa } from '../../utils/dom/select.js';
-import { flatten } from '../../utils/object/flatten.js';
 import { zipObject } from '../../utils/object/zipObject.js';
 
 // clean up the release URL
@@ -32,7 +32,7 @@ let broadcasters = [], productionYear, date = {}, duration;
 sidebarText.forEach((line) => {
 	if (line === 'PRODUKTIONS- UND SENDEDATEN') return;
 
-	const productionMatch = line.match(/^(.+?)\s+(\d{4})$/);
+	const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
 	if (productionMatch) {
 		broadcasters.push(productionMatch[1]);
 		productionYear = productionMatch[2];
@@ -64,10 +64,11 @@ const release = {
 	labels: broadcasters.map((name) => ({ name })),
 	language: 'deu',
 	script: 'Latn',
-	status: 'official',
+	status: 'Official',
 	barcode: 'none',
 	packaging: 'None',
 	mediums: [{
+		format: 'Digital Media',
 		track: [{
 			number: 1,
 			name: title,
@@ -81,5 +82,5 @@ const release = {
 	edit_note: buildEditNote(`Imported radio drama from ${releaseURL}`),
 };
 
-const releaseSeed = flatten(release, ['type']);
-console.log(releaseSeed);
+const form = createReleaseSeederForm(release);
+qs('.sectionC .noPrint > p').prepend(form);
