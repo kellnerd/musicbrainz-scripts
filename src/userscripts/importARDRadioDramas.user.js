@@ -26,12 +26,13 @@ const voiceActorCredits = Array.from(document.querySelectorAll('.mitwirkende tr'
 	return Array.from(cells).map((cell) => cell.textContent.trim()).filter((text) => text);
 }).filter((credit) => credit);
 
-const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p')).map((p) => p.textContent.trim());
+const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
+	.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
+	.map((p) => p.textContent.trim());
+
 let broadcasters = [], productionYear, date = {}, duration;
 
 sidebarText.forEach((line) => {
-	if (line === 'PRODUKTIONS- UND SENDEDATEN') return;
-
 	const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
 	if (productionMatch) {
 		broadcasters.push(...productionMatch[1].split(/\s+\/\s+/));
