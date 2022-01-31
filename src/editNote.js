@@ -1,3 +1,4 @@
+
 /**
  * Adds the given message and a footer for the active userscript to the edit note.
  * @param {string} message Edit note message.
@@ -5,7 +6,7 @@
 export function addMessageToEditNote(message) {
 	/** @type {HTMLTextAreaElement} */
 	const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
-	const previousContent = editNoteInput.value.split(separator);
+	const previousContent = editNoteInput.value.split(editNoteSeparator);
 	editNoteInput.value = buildEditNote(...previousContent, message);
 	editNoteInput.dispatchEvent(new Event('change'));
 }
@@ -26,7 +27,7 @@ export function buildEditNote(...sections) {
 	// drop empty sections and keep only the last occurrence of duplicate sections
 	return sections
 		.filter((section, index) => section && sections.lastIndexOf(section) === index)
-		.join(separator);
+		.join(editNoteSeparator);
 }
 
-const separator = '\n—\n';
+const editNoteSeparator = '\n—\n';
