@@ -45,9 +45,30 @@ sidebarText.forEach((line) => {
 	}
 });
 
+// parse and standardize the title
+let episodeTitle = title;
+let standardizedFullTitle = title;
+let disambiguationComment;
+
+if (title.startsWith(seriesTitle)) {
+	const episodeMatch = title.match(/\((?:(\d+)\.\s+(Folge|Teil)(?:\s+\((.+?)\))?:\s+)?(.+?)\)$/);
+	if (episodeMatch) {
+		episodeTitle = episodeMatch[4];
+		disambiguationComment = episodeMatch[3];
+		standardizedFullTitle = seriesTitle;
+
+		const episodeNumber = episodeMatch[1];
+		if (episodeNumber) {
+			standardizedFullTitle += `, ${episodeMatch[2]} ${episodeNumber}`;
+		}
+
+		standardizedFullTitle += ': ' + episodeTitle;
+	}
+}
+
 /** @type {MB.ReleaseSeed} */
 const release = {
-	name: title,
+	name: standardizedFullTitle,
 	artist_credit: {
 		names: [{
 			name: author,
@@ -71,7 +92,7 @@ const release = {
 		format: 'Digital Media',
 		track: [{
 			number: 1,
-			name: title,
+			name: episodeTitle,
 			length: duration,
 		}],
 	}],
@@ -81,6 +102,8 @@ const release = {
 	}],
 	edit_note: buildEditNote(`Imported radio drama from ${releaseURL}`),
 };
+
+if (disambiguationComment) release.comment = disambiguationComment;
 
 const form = createReleaseSeederForm(release);
 qs('.sectionC .noPrint > p').prepend(form);
