@@ -25,3 +25,5 @@ type SubstitutionRule = [
 	searchValue: string | RegExp,
 	replaceValue: string | ((match: string, ...args: any[]) => string),
 ];
+
+type FormDataRecord = Record<string, MaybeArray<string>>;
