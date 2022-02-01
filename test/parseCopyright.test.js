@@ -33,6 +33,11 @@ const copyrightTestCases = [
 		types: ['℗', '©'],
 		year: '1974',
 	}]],
+	['© ℗ 2019 Interscope Records', [{
+		name: 'Interscope Records',
+		types: ['©', '℗'],
+		year: '2019',
+	}]],
 
 	/* combined (P) & (C) copyright without date */
 	['℗ & © «Rare»', [{

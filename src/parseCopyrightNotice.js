@@ -45,7 +45,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 
 	for (const match of copyrightMatches) {
 		const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
-		const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
+		const types = match[1].split(/[&+]|(?<=[©℗])\s*(?=[©℗])/).map(cleanType);
 		const years = match[2]?.split(/[,&]/).map((year) => year.trim());
 
 		names.forEach((name) => {
