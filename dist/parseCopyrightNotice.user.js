@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.2.3
+// @version      2022.2.3.2
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -535,7 +535,7 @@
 			[/«(.+?)»/g, '$1'],
 
 			// simplify region-specific copyrights
-			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'],
+			[/for (.+?) and (.+?) for the world outside (?:of )?\1/g, '/ $2'],
 
 			// drop confusingly used ℗ symbols and text between ℗ symbol and year
 			[/℗\s*(under\s)/gi, '$1'],
