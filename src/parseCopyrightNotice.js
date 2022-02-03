@@ -40,7 +40,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 	]);
 
 	const copyrightMatches = text.matchAll(new RegExp(
-		String.raw`${copyrightRE.source}(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
+		String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
 		'gm'));
 
 	for (const match of copyrightMatches) {
@@ -61,7 +61,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 	}
 
 	const legalInfoMatches = text.matchAll(new RegExp(
-		`${legalInfoRE.source}(${namePattern})(?:${terminatorPattern})`,
+		String.raw`${legalInfoRE.source}(?:\s*[–-]\s+)?(${namePattern})(?:${terminatorPattern})`,
 		'gim'));
 
 	for (const match of legalInfoMatches) {

@@ -22,6 +22,13 @@ const copyrightTestCases = [
 		year: '2021',
 	}]],
 
+	/* Discogs-style copyrights with dashes */
+	['Copyright (c) – Capitol Records, Inc.', [{
+		name: 'Capitol Records, Inc.',
+		types: ['©'],
+		year: undefined,
+	}]],
+
 	/* combined (P) & (C) copyright */
 	['℗ & © 2021 Universal Music New Zealand Limited', [{
 		name: 'Universal Music New Zealand Limited',
@@ -213,6 +220,10 @@ const copyrightTestCases = [
 	['marketed and distributed by Sony Music Entertainment', [{
 		name: 'Sony Music Entertainment',
 		types: ['marketed by', 'distributed by'],
+	}]],
+	['Distributed By – Universal Music LLC', [{
+		name: 'Universal Music LLC',
+		types: ['distributed by'],
 	}]],
 
 	/* labels with company suffixes */
