@@ -1,7 +1,7 @@
 import path from 'path';
 import { rollup } from 'rollup';
 import rollupIgnore from 'rollup-plugin-ignore';
-import UglifyJS from 'uglify-js';
+import { minify } from 'terser';
 
 import { getScriptFiles } from './getFiles.js';
 import { zipObject } from '../utils/object/zipObject.js';
@@ -54,11 +54,10 @@ async function buildBookmarklet(modulePath, debug = false) {
 	const { output } = await bundle.generate(rollupOptions.output);
 	await bundle.close();
 
-	/**
-	 * Minify bundled code with UglifyJS.
-	 * @type {UglifyJS.MinifyOptions}
-	 */
-	const uglifyOptions = {
+	// minify bundled code with terser
+	const minifiedBundle = await minify({
+		modulePath: output[0].code,
+	}, {
 		compress: {
 			expression: true,
 			drop_console: true,
@@ -67,15 +66,8 @@ async function buildBookmarklet(modulePath, debug = false) {
 		output: {
 			ascii_only: true,
 			quote_style: 3,
-		}
-	};
-
-	const minifiedBundle = UglifyJS.minify(output[0].code, uglifyOptions);
-
-	if (minifiedBundle.error) {
-		console.error('Failed to minify bookmarklet', modulePath);
-		throw minifiedBundle.error;
-	}
+		},
+	});
 
 	return `javascript:${minifiedBundle.code}`;
 }
