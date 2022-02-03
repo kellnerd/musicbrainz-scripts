@@ -54,20 +54,25 @@ async function buildBookmarklet(modulePath, debug = false) {
 	const { output } = await bundle.generate(rollupOptions.output);
 	await bundle.close();
 
-	// minify bundled code with terser
+	// minify bundled code with terser (see https://terser.org/docs/api-reference)
 	const minifiedBundle = await minify({
 		modulePath: output[0].code,
 	}, {
+		ecma: 2020,
 		compress: {
 			expression: true,
 			drop_console: true,
-			passes: 2,
+			passes: 3,
+			unsafe: true,
+			unsafe_arrows: true,
 		},
-		output: {
+		format: {
 			ascii_only: true,
-			quote_style: 3,
+			wrap_func_args: false,
 		},
 	});
+
+	if (debug) console.log(`${minifiedBundle.code.length} bytes for bookmarklet '${modulePath}'`);
 
 	return `javascript:${minifiedBundle.code}`;
 }
