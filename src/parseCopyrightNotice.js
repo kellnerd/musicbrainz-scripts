@@ -34,10 +34,16 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 	text = transform(text, [
 		[/\(C\)/gi, '©'],
 		[/\(P\)/gi, '℗'],
-		[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
-		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
-		[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
-		[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
+
+		// remove a-tisket's French quotes
+		[/«(.+?)»/g, '$1'],
+
+		// simplify region-specific copyrights
+		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'],
+
+		// drop confusingly used ℗ symbols and text between ℗ symbol and year
+		[/℗\s*(under\s)/gi, '$1'],
+		[/(?<=℗\s*)digital remaster/gi, ''],
 
 		// split © & ℗ with different years into two lines
 		[/([©℗]\s*\d{4})\s*[&+]?\s*([©℗]\s*\d{4})(.+)$/g, '$1$3\n$2$3'],
