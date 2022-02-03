@@ -48,11 +48,11 @@ async function buildBookmarklet(modulePath, debug = false) {
 
 	if (debug) {
 		console.debug(`${modulePath} depends on:`, bundle.watchFiles);
-		await bundle.write(rollupOptions.output);
+		bundle.write(rollupOptions.output);
 	}
 
 	const { output } = await bundle.generate(rollupOptions.output);
-	await bundle.close();
+	bundle.close();
 
 	// minify bundled code with terser (see https://terser.org/docs/api-reference)
 	const minifiedBundle = await minify({
