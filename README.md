@@ -126,6 +126,14 @@ javascript:(function(){const t=prompt('MBIDs of entities which should be related
 - Relates the currently edited entity to multiple entities given by their MBIDs.
 - Automatically uses the default relationship type between the two entity types.
 
+### [Show Qobuz Release Availability](src/bookmarklets/showQobuzReleaseAvailability.js)
+
+```js
+javascript:(function(){const e=function(){const e=Array.from(document.querySelectorAll('head > link[rel=alternate]')).map(e=>e.hreflang);return e.map(e=>e.split('-')[1]).filter((e,n,t)=>e&&t.indexOf(e)===n)}();alert(`Available in ${e.length} countries\n`+e.sort().join(', '))})();
+```
+
+- Shows all countries in which the currently visited Qobuz release is available.
+
 ### [View Discogs Entity Via API](src/bookmarklets/viewDiscogsEntityViaAPI.js)
 
 ```js
