@@ -297,6 +297,15 @@ const copyrightTestCases = [
 		types: ['℗', '©'],
 		year: '2020',
 	}]],
+	['℗ & © «2008 Atlantic Recording Corporation for the United States and WEA International Inc. for the world outside of the United States»', [{
+		name: 'Atlantic Recording Corporation',
+		types: ['℗', '©'],
+		year: '2008',
+	}, {
+		name: 'WEA International Inc.',
+		types: ['℗', '©'],
+		year: '2008',
+	}]],
 
 	/* confusing usage of copyright symbols */
 	['℗ «Under exclusive licence to Parlophone Records Limited»', [{

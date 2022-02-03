@@ -39,7 +39,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 		[/«(.+?)»/g, '$1'],
 
 		// simplify region-specific copyrights
-		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'],
+		[/for (.+?) and (.+?) for the world outside (?:of )?\1/g, '/ $2'],
 
 		// drop confusingly used ℗ symbols and text between ℗ symbol and year
 		[/℗\s*(under\s)/gi, '$1'],
