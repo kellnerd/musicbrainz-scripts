@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.1.29
+// @version      2022.2.3
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -298,7 +298,8 @@
 	/**
 	 * Converts an array with a single element into a scalar.
 	 * @template T
-	 * @param {T|T[]} maybeArray 
+	 * @param {MaybeArray<T>} maybeArray 
+	 * @returns A scalar or the input array if the conversion is not possible.
 	 */
 	function preferScalar(maybeArray) {
 		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
@@ -308,7 +309,7 @@
 	/**
 	 * Converts a scalar into an array with a single element.
 	 * @template T
-	 * @param {T|T[]} maybeArray 
+	 * @param {MaybeArray<T>} maybeArray 
 	 */
 	function preferArray(maybeArray) {
 		if (!Array.isArray(maybeArray)) return [maybeArray];
@@ -446,7 +447,7 @@
 	function addMessageToEditNote(message) {
 		/** @type {HTMLTextAreaElement} */
 		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
-		const previousContent = editNoteInput.value.split(separator);
+		const previousContent = editNoteInput.value.split(editNoteSeparator);
 		editNoteInput.value = buildEditNote(...previousContent, message);
 		editNoteInput.dispatchEvent(new Event('change'));
 	}
@@ -467,10 +468,22 @@
 		// drop empty sections and keep only the last occurrence of duplicate sections
 		return sections
 			.filter((section, index) => section && sections.lastIndexOf(section) === index)
-			.join(separator);
+			.join(editNoteSeparator);
 	}
 
-	const separator = '\n—\n';
+	const editNoteSeparator = '\n—\n';
+
+	/**
+	 * Returns the unique elements of the given array (JSON comparison).
+	 * @template T
+	 * @param {T[]} array 
+	 */
+	function getUniqueElementsByJSON(array) {
+		// use a Map to keep the order of elements, the JSON representation is good enough as a unique key for our use
+		return Array.from(new Map(
+			array.map((element) => [JSON.stringify(element), element])
+		).values());
+	}
 
 	/**
 	 * Transforms the given value using the given substitution rules.
@@ -491,7 +504,7 @@
 
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
-		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
+		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?|(?:\p{Letter}\.){2,}))?/,
 		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
 		terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
 	};
@@ -517,19 +530,28 @@
 		text = transform(text, [
 			[/\(C\)/gi, '©'],
 			[/\(P\)/gi, '℗'],
-			[/«(.+?)»/g, '$1'], // remove a-tisket's French quotes
-			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
-			[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
-			[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
+
+			// remove a-tisket's French quotes
+			[/«(.+?)»/g, '$1'],
+
+			// simplify region-specific copyrights
+			[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'],
+
+			// drop confusingly used ℗ symbols and text between ℗ symbol and year
+			[/℗\s*(under\s)/gi, '$1'],
+			[/(?<=℗\s*)digital remaster/gi, ''],
+
+			// split © & ℗ with different years into two lines
+			[/([©℗]\s*\d{4})\s*[&+]?\s*([©℗]\s*\d{4})(.+)$/g, '$1$3\n$2$3'],
 		]);
 
 		const copyrightMatches = text.matchAll(new RegExp(
-			String.raw`${copyrightRE.source}(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
-			'gm'));
+			String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
+			'gmu'));
 
 		for (const match of copyrightMatches) {
 			const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
-			const types = match[1].split(/[&+]|(?<=[©℗])(?=[©℗])/).map(cleanType);
+			const types = match[1].split(/[&+]|(?<=[©℗])\s*(?=[©℗])/).map(cleanType);
 			const years = match[2]?.split(/[,&]/).map((year) => year.trim());
 
 			names.forEach((name) => {
@@ -545,8 +567,8 @@
 		}
 
 		const legalInfoMatches = text.matchAll(new RegExp(
-			`${legalInfoRE.source}(${namePattern})(?:${terminatorPattern})`,
-			'gim'));
+			String.raw`${legalInfoRE.source}(?:\s*[–-]\s+)?(${namePattern})(?:${terminatorPattern})`,
+			'gimu'));
 
 		for (const match of legalInfoMatches) {
 			const types = match[1].split(/\sand\s/).map(cleanType);
@@ -556,7 +578,7 @@
 			});
 		}
 
-		return copyrightInfo;
+		return getUniqueElementsByJSON(copyrightInfo);
 	}
 
 	/**
