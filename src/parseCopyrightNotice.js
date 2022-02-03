@@ -1,4 +1,5 @@
 import { preferScalar } from '../utils/array/scalar.js';
+import { getUniqueElementsByJSON } from '../utils/array/unique.js';
 import { transform } from '../utils/string/transform.js';
 
 const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
@@ -37,6 +38,9 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 		[/for (.+?) and (.+?) for the world outside \1/g, '/ $2'], // simplify region-specific copyrights
 		[/℗\s*(under\s)/gi, '$1'], // drop confusingly used ℗ symbols
 		[/(?<=℗\s*)digital remaster/gi, ''], // drop text between ℗ symbol and year
+
+		// split © & ℗ with different years into two lines
+		[/([©℗]\s*\d{4})\s*[&+]?\s*([©℗]\s*\d{4})(.+)$/g, '$1$3\n$2$3'],
 	]);
 
 	const copyrightMatches = text.matchAll(new RegExp(
@@ -72,7 +76,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 		});
 	}
 
-	return copyrightInfo;
+	return getUniqueElementsByJSON(copyrightInfo);
 }
 
 /**

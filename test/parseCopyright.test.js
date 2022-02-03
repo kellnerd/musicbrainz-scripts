@@ -45,6 +45,18 @@ const copyrightTestCases = [
 		types: ['©', '℗'],
 		year: '2019',
 	}]],
+	['℗ 2012 & © 2017 Casino Records Entertainment. Distributed by The Family Affair Company.', [{
+		name: 'Casino Records Entertainment',
+		types: ['℗'],
+		year: '2012',
+	}, {
+		name: 'Casino Records Entertainment',
+		types: ['©'],
+		year: '2017',
+	}, {
+		name: 'The Family Affair Company',
+		types: ['distributed by'],
+	}]],
 
 	/* combined (P) & (C) copyright without date */
 	['℗ & © «Rare»', [{
