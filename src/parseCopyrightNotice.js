@@ -8,7 +8,7 @@ const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?
 
 /** @type {CreditParserOptions} */
 export const parserDefaults = {
-	nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?))?/,
+	nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?|(?:\p{Letter}\.){2,}))?/,
 	nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
 	terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
 };
@@ -45,7 +45,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 
 	const copyrightMatches = text.matchAll(new RegExp(
 		String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
-		'gm'));
+		'gmu'));
 
 	for (const match of copyrightMatches) {
 		const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
@@ -66,7 +66,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 
 	const legalInfoMatches = text.matchAll(new RegExp(
 		String.raw`${legalInfoRE.source}(?:\s*[–-]\s+)?(${namePattern})(?:${terminatorPattern})`,
-		'gim'));
+		'gimu'));
 
 	for (const match of legalInfoMatches) {
 		const types = match[1].split(/\sand\s/).map(cleanType);

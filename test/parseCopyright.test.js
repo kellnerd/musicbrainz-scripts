@@ -276,6 +276,16 @@ const copyrightTestCases = [
 		name: 'Sony Music Entertainment',
 		types: ['licensed to'],
 	}]],
+	['© «2020 Revealed Music B.V.»', [{
+		name: 'Revealed Music B.V.',
+		types: ['©'],
+		year: '2020',
+	}]],
+	['© Sony Music Entertainment (Greece) Α.Ε.', [{ // Greek letters!
+		name: 'Sony Music Entertainment (Greece) Α.Ε.',
+		types: ['©'],
+		year: undefined,
+	}]],
 
 	/* region-specific copyright */
 	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
