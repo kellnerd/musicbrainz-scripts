@@ -33,7 +33,6 @@ export function transformInputValues(inputSelector, substitutionRules, event = n
  * @param {string} inputSelector CSS selector of the input fields.
  * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
  * @deprecated Legacy function for bookmarklets (uses inline CSS for highlighting, change event is not configurable).
- * @todo UglifyJS creates unnecessary clutter like `a=b,a=f(a),b=a` when `transform()` is used.
  */
 export function $transformInputValues(inputSelector, substitutionRules) {
 	const highlightProperty = 'background-color';
@@ -45,10 +44,7 @@ export function $transformInputValues(inputSelector, substitutionRules) {
 			if (!value) {
 				return; // skip empty inputs
 			}
-			substitutionRules.forEach(([searchValue, replaceValue]) => {
-				value = value.replace(searchValue, replaceValue);
-				console.debug(value);
-			});
+			value = transform(value, substitutionRules);
 			if (value != input.value) { // update and highlight changed values
 				$(input).val(value)
 					.trigger('change')
