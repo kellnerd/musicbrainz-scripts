@@ -14,7 +14,7 @@ export function extractEntityFromURL(url) {
 
 /**
  * @param {MB.EntityType} entityType 
- * @param {MB.MBID} mbid 
+ * @param {MB.MBID | 'add' | 'create'} mbid MBID of an existing entity or `create` for the entity creation page (`add` for releases).
  */
 export function buildEntityURL(entityType, mbid) {
 	return `https://musicbrainz.org/${entityType}/${mbid}`;
