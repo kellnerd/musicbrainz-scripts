@@ -76,4 +76,4 @@ function relevantSourceFile(fileName, basePath) {
 }
 
 
-build();
+build(process.argv.includes('-d'));
