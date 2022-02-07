@@ -27,7 +27,7 @@ export async function buildBookmarklets(srcPath, debug = false) {
  * @param {string} modulePath Path to the executable module of the bookmarklet.
  * @returns {Promise<string>} Bookmarklet code as a `javascript:` URI.
  */
-async function buildBookmarklet(modulePath, debug = false) {
+export async function buildBookmarklet(modulePath, debug = false) {
 	/**
 	 * Bundle all used modules into an IIFE with rollup.
 	 * @type {import('rollup').RollupOptions}
