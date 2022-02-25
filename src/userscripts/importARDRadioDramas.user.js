@@ -31,7 +31,7 @@ const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
 	.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
 	.map((p) => p.textContent.trim());
 
-let broadcasters = [], productionYear, date = {}, duration;
+let broadcasters = [], productionYear, date = {}, station, duration;
 
 sidebarText.forEach((line) => {
 	const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
@@ -40,10 +40,15 @@ sidebarText.forEach((line) => {
 		productionYear = productionMatch[2];
 	}
 
-	const broadcastMatch = line.match(/^Erstsendung:\s+(\d{2}\.\d{2}\.\d{4})\s+\|\s+(\d+'\d{2})$/);
+	const broadcastMatch = line.match(/^Erstsendung:\s+(\d{2}\.\d{2}\.\d{4})\s+\|\s+(?:(.+?)\s+\|\s+)?(\d+'\d{2})$/);
 	if (broadcastMatch) {
 		date = zipObject(['day', 'month', 'year'], broadcastMatch[1].split('.'));
-		duration = broadcastMatch[2].replace("'", ':');
+		station = broadcastMatch[2];
+		duration = broadcastMatch[3].replace("'", ':');
+
+		if (station) {
+			broadcasters.push(station);
+		}
 	}
 });
 
