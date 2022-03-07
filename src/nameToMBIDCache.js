@@ -13,11 +13,11 @@ export const nameToMBIDCache = new SimpleCache({
  */
 export async function loadCachedEntitiesForRelease(release) {
 	return Promise.all([
-		...loadCachedArtists(release.artist_credit) ?? [],
-		...loadCachedLabels(release) ?? [],
+		...loadCachedArtists(release.artist_credit),
+		...loadCachedLabels(release),
 		...release.mediums?.flatMap(
 			(medium) => medium.track?.flatMap(
-				(track) => loadCachedArtists(track.artist_credit) ?? []
+				(track) => loadCachedArtists(track.artist_credit)
 			) ?? []
 		) ?? [],
 	]);
@@ -25,12 +25,12 @@ export async function loadCachedEntitiesForRelease(release) {
 
 /** @param {MB.ArtistCreditSeed} artistCredit */
 function loadCachedArtists(artistCredit) {
-	return artistCredit?.names.map((credit) => loadCachedMBID(credit, 'artist', credit.artist?.name ?? credit.name));
+	return artistCredit?.names.map((credit) => loadCachedMBID(credit, 'artist', credit.artist?.name ?? credit.name)) ?? [];
 }
 
 /** @param {MB.ReleaseSeed} release */
 function loadCachedLabels(release) {
-	return release.labels?.map((label) => loadCachedMBID(label, 'label', label.name));
+	return release.labels?.map((label) => loadCachedMBID(label, 'label', label.name)) ?? [];
 }
 
 /**
