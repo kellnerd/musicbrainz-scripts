@@ -291,6 +291,11 @@ const copyrightTestCases = [
 		types: ['℗', '©'],
 		year: '2012',
 	}]],
+	['℗ «1998 Arkadia Entertainment Corp.»', [{
+		name: 'Arkadia Entertainment Corp.',
+		types: ['℗'],
+		year: '1998',
+	}]],
 
 	/* region-specific copyright */
 	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
