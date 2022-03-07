@@ -286,6 +286,11 @@ const copyrightTestCases = [
 		types: ['©'],
 		year: undefined,
 	}]],
+	['℗ & © «2012 ACT Music + Vision GmbH & Co. KG»', [{
+		name: 'ACT Music + Vision GmbH & Co. KG',
+		types: ['℗', '©'],
+		year: '2012',
+	}]],
 
 	/* region-specific copyright */
 	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
