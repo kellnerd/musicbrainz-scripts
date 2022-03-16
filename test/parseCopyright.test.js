@@ -165,6 +165,11 @@ const copyrightTestCases = [
 		types: ['℗'],
 		year: ['2014', '2017', '2018', '2019', '2020'],
 	}]],
+	['℗ «1983/1999 Sony Music Entertainment Germany GmbH»', [{
+		name: 'Sony Music Entertainment Germany GmbH',
+		types: ['℗'],
+		year: ['1983', '1999'],
+	}]],
 	// GMR (rights society) indicates an unsupported work level copyright
 	['© 1974, 1975, 1978, 1980 Bruce Springsteen (GMR)', [{
 		name: 'Bruce Springsteen (GMR)',

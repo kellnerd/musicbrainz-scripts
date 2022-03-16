@@ -2,7 +2,7 @@ import { preferScalar } from '../utils/array/scalar.js';
 import { getUniqueElementsByJSON } from '../utils/array/unique.js';
 import { transform } from '../utils/string/transform.js';
 
-const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
+const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
 
 const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
@@ -56,7 +56,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 	for (const match of copyrightMatches) {
 		const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])\s*(?=[©℗])/).map(cleanType);
-		const years = match[2]?.split(/[,&]/).map((year) => year.trim());
+		const years = match[2]?.split(/[,&/+]/).map((year) => year.trim());
 
 		names.forEach((name) => {
 			// skip fake copyrights which contain the release label
