@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.2.3.2
+// @version      2022.3.16
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -498,13 +498,13 @@
 		return value;
 	}
 
-	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
+	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
 
 	const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
-		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Inc|Ltd)\.?|(?:\p{Letter}\.){2,}))?/,
+		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))?/,
 		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
 		terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
 	};
@@ -552,7 +552,7 @@
 		for (const match of copyrightMatches) {
 			const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
 			const types = match[1].split(/[&+]|(?<=[©℗])\s*(?=[©℗])/).map(cleanType);
-			const years = match[2]?.split(/[,&]/).map((year) => year.trim());
+			const years = match[2]?.split(/[,&/+]/).map((year) => year.trim());
 
 			names.forEach((name) => {
 				// skip fake copyrights which contain the release label
