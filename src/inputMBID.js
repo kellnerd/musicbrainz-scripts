@@ -24,7 +24,10 @@ export function createMBIDInput(id, allowedEntityTypes, initialValue) {
 	}
 
 	mbidInput.addEventListener('input', async function () {
-		setInputValue(this.value.trim());
+		const entity = await setInputValue(this.value.trim());
+		if (entity) {
+			mbidInput.dispatchEvent(new CustomEvent('mbid-input', { detail: entity }));
+		}
 	});
 
 	return mbidInput;
