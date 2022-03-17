@@ -9,7 +9,7 @@ export const nameToMBIDCache = new SimpleCache({
 /**
  * Loads the MBIDs of cached entity names for the given release seed.
  * @param {MB.ReleaseSeed} release 
- * @returns Names and types of entities which have not been found in the cache.
+ * @returns Name, type and MBID (if already given or found in the cache) of the related entities.
  */
 export async function loadCachedEntitiesForRelease(release) {
 	return Promise.all([
@@ -20,7 +20,7 @@ export async function loadCachedEntitiesForRelease(release) {
 				(track) => loadCachedArtists(track.artist_credit)
 			) ?? []
 		) ?? [],
-	]);
+	]).then((entities) => entities.filter((entity) => entity));
 }
 
 /** @param {MB.ArtistCreditSeed} artistCredit */
@@ -35,20 +35,19 @@ function loadCachedLabels(release) {
 
 /**
  * @param {{ mbid: MB.MBID }} entity 
- * @param {MB.EntityType} entityType 
+ * @param {MB.EntityType} type 
  * @param {string} name 
  * @returns Type and name of the entity if it was not found in the cache.
  */
-async function loadCachedMBID(entity, entityType, name) {
-	if (entity.mbid || !name) return; // nothing to do
+async function loadCachedMBID(entity, type, name) {
+	let mbid = entity.mbid;
 
-	const mbid = await nameToMBIDCache.get(entityType, name);
-	if (mbid) {
-		entity.mbid = mbid;
-	} else {
-		return {
-			entityType,
-			name,
-		};
+	if (!mbid) {
+		mbid = await nameToMBIDCache.get(type, name);
+		if (mbid) {
+			entity.mbid = mbid;
+		}
 	}
+
+	return { type, name, mbid };
 }
