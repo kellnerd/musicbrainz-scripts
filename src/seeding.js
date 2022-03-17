@@ -15,7 +15,9 @@ export function createReleaseSeederForm(releaseData) {
 	form.name = 'musicbrainz-release-seeder';
 
 	const importButton = document.createElement('button');
-	importButton.textContent = 'Import into MusicBrainz';
+	const icon = document.createElement('img');
+	icon.src = '//musicbrainz.org/favicon.ico';
+	importButton.append(icon, 'Import into MusicBrainz');
 	importButton.title = 'Import this release into MusicBrainz (open a new tab)'
 	form.appendChild(importButton);
 
