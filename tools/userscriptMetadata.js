@@ -1,5 +1,5 @@
-import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 import { GitHubUserJS } from './github.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
@@ -8,11 +8,11 @@ import { camelToTitleCase } from '../utils/string/casingStyle.js';
  * Generates the metadata block for the given userscript from the JSON file of the same name.
  * @param {string} userscriptPath
  */
-export function generateMetadataBlock(userscriptPath) {
+export async function generateMetadataBlock(userscriptPath) {
 	const baseName = path.basename(userscriptPath, '.user.js');
 	const date = new Date(); // current date will be used as version identifier
 
-	const metadata = loadMetadata(userscriptPath);
+	const metadata = await loadMetadata(userscriptPath);
 	const metadataBlock = ['// ==UserScript=='];
 
 	function addProperty(key, value) {
@@ -55,10 +55,12 @@ export function generateMetadataBlock(userscriptPath) {
 }
 
 /**
- * Loads the metadata for the given userscript from the JSON file of the same name.
+ * Loads the metadata for the given userscript from the .meta.js ES module of the same name.
  * @param {string} userscriptPath
  */
-export function loadMetadata(userscriptPath) {
-	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.json');
-	return JSON.parse(fs.readFileSync(metadataPath, { encoding: 'utf-8' }));
+export async function loadMetadata(userscriptPath) {
+	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.meta.js');
+	const metadataModule = await import(pathToFileURL(metadataPath));
+
+	return metadataModule.default;
 }

@@ -24,14 +24,15 @@ export async function getMarkdownFiles(directory) {
 /**
  * Returns the names of all JavaScript files inside the given directory.
  * @param {string} directory Path to a directory.
+ * @param {string} [extension] Required extension of the files, defaults to `.js`.
  * @returns {Promise<string[]>} Array of file names including the extension.
  */
-export async function getScriptFiles(directory) {
+export async function getScriptFiles(directory, extension = '.js') {
 	const dir = await fs.promises.opendir(directory);
 	let scriptFiles = [];
 
 	for await (const entry of dir) {
-		if (entry.isFile() && path.extname(entry.name) === '.js') {
+		if (entry.isFile() && entry.name.endsWith(extension)) {
 			scriptFiles.push(entry.name);
 		}
 	}

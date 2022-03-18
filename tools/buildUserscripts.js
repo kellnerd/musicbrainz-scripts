@@ -13,7 +13,7 @@ import { generateMetadataBlock } from './userscriptMetadata.js';
  * @returns {Promise<string[]>} Array of userscript file names (without extension).
  */
 export async function buildUserscripts(srcPath, debug = false) {
-	const scriptFiles = await getScriptFiles(srcPath);
+	const scriptFiles = await getScriptFiles(srcPath, '.user.js');
 	scriptFiles
 		.map((file) => path.join(srcPath, file))
 		.forEach((modulePath) => buildUserscript(modulePath, debug));

@@ -32,7 +32,7 @@ async function build({
 
 	for (let baseName of userscriptNames) {
 		const filePath = path.join(userscriptBasePath, baseName + '.user.js');
-		const metadata = loadMetadata(filePath);
+		const metadata = await loadMetadata(filePath);
 
 		readme.write(`\n### ${camelToTitleCase(baseName)}\n`);
 		readme.write('\n' + metadata.description + '\n');
