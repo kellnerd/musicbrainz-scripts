@@ -43,8 +43,9 @@ async function build({
 		if (bookmarkletFileName in bookmarklets) {
 			const bookmarkletPath = path.join(bookmarkletBasePath, bookmarkletFileName);
 
-			readme.write('\n```js\n' + bookmarklets[bookmarkletFileName] + '\n```\n');
+			readme.write('\nAlso available as a bookmarklet with less features:\n');
 			readme.write(extractDocumentation(bookmarkletPath) + '\n');
+			readme.write('\n```js\n' + bookmarklets[bookmarkletFileName] + '\n```\n');
 
 			delete bookmarklets[bookmarkletFileName];
 		}
@@ -59,8 +60,8 @@ async function build({
 
 		readme.write(`\n### [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
 
-		readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
 		readme.write(extractDocumentation(bookmarkletPath) + '\n');
+		readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
 	}
 
 	// append all additional documentation files to the README
