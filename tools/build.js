@@ -26,17 +26,33 @@ async function build({
 	const readmeHeader = fs.readFileSync(path.join(docBasePath, '_header.md'), { encoding: 'utf-8' });
 	readme.write(readmeHeader);
 
-	// write bookmarklets and their extracted documentation to the README
+	// write userscripts and their extracted documentation to the README
+	readme.write('\n## Userscripts\n');
+
+	for (let baseName of userscriptNames) {
+		readme.write(`\n### ${camelToTitleCase(baseName)}\n`);
+		readme.write(sourceAndInstallButton(baseName));
+
+		// also insert the code snippet if there is a bookmarklet of the same name
+		const bookmarkletFileName = baseName + '.js';
+		if (bookmarkletFileName in bookmarklets) {
+			const bookmarkletPath = path.join(bookmarkletBasePath, bookmarkletFileName);
+
+			readme.write('\n```js\n' + bookmarklets[bookmarkletFileName] + '\n```\n');
+			readme.write(extractDocumentation(bookmarkletPath) + '\n');
+
+			delete bookmarklets[bookmarkletFileName];
+		}
+	}
+
+	// write remaining bookmarklets and their extracted documentation to the README
+	readme.write('\n## Bookmarklets\n');
+
 	for (let fileName in bookmarklets) {
 		const baseName = path.basename(fileName, '.js');
 		const bookmarkletPath = path.join(bookmarkletBasePath, fileName);
 
 		readme.write(`\n### [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
-
-		// insert an install button if there is a userscript of the same name
-		if (userscriptNames.includes(baseName)) {
-			readme.write(sourceAndInstallButton(baseName));
-		}
 
 		readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
 		readme.write(extractDocumentation(bookmarkletPath) + '\n');
