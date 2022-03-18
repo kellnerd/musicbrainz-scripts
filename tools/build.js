@@ -8,19 +8,22 @@ import { getMarkdownFiles } from './getFiles.js'
 import { sourceAndInstallButton } from './github.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
 
-async function build(debug = false) {
-	// build userscripts
-	const userscriptBasePath = 'src/userscripts';
+async function build({
+	bookmarkletBasePath = 'src/bookmarklets',
+	userscriptBasePath = 'src/userscripts',
+	readmePath = 'README.md',
+	docBasePath = 'doc',
+	debug = false,
+} = {}) {
+	// build userscript
 	const userscriptNames = await buildUserscripts(userscriptBasePath, debug);
 
 	// prepare bookmarklets
-	const bookmarkletBasePath = 'src/bookmarklets';
 	const bookmarklets = await buildBookmarklets(bookmarkletBasePath, debug);
 
 	// prepare README file and write header
-	const readmePath = 'README.md';
 	const readme = fs.createWriteStream(readmePath);
-	const readmeHeader = fs.readFileSync('doc/_header.md', { encoding: 'utf-8' });
+	const readmeHeader = fs.readFileSync(path.join(docBasePath, '_header.md'), { encoding: 'utf-8' });
 	readme.write(readmeHeader);
 
 	// write bookmarklets and their extracted documentation to the README
@@ -40,7 +43,6 @@ async function build(debug = false) {
 	}
 
 	// append all additional documentation files to the README
-	const docBasePath = 'doc';
 	const docs = await getMarkdownFiles(docBasePath);
 
 	docs.map((file) => path.join(docBasePath, file)).forEach((filePath) => {
@@ -76,4 +78,4 @@ function relevantSourceFile(fileName, basePath) {
 }
 
 
-build(process.argv.includes('-d'));
+build({ debug: process.argv.includes('-d') });
