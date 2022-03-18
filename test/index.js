@@ -11,7 +11,7 @@ import {
 /**
  * Runs all test modules inside the given directory.
  * @param {string} basePath Path to the test directory. 
- * @returns {number} The total number of failed test cases.
+ * @returns The total number of failed test cases.
  */
 async function runAllTests(basePath) {
 	const testDir = await opendir(basePath);
