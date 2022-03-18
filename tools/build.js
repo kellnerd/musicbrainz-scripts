@@ -6,6 +6,7 @@ import { buildBookmarklets } from './buildBookmarklets.js';
 import { buildUserscripts } from './buildUserscripts.js';
 import { getMarkdownFiles } from './getFiles.js'
 import { sourceAndInstallButton } from './github.js';
+import { loadMetadata } from './userscriptMetadata.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
 
 async function build({
@@ -30,7 +31,11 @@ async function build({
 	readme.write('\n## Userscripts\n');
 
 	for (let baseName of userscriptNames) {
+		const filePath = path.join(userscriptBasePath, baseName + '.user.js');
+		const metadata = loadMetadata(filePath);
+
 		readme.write(`\n### ${camelToTitleCase(baseName)}\n`);
+		readme.write('\n' + metadata.description + '\n');
 		readme.write(sourceAndInstallButton(baseName));
 
 		// also insert the code snippet if there is a bookmarklet of the same name

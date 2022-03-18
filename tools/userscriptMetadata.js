@@ -9,11 +9,10 @@ import { camelToTitleCase } from '../utils/string/casingStyle.js';
  * @param {string} userscriptPath
  */
 export function generateMetadataBlock(userscriptPath) {
-	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.json');
-	const baseName = path.basename(metadataPath, '.json');
+	const baseName = path.basename(userscriptPath, '.user.js');
 	const date = new Date(); // current date will be used as version identifier
 
-	const metadata = JSON.parse(fs.readFileSync(metadataPath, { encoding: 'utf-8' }));
+	const metadata = loadMetadata(userscriptPath);
 	const metadataBlock = ['// ==UserScript=='];
 
 	function addProperty(key, value) {
@@ -53,4 +52,13 @@ export function generateMetadataBlock(userscriptPath) {
 	metadataBlock.push('// ==/UserScript==\n');
 
 	return metadataBlock.join('\n');
+}
+
+/**
+ * Loads the metadata for the given userscript from the JSON file of the same name.
+ * @param {string} userscriptPath
+ */
+export function loadMetadata(userscriptPath) {
+	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.json');
+	return JSON.parse(fs.readFileSync(metadataPath, { encoding: 'utf-8' }));
 }
