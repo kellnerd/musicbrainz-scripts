@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2022.1.28.2
+// @version      2022.3.19
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -9,10 +9,10 @@
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
 // @grant        none
-// @match        *://*.musicbrainz.org/*/create
-// @match        *://*.musicbrainz.org/release/add
-// @match        *://*.musicbrainz.org/*/*/edit
-// @match        *://*.musicbrainz.org/*/*/edit_annotation
+// @include      /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/create(\?.+?)?(#.+?)?$/
+// @include      /^https?://((beta|test)\.)?musicbrainz\.org/release/add(\?.+?)?(#.+?)?$/
+// @include      /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/[0-9a-f-]{36}/edit(_annotation)?(\?.+?)?(#.+?)?$/
+// @include      /^https?://((beta|test)\.)?musicbrainz\.org/artist/[0-9a-f-]{36}/credit/\d+/edit(\?.+?)?(#.+?)?$/
 // ==/UserScript==
 
 (function () {
@@ -57,6 +57,20 @@
 		return value;
 	}
 
+	// Adapted from https://stackoverflow.com/a/46012210
+
+	const nativeInputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+
+	/**
+	 * Sets the value of an input element which has been manipulated by React.
+	 * @param {HTMLInputElement} input 
+	 * @param {string} value 
+	 */
+	function setReactInputValue(input, value) {
+		nativeInputValueSetter.call(input, value);
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
 	const defaultHighlightClass = 'content-changed';
 
 	/**
@@ -64,20 +78,33 @@
 	 * Highlights all updated input fields in order to allow the user to review the changes.
 	 * @param {string} inputSelector CSS selector of the input fields.
 	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
-	 * @param {Event} [event] Event which should be triggered for changed input fields (optional, defaults to 'change').
-	 * @param {string} [highlightClass] CSS class which should be applied to changed input fields (optional, defaults to `defaultHighlightClass`).
+	 * @param {object} [options]
+	 * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
+	 * @param {Event} [options.event] Event which should be triggered for changed input fields (optional, defaults to 'change').
+	 * @param {string} [options.highlightClass] CSS class which should be applied to changed input fields (optional, defaults to `defaultHighlightClass`).
 	 */
-	function transformInputValues(inputSelector, substitutionRules, event = new Event('change'), highlightClass = defaultHighlightClass) {
+	function transformInputValues(inputSelector, substitutionRules, {
+		isReactInput = false,
+		event = new Event('change'),
+		highlightClass = defaultHighlightClass,
+	} = {}) {
 		qsa(inputSelector).forEach((/** @type {HTMLInputElement} */ input) => {
 			input.classList.remove(highlightClass); // disable possible previously highlighted changes
 			let value = input.value;
+
 			if (!value) {
 				return; // skip empty inputs
 			}
+
 			value = transform(value, substitutionRules);
+
 			if (value != input.value) { // update and highlight changed values
-				input.value = value;
-				input.dispatchEvent(event);
+				if (isReactInput) {
+					setReactInputValue(input, value);
+				} else {
+					input.value = value;
+					input.dispatchEvent(event);
+				}
 				input.classList.add(highlightClass);
 			}
 		});
@@ -180,6 +207,7 @@
 	 * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
 	 * by temporarily changing them to characters that will not be touched by the transformation rules.
 	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
+	 * @type {SubstitutionRule[]}
 	 */
 	const transformationRulesToPreserveMarkup = [
 		/* Base64 encode URLs */
@@ -203,11 +231,13 @@
 	 * Searches and replaces ASCII punctuation symbols for all given input fields by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
-	 * @param {string} [language] Language of the input fields' text (English name, optional).
-	 * @param {Event} [event] Event which should be triggered for changed input fields (optional).
+	 * @param {object} options
+	 * @param {string} [options.language] Language of the input fields' text (English name, optional).
+	 * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
+	 * @param {Event} [options.event] Event which should be triggered for changed input fields (optional).
 	 */
-	function guessUnicodePunctuation(inputSelectors, language, event) {
-		transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(language), event);
+	function guessUnicodePunctuation(inputSelectors, options = {}) {
+		transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(options.language), options);
 	}
 
 	// MB languages as of 2021-10-04, extracted from the HTML source code of the release editor's language select menu
@@ -272,6 +302,7 @@
 	}
 
 	var img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAHYgAAB2IBOHqZ2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAFpSURBVDiNpZOxjwFBGMV/e5FspZeoFETlL9Bug0RDL5FolVpRUqxCr1iNUelUEhmFZqlEVAolFRuxsswVl9uzWVfceeX73nvzfTPzaUIIxRuIAJTL5X+ZR6MRH++cDrwOOBwOdLtdbrdbqDafzxmPx78H2LZNtVplt9txPp993vM8TNOk1WoFeIQQ6htSSmUYhur3++rxePi853mq0WioUqmkttutzwshVOS57U6nQy6Xo1KpBLoaDAYsl0t6vR6pVOr1HViWheM4IfPlcmE4HJLNZkPmQMBqtSIajbJYLFiv175gs9lwvV653+/MZjOOx2MgwB/BdV1OpxPtdhuAYrFIvV73X0JKiZQSXdcxTZN0Oh3sIBaLBZInkwlKqRDvui7T6TQ8gmEYAWE8HkfTNBKJBMlkMlQLjVAoFHAcB9u20XWdWq3mi5rNJpZlsd/vyWQy5PP5n7Tnf/BXCCHU27sQga+t+i8+AYUS9lO02Bg3AAAAAElFTkSuQmCC";
+	  var guessPunctuationIcon = img;
 
 	const buttonTemplate = {
 		standard: '<button type="button">Guess punctuation</button>',
@@ -281,7 +312,7 @@
 
 	const styles =
 `button.icon.guess-punctuation {
-	background-image: url(${img});
+	background-image: url(${guessPunctuationIcon});
 }
 input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	background-color: yellow !important;
@@ -323,7 +354,7 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 		}
 
 		const button = createElement(buttonTemplate.standard);
-		button.addEventListener('click', () => guessUnicodePunctuation(acInputs, null, new Event('blur')));
+		button.addEventListener('click', () => guessUnicodePunctuation(acInputs, { isReactInput: true }));
 		acBubbleButtons.append(button);
 	}
 
@@ -361,19 +392,20 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 		// button for the release information tab (after disambiguation comment input field)
 		insertIconButtonAfter(releaseInputs[1])
 			.addEventListener('click', () => {
-				guessUnicodePunctuation(releaseInputs, detectReleaseLanguage());
+				guessUnicodePunctuation(releaseInputs, { language: detectReleaseLanguage() });
 				transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 			});
 
 		// button for the tracklist tab (after the guess case button)
 		const tracklistButton = createElement(buttonTemplate.standard);
-		tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, detectReleaseLanguage()));
+		tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectReleaseLanguage() }));
 		qs('.guesscase .buttons').append(tracklistButton);
 
 		// global button (next to the release editor navigation buttons)
 		const globalButton = createElement(buttonTemplate.global);
 		globalButton.addEventListener('click', () => {
-			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], detectReleaseLanguage()); // both release info and tracklist data
+			// both release info and tracklist data
+			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], { language: detectReleaseLanguage() });
 			transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 			// exclude annotations from the global action as the changes are hard to verify
 		});
@@ -391,12 +423,12 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 		// tested for: area, artist, event, instrument, label, place, recording, release group, series, work
 		// TODO: use lyrics language to localize quotes?
 		insertIconButtonAfter(entityInputs[1]) // skipped for url entities as there is no disambiguation input
-			?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, null, event));
+			?.addEventListener('click', () => guessUnicodePunctuation(entityInputs, { event }));
 
 		// global button after the "Enter edit" button
 		const button = createElement(buttonTemplate.global);
 		button.addEventListener('click', () => {
-			guessUnicodePunctuation(entityInputs, null, event);
+			guessUnicodePunctuation(entityInputs, { event });
 			transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 		});
 		qs('button.submit').parentNode.append(button);
