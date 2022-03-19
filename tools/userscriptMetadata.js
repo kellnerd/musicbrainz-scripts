@@ -64,3 +64,31 @@ export async function loadMetadata(userscriptPath) {
 
 	return metadataModule.default;
 }
+
+/**
+ * Creates a regular expression that matches a full HTTP or HTTPS URL.
+ * @param {string} domainAndPathRegex Regular expression that matches domain and path.
+ */
+export function createURLRuleRegex(domainAndPathRegex, {
+	allowQuery = true,
+	allowFragment = true,
+} = {}) {
+	let ruleRegex = '/^https?://' + domainAndPathRegex;
+
+	if (allowQuery) {
+		ruleRegex += String.raw`(\?.+?)?`;
+	}
+	if (allowFragment) {
+		ruleRegex += '(#.+?)?';
+	}
+
+	return ruleRegex + '$/';
+}
+
+/**
+ * Creates a regular expression that matches a MusicBrainz URL.
+ * @param {string} pathRegex Regular expression that matches a path on musicbrainz.org.
+ */
+export function createMusicBrainzURLRule(pathRegex) {
+	return createURLRuleRegex(String.raw`((beta|test)\.)?musicbrainz\.org/` + pathRegex);
+}
