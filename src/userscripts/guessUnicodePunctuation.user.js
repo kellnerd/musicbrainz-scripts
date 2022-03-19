@@ -59,7 +59,7 @@ function insertACButton(event) {
 	}
 
 	const button = createElement(buttonTemplate.standard);
-	button.addEventListener('click', () => guessUnicodePunctuation(acInputs, { event: new Event('blur') }));
+	button.addEventListener('click', () => guessUnicodePunctuation(acInputs, { isReactInput: true }));
 	acBubbleButtons.append(button);
 }
 

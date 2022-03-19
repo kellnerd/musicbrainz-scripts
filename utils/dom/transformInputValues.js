@@ -1,5 +1,6 @@
 import { qsa } from './select.js';
 import { transform } from '../string/transform.js';
+import { setReactInputValue } from './react.js';
 
 export const defaultHighlightClass = 'content-changed';
 
@@ -8,20 +9,33 @@ export const defaultHighlightClass = 'content-changed';
  * Highlights all updated input fields in order to allow the user to review the changes.
  * @param {string} inputSelector CSS selector of the input fields.
  * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
- * @param {Event} [event] Event which should be triggered for changed input fields (optional, defaults to 'change').
- * @param {string} [highlightClass] CSS class which should be applied to changed input fields (optional, defaults to `defaultHighlightClass`).
+ * @param {object} [options]
+ * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
+ * @param {Event} [options.event] Event which should be triggered for changed input fields (optional, defaults to 'change').
+ * @param {string} [options.highlightClass] CSS class which should be applied to changed input fields (optional, defaults to `defaultHighlightClass`).
  */
-export function transformInputValues(inputSelector, substitutionRules, event = new Event('change'), highlightClass = defaultHighlightClass) {
+export function transformInputValues(inputSelector, substitutionRules, {
+	isReactInput = false,
+	event = new Event('change'),
+	highlightClass = defaultHighlightClass,
+} = {}) {
 	qsa(inputSelector).forEach((/** @type {HTMLInputElement} */ input) => {
 		input.classList.remove(highlightClass); // disable possible previously highlighted changes
 		let value = input.value;
+
 		if (!value) {
 			return; // skip empty inputs
 		}
+
 		value = transform(value, substitutionRules);
+
 		if (value != input.value) { // update and highlight changed values
-			input.value = value;
-			input.dispatchEvent(event);
+			if (isReactInput) {
+				setReactInputValue(input, value);
+			} else {
+				input.value = value;
+				input.dispatchEvent(event);
+			}
 			input.classList.add(highlightClass);
 		}
 	});

@@ -34,8 +34,9 @@ export const transformationRulesToPreserveMarkup = [
  * @param {string[]} inputSelectors CSS selectors of the input fields.
  * @param {object} options
  * @param {string} [options.language] Language of the input fields' text (English name, optional).
+ * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
  * @param {Event} [options.event] Event which should be triggered for changed input fields (optional).
  */
 export function guessUnicodePunctuation(inputSelectors, options = {}) {
-	transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(options.language), options.event);
+	transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(options.language), options);
 }
