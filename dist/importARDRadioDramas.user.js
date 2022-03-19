@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         MusicBrainz: Import ARD radio dramas
-// @version      2022.3.17
+// @version      2022.3.19
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Imports German broadcast releases from the ARD radio drama database.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#import-ardradio-dramas
+// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#import-ard-radio-dramas
 // @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/importARDRadioDramas.user.js
 // @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/importARDRadioDramas.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
