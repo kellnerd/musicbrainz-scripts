@@ -33,6 +33,9 @@ async function buildUserscript(modulePath, debug = false) {
 	 */
 	const rollupOptions = {
 		input: modulePath,
+		treeshake: {
+			moduleSideEffects: false,
+		},
 		output: {
 			dir: 'dist',
 			format: 'iife',

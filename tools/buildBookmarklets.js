@@ -34,6 +34,9 @@ export async function buildBookmarklet(modulePath, debug = false) {
 	 */
 	const rollupOptions = {
 		input: modulePath,
+		treeshake: {
+			moduleSideEffects: false,
+		},
 		output: {
 			dir: 'dist/bookmarklets',
 			format: 'iife',
