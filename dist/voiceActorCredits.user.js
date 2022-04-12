@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.1.29
+// @version      2022.4.12
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
@@ -23,7 +23,7 @@
 	function addMessageToEditNote(message) {
 		/** @type {HTMLTextAreaElement} */
 		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
-		const previousContent = editNoteInput.value.split(separator);
+		const previousContent = editNoteInput.value.split(editNoteSeparator);
 		editNoteInput.value = buildEditNote(...previousContent, message);
 		editNoteInput.dispatchEvent(new Event('change'));
 	}
@@ -44,18 +44,18 @@
 		// drop empty sections and keep only the last occurrence of duplicate sections
 		return sections
 			.filter((section, index) => section && sections.lastIndexOf(section) === index)
-			.join(separator);
+			.join(editNoteSeparator);
 	}
 
-	const separator = '\n—\n';
+	const editNoteSeparator = '\n—\n';
 
 	/**
 	 * Extracts the entity type and ID from a MusicBrainz URL (can be incomplete and/or with additional path components and query parameters).
 	 * @param {string} url URL of a MusicBrainz entity page.
-	 * @returns {{ type: MB.EntityType, mbid: MB.MBID } | undefined} Type and ID.
+	 * @returns {{ type: MB.EntityType | 'mbid', mbid: MB.MBID } | undefined} Type and ID.
 	 */
 	function extractEntityFromURL$1(url) {
-		const entity = url.match(/(area|artist|event|genre|instrument|label|place|recording|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
+		const entity = url.match(/(area|artist|event|genre|instrument|label|mbid|place|recording|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
 		return entity ? {
 			type: entity[1],
 			mbid: entity[2]
@@ -64,7 +64,7 @@
 
 	/**
 	 * @param {MB.EntityType} entityType 
-	 * @param {MB.MBID} mbid 
+	 * @param {MB.MBID | 'add' | 'create'} mbid MBID of an existing entity or `create` for the entity creation page (`add` for releases).
 	 */
 	function buildEntityURL$1(entityType, mbid) {
 		return `https://musicbrainz.org/${entityType}/${mbid}`;
@@ -185,7 +185,7 @@
 			'Accept': 'application/json',
 			// 'User-Agent': 'Application name/<version> ( contact-url )',
 		};
-		const response = await callAPI$1(`/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
+		const response = await callAPI$1(`https://musicbrainz.org/ws/2/${endpoint}?${new URLSearchParams(query)}`, { headers });
 		if (response.ok) {
 			return response.json();
 		} else {

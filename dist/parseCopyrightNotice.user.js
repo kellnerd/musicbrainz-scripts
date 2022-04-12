@@ -225,9 +225,10 @@
 	/**
 	 * Creates a dialog to add a relationship to the currently edited source entity.
 	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
+	 * @param {boolean} [backward] Swap source and target entity of the relationship (if they have the same type).
 	 * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
 	 */
-	function createAddRelationshipDialog(targetEntity) {
+	function createAddRelationshipDialog(targetEntity, backward = false) {
 		const viewModel = MB.sourceRelationshipEditor
 			// releases have multiple relationship editors, edit the release itself
 			?? MB.releaseRelationshipEditor;
@@ -235,6 +236,7 @@
 			viewModel,
 			source: viewModel.source,
 			target: targetEntity,
+			backward,
 		});
 	}
 
