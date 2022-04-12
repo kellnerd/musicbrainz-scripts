@@ -15,13 +15,10 @@ import { fetchEntity } from '../internalAPI.js';
 async function relateThisEntityToMultiple(mbids, relTypeId, backward = false) {
 	for (let mbid of mbids) {
 		const targetEntity = await fetchEntity(mbid);
-		const dialog = createAddRelationshipDialog(targetEntity);
+		const dialog = createAddRelationshipDialog(targetEntity, backward);
 		if (relTypeId) {
 			const rel = dialog.relationship();
 			rel.linkTypeID(relTypeId);
-			if (backward) {
-				dialog.changeDirection();
-			}
 		}
 		dialog.accept();
 	}

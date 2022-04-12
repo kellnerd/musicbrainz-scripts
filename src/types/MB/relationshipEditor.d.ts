@@ -57,6 +57,8 @@ namespace MB.RE {
 	type Dialog = {
 		$dialog: JQuery;
 		accept: () => void;
+		backward: Getter<boolean>;
+		changeDirection: () => void;
 		open: (event?: Event) => void;
 		autocomplete: {
 			$input: JQuery<HTMLInputElement>;
@@ -105,14 +107,15 @@ namespace MB.RE {
 
 	// TODO: imprecise
 	type DialogOptions = {
-		viewModel;
+		viewModel: BaseEditor;
 		source;
 		target;
 		relationship;
-		backward;
+		backward: boolean;
 	};
 
 	type BaseEditor = {
+		activeDialog: Getter<Dialog>;
 		cache: Record<string, Relationship>;
 		source: TargetEntity;
 		uniqueID: string;
