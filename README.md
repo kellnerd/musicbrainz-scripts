@@ -154,10 +154,11 @@ javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1
 ### [Relate This Entity To Multiple MBID](src/bookmarklets/relateThisEntityToMultipleMBID.js)
 
 - Relates the currently edited entity to multiple entities given by their MBIDs.
-- Automatically uses the default relationship type between the two entity types.
+- Automatically uses the selected relationship type of the currently active relationship dialog.
+- Falls back to the default relationship type between the two entity types if there is no active dialog.
 
 ```js
-javascript:(()=>{async function t(t){const e=await fetch("/ws/js/entity/"+t);return MB.entity(await e.json())}function e(t){const e=MB.sourceRelationshipEditor??MB.releaseRelationshipEditor;return new MB.relationshipEditor.UI.AddDialog({viewModel:e,source:e.source,target:t})}const i=prompt("MBIDs of entities which should be related to this entity:");i&&(async(i,o,n=!1)=>{for(let a of i){const i=e(await t(a));o&&(i.relationship().linkTypeID(o),n&&i.changeDirection()),i.accept()}})(Array.from(i.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]))})();
+javascript:(()=>{async function t(t){const i=await fetch("/ws/js/entity/"+t);return MB.entity(await i.json())}function i(t,i=!1){const e=MB.sourceRelationshipEditor??MB.releaseRelationshipEditor;return new MB.relationshipEditor.UI.AddDialog({viewModel:e,source:e.source,target:t,backward:i})}async function e(e,o,a=!1){for(let n of e){const e=i(await t(n),a);o&&e.relationship().linkTypeID(o),e.accept()}}const o=prompt("MBIDs of entities which should be related to this entity:");if(o){const t=Array.from(o.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]),i=(MB.sourceRelationshipEditor??MB.releaseRelationshipEditor).activeDialog();i?e(t,i.relationship().linkTypeID(),i.backward()):e(t)}})();
 ```
 
 ### [Show Qobuz Release Availability](src/bookmarklets/showQobuzReleaseAvailability.js)

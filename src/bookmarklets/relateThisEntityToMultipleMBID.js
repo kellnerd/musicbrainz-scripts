@@ -1,6 +1,7 @@
 /**
  * - Relates the currently edited entity to multiple entities given by their MBIDs.
- * - Automatically uses the default relationship type between the two entity types.
+ * - Automatically uses the selected relationship type of the currently active relationship dialog.
+ * - Falls back to the default relationship type between the two entity types if there is no active dialog.
  */
 
 import { createAddRelationshipDialog } from '../relationshipEditor.js';
@@ -28,6 +29,17 @@ const input = prompt('MBIDs of entities which should be related to this entity:'
 
 if (input) {
 	const mbids = Array.from(input.matchAll(/[0-9a-f-]{36}/gm), (match) => match[0]);
-	relateThisEntityToMultiple(mbids);
-	// relateThisEntityToMultiple(mbids, 894, true); // RGs "included in" this RG
+	const relEditor = MB.sourceRelationshipEditor
+		// releases have multiple relationship editors, we only care about the release relationships
+		?? MB.releaseRelationshipEditor;
+	const activeDialog = relEditor.activeDialog();
+
+	if (activeDialog) {
+		// use the selected relationship type of the active dialog
+		const selectedRel = activeDialog.relationship();
+		relateThisEntityToMultiple(mbids, selectedRel.linkTypeID(), activeDialog.backward());
+	} else {
+		// use the default relationship type
+		relateThisEntityToMultiple(mbids);
+	}
 }
