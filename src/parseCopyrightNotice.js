@@ -2,7 +2,7 @@ import { preferScalar } from '../utils/array/scalar.js';
 import { getUniqueElementsByJSON } from '../utils/array/unique.js';
 import { transform } from '../utils/string/transform.js';
 
-const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
+const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
 
 const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
@@ -41,6 +41,9 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 		// simplify region-specific copyrights
 		[/for (.+?) and (.+?) for the world outside (?:of )?\1/g, '/ $2'],
 
+		// simplify license text
+		[/as licen[sc]ee for/gi, 'under license from'],
+
 		// drop confusingly used ℗ symbols and text between ℗ symbol and year
 		[/℗\s*(under\s)/gi, '$1'],
 		[/(?<=℗\s*)digital remaster/gi, ''],
@@ -51,7 +54,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 
 	const copyrightMatches = text.matchAll(new RegExp(
 		String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
-		'gmu'));
+		'gimu'));
 
 	for (const match of copyrightMatches) {
 		const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());

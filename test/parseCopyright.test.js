@@ -221,6 +221,14 @@ const copyrightTestCases = [
 		name: 'BMG Rights Management (UK) Limited',
 		types: ['licensed to'],
 	}]],
+	['℗ «2022 This compilation WaterTower Music as licensee for Warner Bros Entertainment Inc.»', [{
+		name: 'WaterTower Music',
+		types: ['℗'],
+		year: '2022',
+	}, {
+		name: 'Warner Bros Entertainment Inc.',
+		types: ['licensed from'],
+	}]],
 
 	/* release label between copyright symbol and year */
 	['℗Motown Records; 2021 UMG Recordings, Inc.', [{
