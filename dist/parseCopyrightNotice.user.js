@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.3.16
+// @version      2022.4.15
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -500,7 +500,7 @@
 		return value;
 	}
 
-	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby)?\s+/;
+	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
 
 	const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
@@ -539,6 +539,9 @@
 			// simplify region-specific copyrights
 			[/for (.+?) and (.+?) for the world outside (?:of )?\1/g, '/ $2'],
 
+			// simplify license text
+			[/as licen[sc]ee for/gi, 'under license from'],
+
 			// drop confusingly used ℗ symbols and text between ℗ symbol and year
 			[/℗\s*(under\s)/gi, '$1'],
 			[/(?<=℗\s*)digital remaster/gi, ''],
@@ -549,7 +552,7 @@
 
 		const copyrightMatches = text.matchAll(new RegExp(
 			String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
-			'gmu'));
+			'gimu'));
 
 		for (const match of copyrightMatches) {
 			const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
