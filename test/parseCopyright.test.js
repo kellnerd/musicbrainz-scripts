@@ -237,7 +237,7 @@ const copyrightTestCases = [
 		year: '2021',
 	}]],
 
-	/* distribution & marketing */
+	/* distribution, manufacturing & marketing */
 	['Distributed By Republic Records.', [{
 		name: 'Republic Records',
 		types: ['distributed by'],
@@ -249,6 +249,10 @@ const copyrightTestCases = [
 	['Distributed By – Universal Music LLC', [{
 		name: 'Universal Music LLC',
 		types: ['distributed by'],
+	}]],
+	['Manufactured and distributed by Warner Bros Records Inc., a Warner Music Group Company.', [{
+		name: 'Warner Bros Records Inc.',
+		types: ['manufactured by', 'distributed by'],
 	}]],
 
 	/* labels with company suffixes */

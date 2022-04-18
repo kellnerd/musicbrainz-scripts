@@ -4,7 +4,7 @@ import { transform } from '../utils/string/transform.js';
 
 const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
 
-const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
+const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|manufactured|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
 /** @type {CreditParserOptions} */
 export const parserDefaults = {
@@ -95,6 +95,6 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 function cleanType(type) {
 	return transform(type.toLowerCase().trim(), [
 		[/licen[sc]ed?/g, 'licensed'],
-		[/(distributed|marketed)(\sby)?/, '$1 by'],
+		[/(distributed|manufactured|marketed)(\sby)?/, '$1 by'],
 	]);
 }

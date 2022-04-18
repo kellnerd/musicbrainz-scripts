@@ -12,6 +12,7 @@ export const LINK_TYPES = {
 			'licensed from': 712,
 			'licensed to': 833,
 			'distributed by': 361,
+			'manufactured by': 360,
 			'marketed by': 848,
 		},
 	},
