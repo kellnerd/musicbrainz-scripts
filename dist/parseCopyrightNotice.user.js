@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.4.15
+// @version      2022.4.18
 // @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -170,6 +170,7 @@
 				'licensed from': 712,
 				'licensed to': 833,
 				'distributed by': 361,
+				'manufactured by': 360,
 				'marketed by': 848,
 			},
 		},
@@ -502,13 +503,13 @@
 
 	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
 
-	const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
+	const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|manufactured|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
 		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))?/,
 		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
-		terminatorRE: /$|(?=,|\.(?:\W|$)|\sunder\s)|(?<=\.)\W/,
+		terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\sunder\s)|(?<=(?<!Bros)\.)\W/,
 	};
 
 	/**
@@ -593,7 +594,7 @@
 	function cleanType(type) {
 		return transform(type.toLowerCase().trim(), [
 			[/licen[sc]ed?/g, 'licensed'],
-			[/(distributed|marketed)(\sby)?/, '$1 by'],
+			[/(distributed|manufactured|marketed)(\sby)?/, '$1 by'],
 		]);
 	}
 
