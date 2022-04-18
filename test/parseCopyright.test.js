@@ -221,12 +221,12 @@ const copyrightTestCases = [
 		name: 'BMG Rights Management (UK) Limited',
 		types: ['licensed to'],
 	}]],
-	['℗ «2022 This compilation WaterTower Music as licensee for Warner Bros Entertainment Inc.»', [{
+	['℗ «2022 This compilation WaterTower Music as licensee for Warner Bros. Entertainment Inc.»', [{
 		name: 'WaterTower Music',
 		types: ['℗'],
 		year: '2022',
 	}, {
-		name: 'Warner Bros Entertainment Inc.',
+		name: 'Warner Bros. Entertainment Inc.',
 		types: ['licensed from'],
 	}]],
 
@@ -250,8 +250,8 @@ const copyrightTestCases = [
 		name: 'Universal Music LLC',
 		types: ['distributed by'],
 	}]],
-	['Manufactured and distributed by Warner Bros Records Inc., a Warner Music Group Company.', [{
-		name: 'Warner Bros Records Inc.',
+	['Manufactured and distributed by Warner Bros. Records Inc., a Warner Music Group Company.', [{
+		name: 'Warner Bros. Records Inc.',
 		types: ['manufactured by', 'distributed by'],
 	}]],
 
