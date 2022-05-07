@@ -5,7 +5,7 @@ import { GitHubUserJS } from './github.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
 
 /**
- * Generates the metadata block for the given userscript from the JSON file of the same name.
+ * Generates the metadata block for the given userscript from the corresponding .meta.js ES module.
  * @param {string} userscriptPath
  */
 export async function generateMetadataBlock(userscriptPath) {
