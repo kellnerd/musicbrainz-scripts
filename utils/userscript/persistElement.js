@@ -50,7 +50,7 @@ export function persistDetails(id, openByDefault) {
 
 /**
  * Persists the value of the given input field across page loads and origins.
- * @param {HTMLInputElement} element 
+ * @param {HTMLInputElement|HTMLTextAreaElement} element 
  * @param {string} [defaultValue]
  * @returns {Promise<HTMLInputElement>}
  */

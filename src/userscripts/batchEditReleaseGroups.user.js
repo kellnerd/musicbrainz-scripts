@@ -6,9 +6,11 @@ import {
 	replaceNamesByIds,
 	getReleaseGroupEditData,
 } from '../editorTools.js';
+import { dom } from '../../utils/dom/select.js';
 import {
 	persistCheckbox,
 	persistDetails,
+	persistInput,
 } from '../../utils/userscript/persistElement.js'
 
 /**
@@ -166,6 +168,8 @@ function buildUI() {
 
 	persistDetails('batch-edit-tools', true);
 	persistCheckbox('debug-mode');
+	persistInput(dom('edit-data'));
+	persistInput(dom('edit-note'));
 }
 
 buildUI();
