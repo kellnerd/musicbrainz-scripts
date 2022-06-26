@@ -5,8 +5,12 @@ import {
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
 } from './data/releaseGroup.js';
+import { rateLimit } from '../utils/async/rateLimit.js';
 import { flatten } from '../utils/object/flatten.js';
 import { urlSearchMultiParams } from '../utils/url/searchParams.js';
+
+// Limit editing to 1 edit per 0.5 seconds (two consecutive requests per edit)
+const limitedFetch = rateLimit(fetch, 500);
 
 /**
  * Gets the default edit data for the given release group.
@@ -80,7 +84,7 @@ export function replaceNamesByIds(editData) {
  * @returns {Promise<Object>} JSON edit source data.
  */
 async function fetchEditSourceData(editUrl) {
-	const response = await fetch(editUrl);
+	const response = await limitedFetch(editUrl);
 	const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
 	console.debug(sourceData);
 	return JSON.parse(sourceData);

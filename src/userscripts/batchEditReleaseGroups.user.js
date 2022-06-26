@@ -36,16 +36,28 @@ async function editSelectedEntities() {
 	console.debug(editData);
 
 	const mbids = getSelectedMbids();
-	const totalRequests = mbids.length;
-	for (let i = 0; i < totalRequests; i++) {
-		displayStatus(`Submitting edits (${i} of ${totalRequests}) ...`, true);
+	const totalEdits = mbids.length;
+	let completedEdits = 0;
+	displayStatus(`Submitting edits ...`, true);
+
+	// submit all edit requests at once, they are rate-limited
+	const pendingEdits = mbids.map((mbid) => {
 		try {
-			await editReleaseGroup(mbids[i], editData);
+			return editReleaseGroup(mbid, editData);
 		} catch (error) {
 			displayErrorMessage(error.message);
 		}
+	});
+
+	// update status after each completed edit and wait for all edits to be completed
+	pendingEdits.map((edit) => edit.then(updateProgress));
+	await Promise.all(pendingEdits);
+	displayStatus(`Submitted edits for ${totalEdits} release group${totalEdits != 1 ? 's' : ''}.`);
+
+	function updateProgress() {
+		completedEdits++;
+		displayStatus(`Submitting edits (${completedEdits} of ${totalEdits})`, true);
 	}
-	displayStatus(`Submitted edits for ${totalRequests} release group${totalRequests != 1 ? 's' : ''}.`);
 }
 
 /**
