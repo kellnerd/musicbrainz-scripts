@@ -1,7 +1,7 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
 
-import { GitHubUserJS } from './github.js';
+import { GITHUB } from './github.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
 
 /**
@@ -32,14 +32,14 @@ export async function generateMetadataBlock(userscriptPath) {
 
 	parse('name', camelToTitleCase(baseName));
 	addProperty('version', [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('.'));
-	addProperty('namespace', GitHubUserJS.repoUrl());
+	addProperty('namespace', GITHUB.repoUrl);
 	parse('author');
 	parse('description');
 	parse('icon');
-	addProperty('homepageURL', GitHubUserJS.readmeUrl(baseName));
-	addProperty('downloadURL', GitHubUserJS.rawUrl(baseName));
-	addProperty('updateURL', GitHubUserJS.rawUrl(baseName));
-	parse('supportURL', GitHubUserJS.supportUrl());
+	addProperty('homepageURL', GITHUB.readmeUrl(baseName));
+	addProperty('downloadURL', GITHUB.userscriptRawUrl(baseName));
+	addProperty('updateURL', GITHUB.userscriptRawUrl(baseName));
+	parse('supportURL', GITHUB.supportUrl);
 	parse('require');
 	parse('resource');
 	parse('grant', 'none');
