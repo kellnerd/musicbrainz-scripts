@@ -1,8 +1,8 @@
 import { buildEditNote } from '../editNote.js';
-import { RG_EDIT_FIELDS } from '../MBS.js';
+import { extractMBIDs } from '../entity.js';
+import { RG_EDIT_FIELDS } from '../data/releaseGroup.js';
 import {
 	editReleaseGroup,
-	extractMbids,
 	replaceNamesByIds,
 	getReleaseGroupEditData,
 } from '../editorTools.js';
@@ -58,7 +58,7 @@ async function loadFirstSelectedEntity() {
 function getSelectedMbids() {
 	const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
 	const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-	return extractMbids(entityUrls, 'release-group', true);
+	return extractMBIDs(entityUrls, 'release-group', true);
 }
 
 /**

@@ -20,3 +20,32 @@ export const secondaryTypeIds = {
 	'Soundtrack': 2,
 	'Spokenword': 3,
 };
+
+/**
+ * Dictionary of supported edit data properties for release groups.
+ * Contains their types or mappings of their possible named values to internal IDs.
+ */
+export const RG_EDIT_FIELDS = {
+	name: 'string',
+	artist_credit: 'object',
+	comment: 'string | null',
+	primary_type_id: primaryTypeIds,
+	secondary_type_ids: secondaryTypeIds,
+	rel: 'array',
+	url: 'array',
+	edit_note: 'string | null',
+	make_votable: 'number(boolean) | null',
+};
+
+/**
+ * Maps edit data properties of release groups to the corresponding source data properties.
+ */
+export const RG_SOURCE_DATA = {
+	name: 'name',
+	// artist_credit: separate parser
+	comment: 'comment',
+	primary_type_id: 'typeID',
+	secondary_type_ids: 'secondaryTypeIDs',
+	// rel: separate parser
+	// url: separate parser (same as for rel)
+};

@@ -1,10 +1,10 @@
 import { buildEditNote } from './editNote.js';
+import { buildEditUrl } from './entity.js';
+import { ATTRIBUTE_DATA } from './data/attributes.js';
 import {
-	MBID_REGEX,
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
-	ATTRIBUTE_DATA,
-} from './MBS.js';
+} from './data/releaseGroup.js';
 import { flatten } from '../utils/object/flatten.js';
 import { urlSearchMultiParams } from '../utils/url/searchParams.js';
 
@@ -72,16 +72,6 @@ export function replaceNamesByIds(editData) {
 		editData[property] = value;
 	}
 	return editData;
-}
-
-/**
- * Builds the URL to the MBS edit page of the given entity.
- * @param {string} entityType Type of the entity.
- * @param {string} mbid MBID of the entity.
- * @returns {string}
- */
-function buildEditUrl(entityType, mbid) {
-	return `/${entityType}/${mbid}/edit`;
 }
 
 /**
@@ -200,48 +190,5 @@ function buildDatePeriod(begin_date = null, end_date = null, ended = false) {
 		};
 	} else {
 		return {}; // empty objects will be removed during flattening
-	}
-}
-
-/**
- * Attempts to fetch the given ressource.
- * Performs the same request again if the response was not successful before it fails with an error.
- * @param {RequestInfo} input
- * @param {RequestInit} init
- * @param {number} retries Number of retries.
- * @returns {Promise<Response>}
- */
-async function fetchWithRetry(input, init, retries = 5) {
-	try {
-		const response = await fetch(input, init);
-		if (response.ok) {
-			return response;
-		}
-		throw new Error(`HTTP status ${response.status} for ${input.url || input}`);
-	} catch (error) {
-		if (retries <= 0) {
-			throw error;
-		}
-		console.warn('Retrying fetch:', error);
-		return await fetchWithRetry(input, init, retries - 1);
-	}
-}
-
-/**
- * Extracts MBIDs from the given URLs.
- * @param  {string[]} urls
- * @param  {string} entityType Filter URLs by entity type (optional).
- * @param {boolean} unique Removes duplicate MBIDs from the results (optional).
- * @returns {string[]} Array of valid MBIDs.
- */
-export function extractMbids(urls, entityType = '', unique = false) {
-	const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})`);
-	const mbids = urls
-		.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
-		.filter((mbid) => mbid); // remove undefined MBIDs
-	if (unique) {
-		return [...new Set(mbids)];
-	} else {
-		return mbids;
 	}
 }
