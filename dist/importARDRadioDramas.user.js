@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         MusicBrainz: Import ARD radio dramas
-// @version      2022.3.19
-// @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
+// @version      2022.6.26
+// @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Imports German broadcast releases from the ARD radio drama database.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#import-ard-radio-dramas
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/importARDRadioDramas.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/importARDRadioDramas.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
+// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#import-ard-radio-dramas
+// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
+// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
+// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
 // @grant        none
 // @match        *://hoerspiele.dra.de/vollinfo.php
 // ==/UserScript==

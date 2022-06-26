@@ -1,5 +1,5 @@
 {
-  "name": "musicbrainz-bookmarklets",
+  "name": "musicbrainz-scripts",
   "version": "0.4.1",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",
@@ -8,10 +8,10 @@
     "userscripts",
     "bookmarklets"
   ],
-  "homepage": "https://github.com/kellnerd/musicbrainz-bookmarklets#readme",
+  "homepage": "https://github.com/kellnerd/musicbrainz-scripts#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kellnerd/musicbrainz-bookmarklets.git"
+    "url": "https://github.com/kellnerd/musicbrainz-scripts.git"
   },
   "license": "MIT",
   "type": "module",

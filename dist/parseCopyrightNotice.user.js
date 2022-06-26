@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.4.18
-// @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
+// @version      2022.6.26
+// @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#parse-copyright-notice
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/parseCopyrightNotice.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
+// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#parse-copyright-notice
+// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/parseCopyrightNotice.user.js
+// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/parseCopyrightNotice.user.js
+// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
 // @grant        GM.getValue
 // @grant        GM.setValue
 // @run-at       document-idle

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         MusicBrainz: Guess Unicode punctuation
-// @version      2022.3.19
-// @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
+// @version      2022.6.26
+// @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#guess-unicode-punctuation
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/guessUnicodePunctuation.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
+// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#guess-unicode-punctuation
+// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/guessUnicodePunctuation.user.js
+// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/guessUnicodePunctuation.user.js
+// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
 // @grant        none
 // @include      /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/create(\?.+?)?(#.+?)?$/
 // @include      /^https?://((beta|test)\.)?musicbrainz\.org/release/add(\?.+?)?(#.+?)?$/

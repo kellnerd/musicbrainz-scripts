@@ -1,4 +1,4 @@
-# musicbrainz-bookmarklets
+# musicbrainz-scripts
 
 **[Bookmarklets](https://en.wikipedia.org/wiki/Bookmarklet) and [Userscripts](https://en.wikipedia.org/wiki/Userscript) for [MusicBrainz.org](https://musicbrainz.org)**
 

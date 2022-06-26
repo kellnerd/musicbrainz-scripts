@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.4.12
-// @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
+// @version      2022.6.26
+// @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#voice-actor-credits
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/voiceActorCredits.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/main/dist/voiceActorCredits.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
+// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#voice-actor-credits
+// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/voiceActorCredits.user.js
+// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/voiceActorCredits.user.js
+// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
 // @grant        none
 // @run-at       document-idle
 // @match        *://*.musicbrainz.org/release/*/edit-relationships
@@ -337,6 +337,7 @@
 	function createVoiceActorDialog(artistData = {}, roleName = '', artistCredit = '') {
 		const viewModel = MB.releaseRelationshipEditor;
 		const target = MB.entity(artistData, 'artist'); // automatically caches entities with a GID (unlike `MB.entity.Artist`)
+		// TODO: redundant in most cases, fetchEntity() already calls MB.entity()
 		/** @type {MB.RE.Dialog} */
 		const dialog = new MB.relationshipEditor.UI.AddDialog({
 			source: viewModel.source,
