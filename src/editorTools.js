@@ -4,10 +4,8 @@ import {
 	RG_SOURCE_DATA,
 	ATTRIBUTE_DATA,
 } from './MBS.js';
-import {
-	flatten,
-	urlSearchMultiParams,
-} from './formTools.js';
+import { flatten } from '../utils/object/flatten.js';
+import { urlSearchMultiParams } from '../utils/url/searchParams.js';
 
 /**
  * Gets the default edit data for the given release group.
