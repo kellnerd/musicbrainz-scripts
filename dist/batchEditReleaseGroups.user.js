@@ -15,7 +15,79 @@
 (function () {
 	'use strict';
 
+	/**
+	 * Builds an edit note for the given message sections and adds a footer section for the active userscript.
+	 * Automatically de-duplicates the sections to reduce auto-generated message and footer spam.
+	 * @param {...string} sections Edit note sections.
+	 * @returns {string} Complete edit note content.
+	 */
+	function buildEditNote(...sections) {
+		sections = sections.map((section) => section.trim());
+
+		if (typeof GM_info !== 'undefined') {
+			sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
+		}
+
+		// drop empty sections and keep only the last occurrence of duplicate sections
+		return sections
+			.filter((section, index) => section && sections.lastIndexOf(section) === index)
+			.join(editNoteSeparator);
+	}
+
+	const editNoteSeparator = '\n—\n';
+
 	const MBID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+
+	/**
+	 * Extracts MBIDs from the given URLs.
+	 * @param  {string[]} urls
+	 * @param  {MB.EntityType} entityType Filter URLs by entity type (optional).
+	 * @param {boolean} unique Removes duplicate MBIDs from the results (optional).
+	 * @returns {string[]} Array of valid MBIDs.
+	 */
+	function extractMBIDs(urls, entityType = '', unique = false) {
+		const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})(?:$|\/|\?)`);
+		const MBIDs = urls
+			.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
+			.filter((mbid) => mbid); // remove undefined MBIDs
+		if (unique) {
+			return [...new Set(MBIDs)];
+		} else {
+			return MBIDs;
+		}
+	}
+
+	/**
+	 * Builds the URL to the MBS edit page of the given entity.
+	 * @param {MB.EntityType} entityType Type of the entity.
+	 * @param {string} mbid MBID of the entity.
+	 * @returns {string}
+	 */
+	function buildEditUrl(entityType, mbid) {
+		return `/${entityType}/${mbid}/edit`;
+	}
+
+	const primaryTypeIds = {
+		'Album': 1,
+		'Single': 2,
+		'EP': 3,
+		'Broadcast': 12,
+		'Other': 11,
+	};
+
+	const secondaryTypeIds = {
+		'Audio drama': 11,
+		'Audiobook': 5,
+		'Compilation': 1,
+		'Demo': 10,
+		'DJ-mix': 8,
+		'Interview': 4,
+		'Live': 6,
+		'Mixtape/Street': 9,
+		'Remix': 7,
+		'Soundtrack': 2,
+		'Spokenword': 3,
+	};
 
 	/**
 	 * Dictionary of supported edit data properties for release groups.
@@ -25,26 +97,8 @@
 		name: 'string',
 		artist_credit: 'object',
 		comment: 'string | null',
-		primary_type_id: {
-			'Album': 1,
-			'Single': 2,
-			'EP': 3,
-			'Broadcast': 12,
-			'Other': 11,
-		},
-		secondary_type_ids: {
-			'Audio drama': 11,
-			'Audiobook': 5,
-			'Compilation': 1,
-			'Demo': 10,
-			'DJ-mix': 8,
-			'Interview': 4,
-			'Live': 6,
-			'Mixtape/Street': 9,
-			'Remix': 7,
-			'Soundtrack': 2,
-			'Spokenword': 3,
-		},
+		primary_type_id: primaryTypeIds,
+		secondary_type_ids: secondaryTypeIds,
 		rel: 'array',
 		url: 'array',
 		edit_note: 'string | null',
@@ -77,23 +131,25 @@
 	/**
 	 * Flattens the given (deep) object to a single level hierarchy.
 	 * Concatenates the keys in a nested structure which lead to a value with dots.
-	 * @param {Object} object 
+	 * @param {object} object 
 	 * @param {string[]} preservedKeys Keys whose values will be preserved.
-	 * @returns {Object}
+	 * @returns {object}
 	 */
 	function flatten(object, preservedKeys = []) {
-		let flatObject = {};
-		for (let key in object) {
+		const flatObject = {};
+
+		for (const key in object) {
 			let value = object[key];
 			if (typeof value === 'object' && value !== null && !preservedKeys.includes(key)) { // also matches arrays
 				value = flatten(value, preservedKeys);
-				for (let childKey in value) {
+				for (const childKey in value) {
 					flatObject[key + '.' + childKey] = value[childKey]; // concatenate keys
 				}
 			} else { // value is already flat (e.g. a string) or should be preserved
 				flatObject[key] = value; // keep the key
 			}
 		}
+
 		return flatObject;
 	}
 
@@ -101,11 +157,10 @@
 	 * Creates a custom `URLSearchParams` object where each array is serialized into multiple parameters with the same name
 	 * instead of a single parameter with concatenated values (e.g. `{ a: [1, 2] }` becomes `a=1&a=2` instead of `a=1,2`).
 	 * @param {Object} params Dictionary of parameters.
-	 * @returns {URLSearchParams}
 	 */
 	function urlSearchMultiParams(params) {
 		const searchParams = new URLSearchParams();
-		for (let name in params) {
+		for (const name in params) {
 			const value = params[name];
 			if (Array.isArray(value)) {
 				value.forEach((value) => searchParams.append(name, value));
@@ -179,31 +234,6 @@
 			editData[property] = value;
 		}
 		return editData;
-	}
-
-	/**
-	 * Builds an edit note for the given message, including information about the active userscript.
-	 * @param {string} message Edit note message (optional).
-	 * @param {*} debugData Additional debug data which should be included as JSON (optional).
-	 * @returns {string}
-	 */
-	function buildEditNote(message = '', debugData) {
-		let scriptInfo = '';
-		if (typeof GM_info !== 'undefined') {
-			scriptInfo = `${GM_info.script.name} (${GM_info.script.version})`;
-		}
-		const lines = [message, JSON.stringify(debugData), scriptInfo];
-		return lines.filter((line) => line).join('\n—\n');
-	}
-
-	/**
-	 * Builds the URL to the MBS edit page of the given entity.
-	 * @param {string} entityType Type of the entity.
-	 * @param {string} mbid MBID of the entity.
-	 * @returns {string}
-	 */
-	function buildEditUrl(entityType, mbid) {
-		return `/${entityType}/${mbid}/edit`;
 	}
 
 	/**
@@ -324,25 +354,6 @@
 	}
 
 	/**
-	 * Extracts MBIDs from the given URLs.
-	 * @param  {string[]} urls
-	 * @param  {string} entityType Filter URLs by entity type (optional).
-	 * @param {boolean} unique Removes duplicate MBIDs from the results (optional).
-	 * @returns {string[]} Array of valid MBIDs.
-	 */
-	function extractMbids(urls, entityType = '', unique = false) {
-		const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})`);
-		const mbids = urls
-			.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
-			.filter((mbid) => mbid); // remove undefined MBIDs
-		if (unique) {
-			return [...new Set(mbids)];
-		} else {
-			return mbids;
-		}
-	}
-
-	/**
 	 * Enters edits for all selected entities using the form values for edit data, edit note and the "make votable" checkbox.
 	 */
 	async function editSelectedEntities() {
@@ -359,7 +370,7 @@
 
 		// prepare raw edit data as it is expected by MBS
 		editData = replaceNamesByIds(editData);
-		const debugData = $('#debug-mode').is(':checked') ? editData : undefined;
+		const debugData = $('#debug-mode').is(':checked') ? JSON.stringify(editData) : undefined;
 		editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
 		editData.make_votable = Number($('#make-votable').is(':checked'));
 
@@ -392,7 +403,7 @@
 	function getSelectedMbids() {
 		const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
 		const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-		return extractMbids(entityUrls, 'release-group', true);
+		return extractMBIDs(entityUrls, 'release-group', true);
 	}
 
 	/**
