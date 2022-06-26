@@ -8,7 +8,8 @@
 // @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/batch-edit/dist/batchEditReleaseGroups.user.js
 // @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/batch-edit/dist/batchEditReleaseGroups.user.js
 // @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
-// @grant        none
+// @grant        GM.getValue
+// @grant        GM.setValue
 // @include      /^https?://((beta|test)\.)?musicbrainz\.org/artist/[0-9a-f-]{36}(\?.+?)?(#.+?)?$/
 // ==/UserScript==
 
@@ -22,7 +23,7 @@
 	 * @returns {string} Complete edit note content.
 	 */
 	function buildEditNote(...sections) {
-		sections = sections.map((section) => section.trim());
+		sections = sections.map((section) => section?.trim());
 
 		if (typeof GM_info !== 'undefined') {
 			sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
@@ -46,7 +47,7 @@
 	 * @returns {string[]} Array of valid MBIDs.
 	 */
 	function extractMBIDs(urls, entityType = '', unique = false) {
-		const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})(?:$|\/|\?)`);
+		const pattern = new RegExp(String.raw`${entityType}/(${MBID_REGEX.source})(?:$|\/|\?)`);
 		const MBIDs = urls
 			.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
 			.filter((mbid) => mbid); // remove undefined MBIDs
@@ -129,6 +130,46 @@
 	];
 
 	/**
+	 * Returns a promise that resolves after the given delay.
+	 * @param {number} ms Delay in milliseconds.
+	 */
+	function delay(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
+
+	function rateLimit1(operation, interval) {
+		let queue = Promise.resolve(); // empty queue is ready
+		return (...args) => {
+			const result = queue.then(() => operation(...args)); // queue the next operation
+			queue = queue.then(() => delay(interval)); // start the next delay
+			return result;
+		};
+	}
+
+	/**
+	 * Limits the number of requests for the given operation within a time interval.
+	 * @template Params
+	 * @template Result
+	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
+	 * @param {number} interval Time interval (in ms).
+	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
+	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
+	 */
+	function rateLimit(operation, interval, requestsPerInterval = 1) {
+		if (requestsPerInterval == 1) {
+			return rateLimit1(operation, interval);
+		}
+		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
+		let queueIndex = 0;
+		return (...args) => {
+			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
+			return queues[queueIndex](...args); // return the rate-limited operation
+		};
+	}
+
+	/**
 	 * Flattens the given (deep) object to a single level hierarchy.
 	 * Concatenates the keys in a nested structure which lead to a value with dots.
 	 * @param {object} object 
@@ -170,6 +211,9 @@
 		}
 		return searchParams;
 	}
+
+	// Limit editing to 1 edit per 0.5 seconds (two consecutive requests per edit)
+	const limitedFetch = rateLimit(fetch, 500);
 
 	/**
 	 * Gets the default edit data for the given release group.
@@ -242,7 +286,7 @@
 	 * @returns {Promise<Object>} JSON edit source data.
 	 */
 	async function fetchEditSourceData(editUrl) {
-		const response = await fetch(editUrl);
+		const response = await limitedFetch(editUrl);
 		const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
 		return JSON.parse(sourceData);
 	}
@@ -354,6 +398,72 @@
 	}
 
 	/**
+	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
+	 * @param {string} elementId String that specifies the ID value.
+	 */
+	function dom(elementId) {
+		return document.getElementById(elementId);
+	}
+
+	/**
+	 * Persists the desired attribute of the given element across page loads and origins.
+	 * @param {HTMLElement} element 
+	 * @param {keyof HTMLElement} attribute 
+	 * @param {keyof HTMLElementEventMap} eventType
+	 * @param {string|number|boolean} [defaultValue] Default value of the attribute.
+	 */
+	async function persistElement(element, attribute, eventType, defaultValue) {
+		if (!element.id) {
+			throw new Error('Can not persist an element without ID');
+		}
+
+		const key = ['persist', element.id, attribute].join('.');
+
+		// initialize attribute
+		const persistedValue = await GM.getValue(key, defaultValue);
+		if (persistedValue) {
+			element[attribute] = persistedValue;
+		}
+
+		// persist attribute once the event occurs
+		element.addEventListener(eventType, () => {
+			GM.setValue(key, element[attribute]);
+		});
+
+		return element;
+	}
+
+	/**
+	 * Persists the state of the checkbox with the given ID across page loads and origins.
+	 * @param {string} id 
+	 * @param {boolean} [checkedByDefault]
+	 * @returns {Promise<HTMLInputElement>}
+	 */
+	function persistCheckbox(id, checkedByDefault) {
+		return persistElement(dom(id), 'checked', 'change', checkedByDefault);
+	}
+
+	/**
+	 * Persists the state of the collapsible details container with the given ID across page loads and origins.
+	 * @param {string} id 
+	 * @param {boolean} [openByDefault]
+	 * @returns {Promise<HTMLDetailsElement>}
+	 */
+	function persistDetails(id, openByDefault) {
+		return persistElement(dom(id), 'open', 'toggle', openByDefault);
+	}
+
+	/**
+	 * Persists the value of the given input field across page loads and origins.
+	 * @param {HTMLInputElement|HTMLTextAreaElement} element 
+	 * @param {string} [defaultValue]
+	 * @returns {Promise<HTMLInputElement>}
+	 */
+	function persistInput(element, defaultValue) {
+		return persistElement(element, 'value', 'change', defaultValue);
+	}
+
+	/**
 	 * Enters edits for all selected entities using the form values for edit data, edit note and the "make votable" checkbox.
 	 */
 	async function editSelectedEntities() {
@@ -375,16 +485,28 @@
 		editData.make_votable = Number($('#make-votable').is(':checked'));
 
 		const mbids = getSelectedMbids();
-		const totalRequests = mbids.length;
-		for (let i = 0; i < totalRequests; i++) {
-			displayStatus(`Submitting edits (${i} of ${totalRequests}) ...`, true);
+		const totalEdits = mbids.length;
+		let completedEdits = 0;
+		displayStatus(`Submitting edits ...`, true);
+
+		// submit all edit requests at once, they are rate-limited
+		const pendingEdits = mbids.map((mbid) => {
 			try {
-				await editReleaseGroup(mbids[i], editData);
+				return editReleaseGroup(mbid, editData);
 			} catch (error) {
 				displayErrorMessage(error.message);
 			}
+		});
+
+		// update status after each completed edit and wait for all edits to be completed
+		pendingEdits.map((edit) => edit.then(updateProgress));
+		await Promise.all(pendingEdits);
+		displayStatus(`Submitted edits for ${totalEdits} release group${totalEdits != 1 ? 's' : ''}.`);
+
+		function updateProgress() {
+			completedEdits++;
+			displayStatus(`Submitting edits (${completedEdits} of ${totalEdits})`, true);
 		}
-		displayStatus(`Submitted edits for ${totalRequests} release group${totalRequests != 1 ? 's' : ''}.`);
 	}
 
 	/**
@@ -429,10 +551,8 @@
 		$('#userscript-errors').empty();
 	}
 
-	const isProductionServer = ['musicbrainz.org', 'beta.musicbrainz.org'].includes(window.location.hostname);
-
 	const UI =
-`<details id="batch-edit-tools" ${isProductionServer ? '' : 'open'}>
+`<details id="batch-edit-tools">
 <summary>
 	<h2>Batch‐edit release groups</h2>
 </summary>
@@ -446,7 +566,7 @@
 		<textarea id="edit-note" name="edit_note" cols="80" rows="2" class="edit-note"></textarea>
 	</div>
 	<div class="row no-label">
-		<input id="debug-mode" name="debug_mode" type="checkbox" value="1" ${isProductionServer ? '' : 'checked'}>
+		<input id="debug-mode" name="debug_mode" type="checkbox" value="1">
 		<label class="inline" for="debug-mode">Include edit data (minified JSON) in edit notes.</label>
 	</div>
 	<div class="row no-label">
@@ -506,6 +626,12 @@ summary > h2 {
 
 		// show supported properties and their types or value mappings as a tooltip
 		$('#edit-data').attr('title', `Property types/mappings: ${JSON.stringify(RG_EDIT_FIELDS, null, 2)}`);
+
+		persistDetails('batch-edit-tools', true);
+		persistCheckbox('debug-mode');
+		persistCheckbox('make-votable');
+		persistInput(dom('edit-data'));
+		persistInput(dom('edit-note'));
 	}
 
 	buildUI();
