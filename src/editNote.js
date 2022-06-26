@@ -18,7 +18,7 @@ export function addMessageToEditNote(message) {
  * @returns {string} Complete edit note content.
  */
 export function buildEditNote(...sections) {
-	sections = sections.map((section) => section.trim());
+	sections = sections.map((section) => section?.trim());
 
 	if (typeof GM_info !== 'undefined') {
 		sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
