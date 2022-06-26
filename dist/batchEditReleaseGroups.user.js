@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2021.6.13
-// @namespace    https://github.com/kellnerd/musicbrainz-bookmarklets
+// @version      2022.6.26
+// @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-bookmarklets#batch-edit-release-groups
-// @downloadURL  https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/batch-edit/dist/batchEditReleaseGroups.user.js
-// @updateURL    https://raw.githubusercontent.com/kellnerd/musicbrainz-bookmarklets/batch-edit/dist/batchEditReleaseGroups.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-bookmarklets/issues
-// @grant        GM_info
-// @include      /^https?:\/\/(\w+\.)?musicbrainz\.org\/artist\/[a-f0-9-]{36}(\?.*)?$/
+// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#batch-edit-release-groups
+// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/batch-edit/dist/batchEditReleaseGroups.user.js
+// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/batch-edit/dist/batchEditReleaseGroups.user.js
+// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
+// @grant        none
+// @include      /^https?://((beta|test)\.)?musicbrainz\.org/artist/[0-9a-f-]{36}(\?.+?)?(#.+?)?$/
 // ==/UserScript==
 
 (function () {
@@ -499,4 +499,4 @@ summary > h2 {
 
 	buildUI();
 
-}());
+})();
