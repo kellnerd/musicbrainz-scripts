@@ -180,6 +180,7 @@ function buildUI() {
 
 	persistDetails('batch-edit-tools', true);
 	persistCheckbox('debug-mode');
+	persistCheckbox('make-votable');
 	persistInput(dom('edit-data'));
 	persistInput(dom('edit-note'));
 }
