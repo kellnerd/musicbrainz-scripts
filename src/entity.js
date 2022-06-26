@@ -22,7 +22,7 @@ export function extractEntityFromURL(url) {
  * @returns {string[]} Array of valid MBIDs.
  */
 export function extractMBIDs(urls, entityType = '', unique = false) {
-	const pattern = new RegExp(`${entityType}/(${MBID_REGEX.source})(?:$|\/|\?)`);
+	const pattern = new RegExp(String.raw`${entityType}/(${MBID_REGEX.source})(?:$|\/|\?)`);
 	const MBIDs = urls
 		.map((url) => url.match(pattern)?.[1]) // returns first capture group or `undefined`
 		.filter((mbid) => mbid); // remove undefined MBIDs
