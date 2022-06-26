@@ -1,0 +1,50 @@
+
+export const statusTypeIds = {
+	'Official': 1,
+	'Promotion': 2,
+	'Bootleg': 3,
+	'Pseudo-Release': 4,
+};
+
+export const packagingTypeIds = {
+	'Book': 9,
+	'Box': 19,
+	'Cardboard/Paper Sleeve': 4,
+	'Cassette Case': 8,
+	'Digibook': 17,
+	'Digipak': 3,
+	'Discbox Slider': 13,
+	'Fatbox': 10,
+	'Gatefold Cover': 12,
+	'Jewel Case': 1,
+	'Keep Case': 6,
+	'Plastic Sleeve': 18,
+	'Slidepack': 20,
+	'Slim Jewel Case': 2,
+	'Snap Case': 11,
+	'SnapPack': 21,
+	'Super Jewel Box': 16,
+	'Other': 5,
+	'None': 7,
+};
+
+export const urlTypeIds = /** @type {const} */ ({
+	'production': 72,
+	'amazon asin': 77,
+	'discography entry': 288,
+	'license': 301,
+	'get the music': 73,
+	'purchase for mail-order': 79,
+	'purchase for download': 74,
+	'download for free': 75,
+	'free streaming': 85,
+	'streaming': 980,
+	'crowdfunding page': 906,
+	'show notes': 729,
+	'other databases': 82,
+	'discogs': 76,
+	'vgmdb': 86,
+	'secondhandsongs': 308,
+	'allmusic': 755,
+	'BookBrainz': 850,
+});

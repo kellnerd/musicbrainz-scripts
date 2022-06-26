@@ -4,7 +4,7 @@
  *   release date of the release group.
  */
 
-import { changeAllReleaseDates } from '../changeAllReleaseDates';
+import { changeAllReleaseDates } from '../changeAllReleaseDates.js';
 
 const input = prompt('Date for all release events (YYYY-MM-DD):');
 
