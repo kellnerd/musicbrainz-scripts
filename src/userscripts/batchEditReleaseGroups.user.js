@@ -1,9 +1,9 @@
+import { buildEditNote } from '../editNote.js';
 import { RG_EDIT_FIELDS } from '../MBS.js';
 import {
 	editReleaseGroup,
 	extractMbids,
 	replaceNamesByIds,
-	buildEditNote,
 	getReleaseGroupEditData,
 } from '../editorTools.js';
 
@@ -24,7 +24,7 @@ async function editSelectedEntities() {
 
 	// prepare raw edit data as it is expected by MBS
 	editData = replaceNamesByIds(editData);
-	const debugData = $('#debug-mode').is(':checked') ? editData : undefined;
+	const debugData = $('#debug-mode').is(':checked') ? JSON.stringify(editData) : undefined;
 	editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
 	editData.make_votable = Number($('#make-votable').is(':checked'));
 	console.debug(editData);
