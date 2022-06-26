@@ -5,6 +5,10 @@ const metadata = {
 	name: 'MusicBrainz: Batch‐edit release groups',
 	author: 'kellnerd',
 	description: 'Batch‐edit selected release groups from artist’s overview pages.',
+	grant: [
+		'GM.getValue',
+		'GM.setValue',
+	],
 	include: [
 		`artist/[0-9a-f-]{36}`,
 	].map(createMusicBrainzURLRule),
