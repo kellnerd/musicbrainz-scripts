@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2022.6.26
+// @version      2022.6.27
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -139,33 +139,31 @@
 
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
-	function rateLimit1(operation, interval) {
+	function queue(operation) {
 		let queue = Promise.resolve(); // empty queue is ready
 		return (...args) => {
-			const result = queue.then(() => operation(...args)); // queue the next operation
-			queue = queue.then(() => delay(interval)); // start the next delay
-			return result;
+			queue = queue.then(() => operation(...args)); // queue the next operation
+			return queue; // now points to the result of the just enqueued operation
 		};
 	}
 
 	/**
-	 * Limits the number of requests for the given operation within a time interval.
+	 * Limits the number of simultaneous requests for the given operation.
 	 * @template Params
 	 * @template Result
-	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
-	 * @param {number} interval Time interval (in ms).
-	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
-	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
+	 * @param {(...args:Params)=>Result} operation Operation that should be limited in its use.
+	 * @param {number} concurrency Maximum number of concurrent requests at any time.
+	 * @returns {(...args:Params)=>Promise<Result>} Concurrency-limited version of the given operation.
 	 */
-	function rateLimit(operation, interval, requestsPerInterval = 1) {
-		if (requestsPerInterval == 1) {
-			return rateLimit1(operation, interval);
+	function limit(operation, concurrency = 1) {
+		if (concurrency == 1) {
+			return queue(operation);
 		}
-		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
+		const queues = Array(concurrency).fill().map(() => queue(operation));
 		let queueIndex = 0;
 		return (...args) => {
-			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
-			return queues[queueIndex](...args); // return the rate-limited operation
+			queueIndex = (queueIndex + 1) % concurrency; // use the next queue
+			return queues[queueIndex](...args); // return the result of the operation
 		};
 	}
 
@@ -212,9 +210,6 @@
 		return searchParams;
 	}
 
-	// Limit editing to 1 edit per 0.5 seconds (two consecutive requests per edit)
-	const limitedFetch = rateLimit(fetch, 500);
-
 	/**
 	 * Gets the default edit data for the given release group.
 	 * @param {string} mbid MBID of the release group.
@@ -226,12 +221,15 @@
 		return parseSourceData(sourceData, true);
 	}
 
+	// Limit editing to 5 concurrent edits
+	const editReleaseGroup = limit(_editReleaseGroup, 5);
+
 	/**
 	 * Sends an edit request for the given release group to MBS.
 	 * @param {string} mbid MBID of the release group.
 	 * @param {Object} editData Properties of the release group and their new values.
 	 */
-	async function editReleaseGroup(mbid, editData) {
+	async function _editReleaseGroup(mbid, editData) {
 		const editUrl = buildEditUrl('release-group', mbid);
 
 		// build body of the edit request and preserve values of unaffected properties
@@ -286,7 +284,7 @@
 	 * @returns {Promise<Object>} JSON edit source data.
 	 */
 	async function fetchEditSourceData(editUrl) {
-		const response = await limitedFetch(editUrl);
+		const response = await fetch(editUrl);
 		const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
 		return JSON.parse(sourceData);
 	}
@@ -485,28 +483,27 @@
 		editData.make_votable = Number($('#make-votable').is(':checked'));
 
 		const mbids = getSelectedMbids();
-		const totalEdits = mbids.length;
-		let completedEdits = 0;
-		displayStatus(`Submitting edits ...`, true);
 
-		// submit all edit requests at once, they are rate-limited
-		const pendingEdits = mbids.map((mbid) => {
-			try {
-				return editReleaseGroup(mbid, editData);
-			} catch (error) {
+		// submit all edit requests at once, they are concurrency-limited
+		displayStatus(`Submitting edits ...`, true);
+		const pendingEdits = mbids.map((mbid) => editReleaseGroup(mbid, editData));
+		const totalEdits = pendingEdits.length;
+
+		// update status after each completed edit and display potential errors
+		let completedEdits = 0;
+		pendingEdits.forEach((pendingEdit) => {
+			pendingEdit.then(() => {
+				completedEdits++;
+				displayStatus(`Submitting edits (${completedEdits} of ${totalEdits})`, true);
+			}).catch((error) => {
 				displayErrorMessage(error.message);
-			}
+			});
 		});
 
-		// update status after each completed edit and wait for all edits to be completed
-		pendingEdits.map((edit) => edit.then(updateProgress));
-		await Promise.all(pendingEdits);
-		displayStatus(`Submitted edits for ${totalEdits} release group${totalEdits != 1 ? 's' : ''}.`);
-
-		function updateProgress() {
-			completedEdits++;
-			displayStatus(`Submitting edits (${completedEdits} of ${totalEdits})`, true);
-		}
+		// wait for all edits to be completed (or to fail)
+		await Promise.allSettled(pendingEdits);
+		await delay(0); // wait for the callback of the last pending edit to update `completedEdits`
+		displayStatus(`Submitted edits for ${completedEdits} release group${completedEdits != 1 ? 's' : ''}.`);
 	}
 
 	/**
