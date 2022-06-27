@@ -5,12 +5,9 @@ import {
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
 } from './data/releaseGroup.js';
-import { rateLimit } from '../utils/async/rateLimit.js';
+import { limit } from '../utils/async/rateLimit.js';
 import { flatten } from '../utils/object/flatten.js';
 import { urlSearchMultiParams } from '../utils/url/searchParams.js';
-
-// Limit editing to 1 edit per 0.5 seconds (two consecutive requests per edit)
-const limitedFetch = rateLimit(fetch, 500);
 
 /**
  * Gets the default edit data for the given release group.
@@ -23,12 +20,15 @@ export async function getReleaseGroupEditData(mbid) {
 	return parseSourceData(sourceData, true);
 }
 
+// Limit editing to 5 concurrent edits
+export const editReleaseGroup = limit(_editReleaseGroup, 5);
+
 /**
  * Sends an edit request for the given release group to MBS.
  * @param {string} mbid MBID of the release group.
  * @param {Object} editData Properties of the release group and their new values.
  */
-export async function editReleaseGroup(mbid, editData) {
+async function _editReleaseGroup(mbid, editData) {
 	const editUrl = buildEditUrl('release-group', mbid);
 
 	// build body of the edit request and preserve values of unaffected properties
@@ -84,7 +84,7 @@ export function replaceNamesByIds(editData) {
  * @returns {Promise<Object>} JSON edit source data.
  */
 async function fetchEditSourceData(editUrl) {
-	const response = await limitedFetch(editUrl);
+	const response = await fetch(editUrl);
 	const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
 	console.debug(sourceData);
 	return JSON.parse(sourceData);
