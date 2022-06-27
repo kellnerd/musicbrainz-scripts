@@ -6,6 +6,7 @@ import {
 	replaceNamesByIds,
 	getReleaseGroupEditData,
 } from '../editorTools.js';
+import { delay } from '../../utils/async/delay.js';
 import { dom } from '../../utils/dom/select.js';
 import {
 	persistCheckbox,
@@ -36,28 +37,27 @@ async function editSelectedEntities() {
 	console.debug(editData);
 
 	const mbids = getSelectedMbids();
-	const totalEdits = mbids.length;
-	let completedEdits = 0;
-	displayStatus(`Submitting edits ...`, true);
 
-	// submit all edit requests at once, they are rate-limited
-	const pendingEdits = mbids.map((mbid) => {
-		try {
-			return editReleaseGroup(mbid, editData);
-		} catch (error) {
+	// submit all edit requests at once, they are concurrency-limited
+	displayStatus(`Submitting edits ...`, true);
+	const pendingEdits = mbids.map((mbid) => editReleaseGroup(mbid, editData));
+	const totalEdits = pendingEdits.length;
+
+	// update status after each completed edit and display potential errors
+	let completedEdits = 0;
+	pendingEdits.forEach((pendingEdit) => {
+		pendingEdit.then(() => {
+			completedEdits++;
+			displayStatus(`Submitting edits (${completedEdits} of ${totalEdits})`, true);
+		}).catch((error) => {
 			displayErrorMessage(error.message);
-		}
+		});
 	});
 
-	// update status after each completed edit and wait for all edits to be completed
-	pendingEdits.map((edit) => edit.then(updateProgress));
-	await Promise.all(pendingEdits);
-	displayStatus(`Submitted edits for ${totalEdits} release group${totalEdits != 1 ? 's' : ''}.`);
-
-	function updateProgress() {
-		completedEdits++;
-		displayStatus(`Submitting edits (${completedEdits} of ${totalEdits})`, true);
-	}
+	// wait for all edits to be completed (or to fail)
+	await Promise.allSettled(pendingEdits);
+	await delay(0); // wait for the callback of the last pending edit to update `completedEdits`
+	displayStatus(`Submitted edits for ${completedEdits} release group${completedEdits != 1 ? 's' : ''}.`);
 }
 
 /**
