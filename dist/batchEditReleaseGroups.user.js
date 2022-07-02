@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2022.6.27
+// @version      2022.7.2
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -396,11 +396,53 @@
 	}
 
 	/**
+	 * Creates a DOM element from the given HTML fragment.
+	 * @param {string} html HTML fragment.
+	 */
+	function createElement(html) {
+		const template = document.createElement('template');
+		template.innerHTML = html;
+		return template.content.firstElementChild;
+	}
+
+	/**
+	 * Creates a style element from the given CSS fragment and injects it into the document's head.
+	 * @param {string} css CSS fragment.
+	 * @param {string} userscriptName Name of the userscript, used to generate an ID for the style element.
+	 */
+	function injectStylesheet(css, userscriptName) {
+		const style = document.createElement('style');
+		if (userscriptName) {
+			style.id = [userscriptName, 'userscript-css'].join('-');
+		}
+		style.innerText = css;
+		document.head.append(style);
+	}
+
+	/**
 	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
 	 * @param {string} elementId String that specifies the ID value.
 	 */
 	function dom(elementId) {
 		return document.getElementById(elementId);
+	}
+
+	/**
+	 * Returns the first element that is a descendant of node that matches selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qs(selectors, node = document) {
+		return node.querySelector(selectors);
+	}
+
+	/**
+	 * Returns all element descendants of node that match selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qsa(selectors, node = document) {
+		return node.querySelectorAll(selectors);
 	}
 
 	/**
@@ -469,7 +511,7 @@
 		let editData;
 		clearErrorMessages();
 		try {
-			editData = JSON.parse($('#edit-data').val());
+			editData = JSON.parse(dom('edit-data').value);
 		} catch (error) {
 			displayErrorMessage(error.message);
 			return;
@@ -478,9 +520,9 @@
 
 		// prepare raw edit data as it is expected by MBS
 		editData = replaceNamesByIds(editData);
-		const debugData = $('#debug-mode').is(':checked') ? JSON.stringify(editData) : undefined;
-		editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
-		editData.make_votable = Number($('#make-votable').is(':checked'));
+		const debugData = dom('debug-mode').checked ? JSON.stringify(editData) : undefined;
+		editData.edit_note = buildEditNote(dom('edit-note').value, debugData);
+		editData.make_votable = Number(dom('make-votable').checked);
 
 		const mbids = getSelectedMbids();
 
@@ -520,9 +562,11 @@
 	}
 
 	function getSelectedMbids() {
-		const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
-		const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-		return extractMBIDs(entityUrls, 'release-group', true);
+		const checkedItemURLs = Array.from(qsa('input[type=checkbox][name=add-to-merge]:checked')).map((checkbox) => {
+			const row = checkbox.closest('tr');
+			return qs('a[href^="/release-group"]', row).href;
+		});
+		return extractMBIDs(checkedItemURLs, 'release-group', true);
 	}
 
 	/**
@@ -530,22 +574,23 @@
 	 * @param {Object} object Edit data.
 	 */
 	function loadEditData(object = {}) {
-		$('#edit-data').val(JSON.stringify(object, null, 2));
+		const editDataInput = dom('edit-data');
+		editDataInput.value = JSON.stringify(object, null, 2);
+		editDataInput.dispatchEvent(new Event('change'));
 	}
 
 	function displayStatus(message, loading = false) {
-		$('#userscript-status')
-			.text(message)
-			.toggleClass('loading-message', loading);
+		const statusElement = dom('userscript-status');
+		statusElement.innerText = message;
+		statusElement.classList.toggle('loading-message', loading);
 	}
 
 	function displayErrorMessage(message) {
-		$('#userscript-errors')
-			.append(`<p>${message}</p>`);
+		dom('userscript-errors').insertAdjacentHTML('beforeend', `<p>${message}</p>`);
 	}
 
 	function clearErrorMessages() {
-		$('#userscript-errors').empty();
+		dom('userscript-errors').innerHTML = '';
 	}
 
 	const UI =
@@ -591,27 +636,26 @@ summary > h2 {
 }`	;
 
 	function addEditDataTemplateButton(label, description, editData) {
-		$(`<button type="button" title="Load JSON for “${description}”">${label}</button>`)
-			.on('click', () => {
-				loadEditData(editData);
-				displayStatus(`Loaded edit data for “${description}”.`);
-			})
-			.appendTo('#batch-edit-tools .buttons');
+		const button = createElement(`<button type="button" title="Load JSON for “${description}”">${label}</button>`);
+		button.addEventListener('click', () => {
+			loadEditData(editData);
+			displayStatus(`Loaded edit data for “${description}”.`);
+		});
+		qs('#batch-edit-tools .buttons').append(button);
 	}
 
 	function buildUI() {
-		$(UI).appendTo('#content');
-		$('<style type="text/css" id="batch-edit-styles">')
-			.text(styles)
-			.appendTo('head');
+		dom('content').insertAdjacentHTML('beforeend', UI);
+		injectStylesheet(styles, 'batch-edit');
+		const editDataInput = dom('edit-data');
 
 		// add buttons and attach click handlers
-		$('<button type="button" class="positive">Edit selected entities</button>')
-			.on('click', editSelectedEntities)
-			.appendTo('#batch-edit-tools .buttons');
-		$('<button type="button" title="Load JSON of the first selected entity">Load first entity</button>')
-			.on('click', loadFirstSelectedEntity)
-			.appendTo('#batch-edit-tools .buttons');
+		const editButton = createElement('<button type="button" class="positive">Edit selected entities</button>');
+		const loadButton = createElement('<button type="button" title="Load JSON of the first selected entity">Load first entity</button>');
+		editButton.addEventListener('click', editSelectedEntities);
+		loadButton.addEventListener('click', loadFirstSelectedEntity);
+		qs('#batch-edit-tools .buttons').append(editButton, loadButton);
+
 		addEditDataTemplateButton('Audiobook', 'Change types to Other + Audiobook', {
 			primary_type_id: "Other",
 			secondary_type_ids: "Audiobook",
@@ -622,12 +666,12 @@ summary > h2 {
 		});
 
 		// show supported properties and their types or value mappings as a tooltip
-		$('#edit-data').attr('title', `Property types/mappings: ${JSON.stringify(RG_EDIT_FIELDS, null, 2)}`);
+		editDataInput.title = `Property types/mappings: ${JSON.stringify(RG_EDIT_FIELDS, null, 2)}`;
 
 		persistDetails('batch-edit-tools', true);
 		persistCheckbox('debug-mode');
 		persistCheckbox('make-votable');
-		persistInput(dom('edit-data'));
+		persistInput(editDataInput);
 		persistInput(dom('edit-note'));
 	}
 
