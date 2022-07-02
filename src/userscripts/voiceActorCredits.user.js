@@ -1,6 +1,11 @@
-import { addButton, buildCreditParserUI } from '../creditParserUI.js';
+import {
+	addButton,
+	addParserButton,
+	buildCreditParserUI,
+} from '../creditParserUI.js';
 import { addMessageToEditNote } from '../editNote.js';
 import { buildEntityURL } from '../entity.js';
+import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 import {
 	fetchEntity,
@@ -10,6 +15,7 @@ import {
 } from '../relationshipEditor.js';
 import { seedURLForEntity } from '../seeding.js';
 import {
+	addVoiceActorRelationship,
 	importVoiceActorsFromDiscogs,
 } from '../voiceActorCredits.js';
 import { createElement } from '../../utils/dom/create.js';
@@ -31,6 +37,31 @@ function injectAddVoiceActorButton() {
 
 	addVoiceActorButton.addEventListener('click', (event) => createVoiceActorDialog().open(event));
 	dom('release-rels').appendChild(addVoiceActorButton);
+}
+
+function buildVoiceActorCreditParserUI() {
+	nameToMBIDCache.load();
+
+	addParserButton('Parse voice actor credits', async (creditLine, event) => {
+		const voiceActorCredit = creditLine.match(/^(.+)(?:\s[–-]\s|\t+)(.+)$/);
+
+		if (voiceActorCredit) {
+			const names = voiceActorCredit.slice(1).map((name) => name.trim());
+			const swapNames = event.shiftKey;
+
+			// assume that role names are credited before the artist name, so we have to swap by default
+			if (!swapNames) names.reverse();
+
+			const result = await addVoiceActorRelationship(...names);
+			nameToMBIDCache.store();
+			return result;
+		} else {
+			return 'skipped';
+		}
+	}, [
+		'SHIFT key to swap the order of artist names and their role names',
+		'CTRL key to bypass the cache and force a search', // TODO
+	].join('\n'));
 }
 
 function buildVoiceActorCreditImporterUI() {
@@ -72,4 +103,4 @@ function buildVoiceActorCreditImporterUI() {
 }
 
 injectAddVoiceActorButton();
-buildCreditParserUI(buildVoiceActorCreditImporterUI);
+buildCreditParserUI(buildVoiceActorCreditParserUI, buildVoiceActorCreditImporterUI);

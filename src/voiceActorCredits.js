@@ -1,4 +1,5 @@
 import { entityCache } from './entityCache.js';
+import { nameToMBIDCache } from './nameToMBIDCache.js';
 import {
 	closingDialog,
 	createVoiceActorDialog,
@@ -8,6 +9,33 @@ import {
 import { fetchVoiceActors as fetchVoiceActorsFromDiscogs } from './discogs/api.js';
 import { buildEntityURL as buildDiscogsURL } from './discogs/entity.js';
 import { discogsToMBIDCache } from './discogs/entityMapping.js';
+
+/**
+ * Adds a voice actor release relationship for the given artist and their role.
+ * Automatically maps artist names to MBIDs where possible, asks the user to match the remaining ones.
+ * @param {string} artistName Artist name (as credited).
+ * @param {string} roleName Credited role of the artist.
+ * @returns {Promise<CreditParserLineStatus>}
+ */
+export async function addVoiceActorRelationship(artistName, roleName) {
+	const artistMBID = await nameToMBIDCache.get('artist', artistName);
+
+	if (artistMBID) {
+		// mapping already exists, automatically add the relationship
+		const mbArtist = await entityCache.get(artistMBID);
+		createVoiceActorDialog(mbArtist, roleName, artistName).accept();
+		return 'done';
+	} else {
+		// pre-fill dialog and collect mappings for freshly matched artists
+		const artistMatch = await letUserSelectVoiceActor(artistName, roleName, artistName);
+		if (artistMatch.gid) {
+			nameToMBIDCache.set(['artist', artistName], artistMatch.gid);
+			return 'done';
+		} else {
+			return 'skipped';
+		}
+	}
+}
 
 /**
  * Imports all existing voice actor credits from the given Discogs release.
@@ -45,15 +73,8 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 			mappedCredits++;
 			// duplicates of already existing rels will be merged automatically
 		} else {
-			// pre-fill dialog with the Discogs artist object (compatible because it also has a `name` property)
-			const dialog = createVoiceActorDialog(actor, roleName, artistCredit);
-
-			// let the user select the matching entity
-			openDialogAndTriggerAutocomplete(dialog);
-			await closingDialog(dialog);
-
-			// collect mappings for freshly matched artists
-			const artistMatch = getTargetEntity(dialog);
+			// pre-fill dialog and collect mappings for freshly matched artists
+			const artistMatch = await letUserSelectVoiceActor(actor.name, roleName, artistCredit);
 			if (artistMatch.gid) {
 				discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
 			}
@@ -75,4 +96,14 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 		mappedCredits,
 		unmappedArtists,
 	};
+}
+
+async function letUserSelectVoiceActor(artistName, roleName, artistCredit) {
+	const dialog = createVoiceActorDialog({ name: artistName }, roleName, artistCredit);
+
+	// let the user select the matching entity
+	openDialogAndTriggerAutocomplete(dialog);
+	await closingDialog(dialog);
+
+	return getTargetEntity(dialog);
 }
