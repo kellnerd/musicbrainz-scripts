@@ -2,7 +2,7 @@
 const metadata = {
 	name: 'MusicBrainz: Voice actor credits',
 	author: 'kellnerd',
-	description: 'Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.',
+	description: 'Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.',
 	grant: [
 		'GM.getValue',
 		'GM.setValue',

@@ -57,7 +57,7 @@ javascript:(()=>{function e(e,s){return s.forEach(([s,r])=>{e=e.replace(s,r)}),e
 
 ### Voice Actor Credits
 
-Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
+Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/voiceActorCredits.user.js)
@@ -65,6 +65,7 @@ Simplifies the addition of “spoken vocals” relationships (at release level).
 Also available as a bookmarklet with less features:
 
 - Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.
+- Parses voice actor credits from text and remembers name to MBID mappings(userscript only).
 - Imports voice actor credits from linked Discogs pages (userscript only).
 - Automatically matches artists whose Discogs pages are linked to MB (unlinked artists can be selected from the already opened inline search).
 

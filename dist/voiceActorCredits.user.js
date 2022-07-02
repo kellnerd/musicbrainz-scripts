@@ -3,7 +3,7 @@
 // @version      2022.7.2
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
-// @description  Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
+// @description  Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
 // @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#voice-actor-credits
 // @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/voiceActorCredits.user.js
 // @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/voiceActorCredits.user.js
@@ -1233,6 +1233,7 @@ form div.row span.col label {
 			}
 		}, [
 			'SHIFT key to swap the order of artist names and their role names',
+			'CTRL key to bypass the cache and force a search', // TODO
 		].join('\n'));
 	}
 
