@@ -59,36 +59,49 @@ form div.row span.col label {
 	cursor: help;
 }`;
 
+const uiReadyEventType = 'credit-parser-ui-ready';
+
 /**
  * Injects the basic UI of the credit parser and waits until the UI has been expanded before it continues with the build tasks.
  * @param {...(() => void)} buildTasks Handlers which can be registered for additional UI build tasks.
  */
 export function buildCreditParserUI(...buildTasks) {
-	// possibly called by multiple userscripts, do not inject the UI again
-	if (dom('credit-parser')) return;
+	/** @type {HTMLDetailsElement} */
+	const existingUI = dom('credit-parser');
 
-	// inject credit parser between the sections for track and release relationships,
-	// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
-	qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
-	injectStylesheet(css, 'credit-parser');
+	// possibly called by multiple userscripts, do not inject the UI again
+	if (!existingUI) {
+		// inject credit parser between the sections for track and release relationships,
+		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
+		qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
+		injectStylesheet(css, 'credit-parser');
+	}
+
+	// execute all additional build tasks once the UI is open and ready
+	if (existingUI && existingUI.open) {
+		// our custom event already happened because the UI builder code is synchronous
+		buildTasks.forEach((task) => task());
+	} else {
+		// wait for our custom event if the UI is not (fully) initialized or is collapsed
+		buildTasks.forEach((task) => document.addEventListener(uiReadyEventType, () => task(), { once: true }));
+	}
+
+	if (existingUI) return;
 
 	// continue initialization of the UI once it has been opened
 	persistDetails('credit-parser', true).then((UI) => {
 		if (UI.open) {
-			initializeUI(buildTasks);
+			initializeUI();
 		} else {
 			UI.addEventListener('toggle', function toggleHandler(event) {
 				UI.removeEventListener(event.type, toggleHandler);
-				initializeUI(buildTasks);
-			});			
+				initializeUI();
+			});
 		}
 	});
 }
 
-/**
- * @param {Array<() => void>} buildTasks
- */
-function initializeUI(buildTasks) {
+function initializeUI() {
 	const creditInput = dom('credit-input');
 
 	// persist the state of the UI
@@ -118,9 +131,8 @@ function initializeUI(buildTasks) {
 		defaultValue: parserDefaults.nameSeparatorRE,
 	});
 
-	for (const task of buildTasks) {
-		task();
-	}
+	// trigger all additional UI build tasks
+	document.dispatchEvent(new CustomEvent(uiReadyEventType));
 
 	// focus the credit parser input once all relationships have been loaded (and displayed)
 	releaseLoadingFinished().then(() => {
