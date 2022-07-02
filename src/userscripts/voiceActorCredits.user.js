@@ -20,6 +20,7 @@ import {
 } from '../voiceActorCredits.js';
 import { createElement } from '../../utils/dom/create.js';
 import { dom, qs } from '../../utils/dom/select.js';
+import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
 
 const UI =
 `<div id="credit-import-tools">
@@ -46,13 +47,14 @@ function buildVoiceActorCreditParserUI() {
 		const voiceActorCredit = creditLine.match(/^(.+)(?:\s[–-]\s|\t+)(.+)$/);
 
 		if (voiceActorCredit) {
-			const names = voiceActorCredit.slice(1).map((name) => name.trim());
+			let [roleName, artistName] = voiceActorCredit.slice(1).map((name) => guessUnicodePunctuation(name.trim()));
+
 			const swapNames = event.shiftKey;
+			if (swapNames) {
+				[artistName, roleName] = [roleName, artistName];
+			}
 
-			// assume that role names are credited before the artist name, so we have to swap by default
-			if (!swapNames) names.reverse();
-
-			const result = await addVoiceActorRelationship(...names);
+			const result = await addVoiceActorRelationship(artistName, roleName);
 			nameToMBIDCache.store();
 			return result;
 		} else {
