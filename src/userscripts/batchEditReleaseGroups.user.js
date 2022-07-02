@@ -7,7 +7,8 @@ import {
 	getReleaseGroupEditData,
 } from '../editorTools.js';
 import { delay } from '../../utils/async/delay.js';
-import { dom } from '../../utils/dom/select.js';
+import { createElement, injectStylesheet } from '../../utils/dom/create.js';
+import { dom, qs, qsa } from '../../utils/dom/select.js';
 import {
 	persistCheckbox,
 	persistDetails,
@@ -22,7 +23,7 @@ async function editSelectedEntities() {
 	let editData;
 	clearErrorMessages();
 	try {
-		editData = JSON.parse($('#edit-data').val());
+		editData = JSON.parse(dom('edit-data').value);
 	} catch (error) {
 		displayErrorMessage(error.message);
 		return;
@@ -31,9 +32,9 @@ async function editSelectedEntities() {
 
 	// prepare raw edit data as it is expected by MBS
 	editData = replaceNamesByIds(editData);
-	const debugData = $('#debug-mode').is(':checked') ? JSON.stringify(editData) : undefined;
-	editData.edit_note = buildEditNote($('#edit-note').val(), debugData);
-	editData.make_votable = Number($('#make-votable').is(':checked'));
+	const debugData = dom('debug-mode').checked ? JSON.stringify(editData) : undefined;
+	editData.edit_note = buildEditNote(dom('edit-note').value, debugData);
+	editData.make_votable = Number(dom('make-votable').checked);
 	console.debug(editData);
 
 	const mbids = getSelectedMbids();
@@ -74,9 +75,11 @@ async function loadFirstSelectedEntity() {
 }
 
 function getSelectedMbids() {
-	const checkedItems = $('input[type=checkbox][name=add-to-merge]:checked').closest('tr');
-	const entityUrls = $('a[href^="/release-group"]', checkedItems).map((_, a) => a.href).get();
-	return extractMBIDs(entityUrls, 'release-group', true);
+	const checkedItemURLs = Array.from(qsa('input[type=checkbox][name=add-to-merge]:checked')).map((checkbox) => {
+		const row = checkbox.closest('tr');
+		return qs('a[href^="/release-group"]', row).href;
+	});
+	return extractMBIDs(checkedItemURLs, 'release-group', true);
 }
 
 /**
@@ -84,22 +87,23 @@ function getSelectedMbids() {
  * @param {Object} object Edit data.
  */
 function loadEditData(object = {}) {
-	$('#edit-data').val(JSON.stringify(object, null, 2));
+	const editDataInput = dom('edit-data');
+	editDataInput.value = JSON.stringify(object, null, 2);
+	editDataInput.dispatchEvent(new Event('change'));
 }
 
 function displayStatus(message, loading = false) {
-	$('#userscript-status')
-		.text(message)
-		.toggleClass('loading-message', loading);
+	const statusElement = dom('userscript-status');
+	statusElement.innerText = message;
+	statusElement.classList.toggle('loading-message', loading);
 }
 
 function displayErrorMessage(message) {
-	$('#userscript-errors')
-		.append(`<p>${message}</p>`);
+	dom('userscript-errors').insertAdjacentHTML('beforeend', `<p>${message}</p>`);
 }
 
 function clearErrorMessages() {
-	$('#userscript-errors').empty();
+	dom('userscript-errors').innerHTML = '';
 }
 
 const UI =
@@ -145,27 +149,26 @@ summary > h2 {
 }`;
 
 function addEditDataTemplateButton(label, description, editData) {
-	$(`<button type="button" title="Load JSON for “${description}”">${label}</button>`)
-		.on('click', () => {
-			loadEditData(editData);
-			displayStatus(`Loaded edit data for “${description}”.`);
-		})
-		.appendTo('#batch-edit-tools .buttons');
+	const button = createElement(`<button type="button" title="Load JSON for “${description}”">${label}</button>`);
+	button.addEventListener('click', () => {
+		loadEditData(editData);
+		displayStatus(`Loaded edit data for “${description}”.`);
+	});
+	qs('#batch-edit-tools .buttons').append(button);
 }
 
 function buildUI() {
-	$(UI).appendTo('#content');
-	$('<style type="text/css" id="batch-edit-styles">')
-		.text(styles)
-		.appendTo('head');
+	dom('content').insertAdjacentHTML('beforeend', UI);
+	injectStylesheet(styles, 'batch-edit');
+	const editDataInput = dom('edit-data');
 
 	// add buttons and attach click handlers
-	$('<button type="button" class="positive">Edit selected entities</button>')
-		.on('click', editSelectedEntities)
-		.appendTo('#batch-edit-tools .buttons');
-	$('<button type="button" title="Load JSON of the first selected entity">Load first entity</button>')
-		.on('click', loadFirstSelectedEntity)
-		.appendTo('#batch-edit-tools .buttons');
+	const editButton = createElement('<button type="button" class="positive">Edit selected entities</button>');
+	const loadButton = createElement('<button type="button" title="Load JSON of the first selected entity">Load first entity</button>');
+	editButton.addEventListener('click', editSelectedEntities);
+	loadButton.addEventListener('click', loadFirstSelectedEntity);
+	qs('#batch-edit-tools .buttons').append(editButton, loadButton);
+
 	addEditDataTemplateButton('Audiobook', 'Change types to Other + Audiobook', {
 		primary_type_id: "Other",
 		secondary_type_ids: "Audiobook",
@@ -176,12 +179,12 @@ function buildUI() {
 	});
 
 	// show supported properties and their types or value mappings as a tooltip
-	$('#edit-data').attr('title', `Property types/mappings: ${JSON.stringify(RG_EDIT_FIELDS, null, 2)}`);
+	editDataInput.title = `Property types/mappings: ${JSON.stringify(RG_EDIT_FIELDS, null, 2)}`;
 
 	persistDetails('batch-edit-tools', true);
 	persistCheckbox('debug-mode');
 	persistCheckbox('make-votable');
-	persistInput(dom('edit-data'));
+	persistInput(editDataInput);
 	persistInput(dom('edit-note'));
 }
 
