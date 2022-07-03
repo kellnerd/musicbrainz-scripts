@@ -23,8 +23,8 @@ import { dom, qs } from '../../utils/dom/select.js';
 import { getPattern } from '../../utils/regex/parse.js';
 import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
 
-const UI =
-`<div id="credit-import-tools">
+const UI = `
+<div id="credit-import-tools">
 	<div id="credit-import-status" class="row no-label"></div>
 	<div id="credit-import-errors" class="row no-label error"></div>
 </div>`;

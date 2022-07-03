@@ -12,8 +12,8 @@ import {
 	persistInput,
 } from '../utils/userscript/persistElement.js';
 
-const creditParserUI =
-`<details id="credit-parser">
+const creditParserUI = `
+<details id="credit-parser">
 <summary>
 	<h2>Credit Parser</h2>
 </summary>
@@ -39,8 +39,8 @@ const creditParserUI =
 </form>
 </details>`;
 
-const css =
-`details#credit-parser summary {
+const css = `
+details#credit-parser summary {
 	cursor: pointer;
 	display: block;
 }

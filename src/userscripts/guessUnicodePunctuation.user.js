@@ -15,8 +15,8 @@ const buttonTemplate = {
 	icon: '<button class="icon guess-punctuation" type="button" title="Guess punctuation"></button>',
 };
 
-const styles =
-`button.icon.guess-punctuation {
+const styles = `
+button.icon.guess-punctuation {
 	background-image: url(${guessPunctuationIcon});
 }
 input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
