@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Import ARD radio dramas
-// @version      2022.6.26
+// @version      2022.7.3
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Imports German broadcast releases from the ARD radio drama database.
@@ -560,7 +560,7 @@
 		return line.split(/:\s+/, 2); // split prefix (attribute name) and content (attribute values)
 	});
 
-	Array.from(document.querySelectorAll('.mitwirkende tr')).map((row) => {
+	const voiceActorCredits = Array.from(qsa('.mitwirkende tr')).map((row) => {
 		// three cells which should contain: 1. actor/actress, 2. empty, 3. role(s) or empty
 		const cells = row.childNodes;
 		if (cells.length !== 3 || cells[0].nodeName !== 'TD') return; // skip headers and empty rows
@@ -690,6 +690,15 @@
 		const importerContainer = qs('.sectionC .noPrint > p');
 		importerContainer.prepend(entityMappings);
 		injectImporterForm();
+
+		// inject a button to copy credits
+		/** @type {HTMLButtonElement} */
+		const copyButton = createElement('<button type="button" title="Copy voice actor credits to clipboard">Copy credits</button>');
+		copyButton.addEventListener('click', () => {
+			navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1]} - ${credit[0]}`).join('\n'));
+		});
+		copyButton.style.marginTop = '5px';
+		importerContainer.appendChild(copyButton);
 
 		function injectImporterForm() {
 			const form = createReleaseSeederForm(release);
