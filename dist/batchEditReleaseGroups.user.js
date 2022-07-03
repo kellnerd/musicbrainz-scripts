@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2022.7.2
+// @version      2022.7.3
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -142,7 +142,8 @@
 	function queue(operation) {
 		let queue = Promise.resolve(); // empty queue is ready
 		return (...args) => {
-			queue = queue.then(() => operation(...args)); // queue the next operation
+			// queue the next operation, regardless of the last operation's success
+			queue = queue.then(() => operation(...args), () => operation(...args));
 			return queue; // now points to the result of the just enqueued operation
 		};
 	}
