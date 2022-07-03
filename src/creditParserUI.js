@@ -126,8 +126,14 @@ function initializeUI() {
 	});
 
 	addPatternInput({
+		label: 'Credit separator',
+		description: 'Splits a credit into role and artist (disabled when empty)',
+		defaultValue: /\s[–-]\s|:\s|\t+/,
+	});
+
+	addPatternInput({
 		label: 'Name separator',
-		description: 'Splits the extracted name into multiple names (disabled by default when empty)',
+		description: 'Splits the extracted name into multiple names (disabled when empty)',
 		defaultValue: parserDefaults.nameSeparatorRE,
 	});
 
