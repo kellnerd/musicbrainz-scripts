@@ -15,10 +15,11 @@ import { discogsToMBIDCache } from './discogs/entityMapping.js';
  * Automatically maps artist names to MBIDs where possible, asks the user to match the remaining ones.
  * @param {string} artistName Artist name (as credited).
  * @param {string} roleName Credited role of the artist.
+ * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
  * @returns {Promise<CreditParserLineStatus>}
  */
-export async function addVoiceActorRelationship(artistName, roleName) {
-	const artistMBID = await nameToMBIDCache.get('artist', artistName);
+export async function addVoiceActorRelationship(artistName, roleName, bypassCache = false) {
+	const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
 
 	if (artistMBID) {
 		// mapping already exists, automatically add the relationship

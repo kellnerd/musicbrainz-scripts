@@ -54,7 +54,8 @@ function buildVoiceActorCreditParserUI() {
 				[artistName, roleName] = [roleName, artistName];
 			}
 
-			const result = await addVoiceActorRelationship(artistName, roleName);
+			const bypassCache = event.ctrlKey;
+			const result = await addVoiceActorRelationship(artistName, roleName, bypassCache);
 			nameToMBIDCache.store();
 			return result;
 		} else {
@@ -62,7 +63,7 @@ function buildVoiceActorCreditParserUI() {
 		}
 	}, [
 		'SHIFT key to swap the order of artist names and their role names',
-		'CTRL key to bypass the cache and force a search', // TODO
+		'CTRL key to bypass the cache and force a search',
 	].join('\n'));
 }
 
