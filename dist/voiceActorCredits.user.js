@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Voice actor credits
-// @version      2022.7.2
+// @version      2022.7.3
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
@@ -254,6 +254,15 @@
 		return node.querySelector(selectors);
 	}
 
+	/**
+	 * Returns all element descendants of node that match selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qsa(selectors, node = document) {
+		return node.querySelectorAll(selectors);
+	}
+
 	/** Pattern to match an ES RegExp string representation. */
 	const regexPattern = /^\/(.+?)\/([gimsuy]*)$/;
 
@@ -367,19 +376,21 @@
 		return persistElement(element, 'value', 'change', defaultValue);
 	}
 
-	const creditParserUI =
-`<details id="credit-parser">
+	const creditParserUI = `
+<details id="credit-parser">
 <summary>
 	<h2>Credit Parser</h2>
 </summary>
 <form>
+	<details id="credit-parser-config">
+		<summary><h3>Advanced configuration</h3></summary>
+		<ul id="credit-patterns"></ul>
+	</details>
 	<div class="row">
 		<textarea name="credit-input" id="credit-input" cols="120" rows="1" placeholder="Paste credits here…"></textarea>
 	</div>
 	<div class="row">
 		Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).
-	</div>
-	<div class="row" id="credit-patterns">
 	</div>
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
@@ -390,29 +401,23 @@
 	<div class="row buttons">
 	</div>
 </form>
-</details>`	;
+</details>`;
 
-	const css =
-`details#credit-parser > summary {
+	const css = `
+details#credit-parser summary {
 	cursor: pointer;
 	display: block;
 }
-details#credit-parser > summary > h2 {
+details#credit-parser summary > h2, details#credit-parser summary > h3 {
 	display: list-item;
 }
 textarea#credit-input {
 	overflow-y: hidden;
 }
-form div.row span.col:not(:last-child)::after {
-	content: " | ";
-}
-form div.row span.col label {
-	margin-right: 0;
-}
 #credit-parser label[title] {
 	border-bottom: 1px dotted;
 	cursor: help;
-}`	;
+}`;
 
 	const uiReadyEventType = 'credit-parser-ui-ready';
 
@@ -448,10 +453,7 @@ form div.row span.col label {
 			if (UI.open) {
 				initializeUI();
 			} else {
-				UI.addEventListener('toggle', function toggleHandler(event) {
-					UI.removeEventListener(event.type, toggleHandler);
-					initializeUI();
-				});
+				UI.addEventListener('toggle', initializeUI, { once: true });
 			}
 		});
 	}
@@ -462,6 +464,14 @@ form div.row span.col label {
 		// persist the state of the UI
 		persistCheckbox('remove-parsed-lines');
 		persistCheckbox('parser-autofocus');
+		persistDetails('credit-parser-config').then((config) => {
+			// hidden pattern inputs have a zero width, so they have to be resized if the config has not been open initially
+			if (!config.open) {
+				config.addEventListener('toggle', () => {
+					qsa('input.pattern', config).forEach((input) => automaticWidth.call(input));
+				}, { once: true });
+			}
+		});
 
 		// auto-resize the credit textarea on input
 		creditInput.addEventListener('input', automaticHeight);
@@ -481,8 +491,14 @@ form div.row span.col label {
 		});
 
 		addPatternInput({
+			label: 'Credit separator',
+			description: 'Splits a credit into role and artist (disabled when empty)',
+			defaultValue: /\s[–-]\s|:\s|\t+/,
+		});
+
+		addPatternInput({
 			label: 'Name separator',
-			description: 'Splits the extracted name into multiple names (disabled by default when empty)',
+			description: 'Splits the extracted name into multiple names (disabled when empty)',
 			defaultValue: parserDefaults.nameSeparatorRE,
 		});
 
@@ -604,11 +620,10 @@ form div.row span.col label {
 		});
 
 		// inject label, input, reset button and explanation link
-		const span = document.createElement('span');
-		span.className = 'col';
-		span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
-		span.append(' ', patternInput, ' ', resetButton, ' ', explanationLink);
-		dom('credit-patterns').appendChild(span);
+		const container = document.createElement('li');
+		container.insertAdjacentHTML('beforeend', `<label for="${id}" title="${config.description}">${config.label}:</label>`);
+		container.append(' ', patternInput, ' ', resetButton, ' ', explanationLink);
+		dom('credit-patterns').appendChild(container);
 
 		// persist the input and calls the setter for the initial value (persisted value or the default)
 		persistInput(patternInput, config.defaultValue).then(setInput);
@@ -1102,10 +1117,11 @@ form div.row span.col label {
 	 * Automatically maps artist names to MBIDs where possible, asks the user to match the remaining ones.
 	 * @param {string} artistName Artist name (as credited).
 	 * @param {string} roleName Credited role of the artist.
+	 * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
 	 * @returns {Promise<CreditParserLineStatus>}
 	 */
-	async function addVoiceActorRelationship(artistName, roleName) {
-		const artistMBID = await nameToMBIDCache.get('artist', artistName);
+	async function addVoiceActorRelationship(artistName, roleName, bypassCache = false) {
+		const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
 
 		if (artistMBID) {
 			// mapping already exists, automatically add the relationship
@@ -1194,11 +1210,11 @@ form div.row span.col label {
 		return getTargetEntity(dialog);
 	}
 
-	const UI =
-`<div id="credit-import-tools">
+	const UI = `
+<div id="credit-import-tools">
 	<div id="credit-import-status" class="row no-label"></div>
 	<div id="credit-import-errors" class="row no-label error"></div>
-</div>`	;
+</div>`;
 
 	// TODO: only show button for certain RG types (audiobook, audio drama, spoken word) of the MB release?
 	function injectAddVoiceActorButton() {
@@ -1213,19 +1229,23 @@ form div.row span.col label {
 	}
 
 	function buildVoiceActorCreditParserUI() {
+		const creditSeparatorInput = dom('credit-separator');
+
 		nameToMBIDCache.load();
 
 		addParserButton('Parse voice actor credits', async (creditLine, event) => {
-			const voiceActorCredit = creditLine.match(/^(.+)(?:\s[–-]\s|\t+)(.+)$/);
+			const creditTokens = creditLine.split(getPattern(creditSeparatorInput.value) || /$/);
 
-			if (voiceActorCredit) {
-				const names = voiceActorCredit.slice(1).map((name) => name.trim());
+			if (creditTokens.length === 2) {
+				let [roleName, artistName] = creditTokens.map((token) => guessUnicodePunctuation(token.trim()));
+
 				const swapNames = event.shiftKey;
+				if (swapNames) {
+					[artistName, roleName] = [roleName, artistName];
+				}
 
-				// assume that role names are credited before the artist name, so we have to swap by default
-				if (!swapNames) names.reverse();
-
-				const result = await addVoiceActorRelationship(...names);
+				const bypassCache = event.ctrlKey;
+				const result = await addVoiceActorRelationship(artistName, roleName, bypassCache);
 				nameToMBIDCache.store();
 				return result;
 			} else {
@@ -1233,7 +1253,7 @@ form div.row span.col label {
 			}
 		}, [
 			'SHIFT key to swap the order of artist names and their role names',
-			'CTRL key to bypass the cache and force a search', // TODO
+			'CTRL key to bypass the cache and force a search',
 		].join('\n'));
 	}
 
