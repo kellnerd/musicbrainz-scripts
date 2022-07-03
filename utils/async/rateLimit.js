@@ -6,7 +6,8 @@ function rateLimitedQueue(operation, interval) {
 	let queue = Promise.resolve(); // empty queue is ready
 	return (...args) => {
 		const result = queue.then(() => operation(...args)); // queue the next operation
-		queue = queue.then(() => delay(interval)); // start the next delay
+		// start the next delay, regardless of the last operation's success
+		queue = queue.then(() => delay(interval), () => delay(interval));
 		return result;
 	};
 }
@@ -14,7 +15,8 @@ function rateLimitedQueue(operation, interval) {
 function queue(operation) {
 	let queue = Promise.resolve(); // empty queue is ready
 	return (...args) => {
-		queue = queue.then(() => operation(...args)); // queue the next operation
+		// queue the next operation, regardless of the last operation's success
+		queue = queue.then(() => operation(...args), () => operation(...args));
 		return queue; // now points to the result of the just enqueued operation
 	};
 }
