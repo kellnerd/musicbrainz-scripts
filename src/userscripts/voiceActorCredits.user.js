@@ -20,6 +20,7 @@ import {
 } from '../voiceActorCredits.js';
 import { createElement } from '../../utils/dom/create.js';
 import { dom, qs } from '../../utils/dom/select.js';
+import { getPattern } from '../../utils/regex/parse.js';
 import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
 
 const UI =
@@ -41,13 +42,15 @@ function injectAddVoiceActorButton() {
 }
 
 function buildVoiceActorCreditParserUI() {
+	const creditSeparatorInput = dom('credit-separator');
+
 	nameToMBIDCache.load();
 
 	addParserButton('Parse voice actor credits', async (creditLine, event) => {
-		const voiceActorCredit = creditLine.match(/^(.+)(?:\s[–-]\s|\t+)(.+)$/);
+		const creditTokens = creditLine.split(getPattern(creditSeparatorInput.value) || /$/);
 
-		if (voiceActorCredit) {
-			let [roleName, artistName] = voiceActorCredit.slice(1).map((name) => guessUnicodePunctuation(name.trim()));
+		if (creditTokens.length === 2) {
+			let [roleName, artistName] = creditTokens.map((token) => guessUnicodePunctuation(token.trim()));
 
 			const swapNames = event.shiftKey;
 			if (swapNames) {
