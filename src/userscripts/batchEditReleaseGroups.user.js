@@ -106,8 +106,8 @@ function clearErrorMessages() {
 	dom('userscript-errors').innerHTML = '';
 }
 
-const UI =
-`<details id="batch-edit-tools">
+const UI = `
+<details id="batch-edit-tools">
 <summary>
 	<h2>Batch‐edit release groups</h2>
 </summary>
@@ -139,13 +139,13 @@ const UI =
 </form>
 </details>`;
 
-const styles =
-`summary {
-	color: #EB743B;
+const styles = `
+details#batch-edit-tools summary {
 	cursor: pointer;
+	display: block;
 }
-summary > h2 {
-	display: inline;
+details#batch-edit-tools summary > h2 {
+	display: list-item;
 }`;
 
 function addEditDataTemplateButton(label, description, editData) {
