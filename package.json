@@ -1,6 +1,6 @@
 {
   "name": "musicbrainz-scripts",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",
   "keywords": [
@@ -26,6 +26,6 @@
     "extract-comments": "^1.1.0",
     "rollup": "^2.56.0",
     "rollup-plugin-ignore": "^1.0.10",
-    "terser": "^5.10.0"
+    "terser": "^5.14.2"
   }
 }
