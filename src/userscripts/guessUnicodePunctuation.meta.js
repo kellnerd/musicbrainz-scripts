@@ -24,6 +24,7 @@ const metadata = {
 		`(${supportedEntities.join('|')})/create`,
 		'release/add', // release has no `create` route
 		`(${supportedEntities.join('|')})/[0-9a-f-]{36}/edit(_annotation)?`,
+		String.raw`artist/[0-9a-f-]{36}/(add-alias|alias\/\d+\/edit)`,
 		String.raw`artist/[0-9a-f-]{36}/credit/\d+/edit`,
 	].map(createMusicBrainzURLRule),
 };
