@@ -152,6 +152,15 @@ javascript:void(async e=>{const t=document.querySelector("h1 bdi").textContent.m
 javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];(a=>{a&&open("https://magicisrc.kepstin.ca?mbid="+a)})(a)})();
 ```
 
+### [Mark Release As Worldwide](src/bookmarklets/markReleaseAsWorldwide.js)
+
+- Removes all release events except for the first one and changes its country to [Worldwide].
+- Allows to replace an exhaustive list of release countries/events with a single release event.
+
+```js
+javascript:$(".remove-release-event:not(:first)").trigger("click"),void $("#country-0").val(240).trigger("change");
+```
+
 ### [Relate This Entity To Multiple MBID](src/bookmarklets/relateThisEntityToMultipleMBID.js)
 
 - Relates the currently edited entity to multiple entities given by their MBIDs.
