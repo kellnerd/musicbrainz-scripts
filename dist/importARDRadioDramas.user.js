@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Import ARD radio dramas
-// @version      2022.7.3
+// @version      2022.9.11
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Imports German broadcast releases from the ARD radio drama database.
@@ -186,6 +186,21 @@
 	}
 
 	/**
+	 * Converts the name from kebab case into title case.
+	 * @param {string} name
+	 */
+	function kebabToTitleCase(name) {
+		return name.split('-')
+			.map(upperCaseFirstLetter)
+			.join(' ');
+	}
+
+	/** @param {string} word */
+	function upperCaseFirstLetter(word) {
+		return word.replace(/^./, c => c.toUpperCase());
+	}
+
+	/**
 	 * Creates an input element where you can paste an MBID or an MB entity URL.
 	 * It automatically validates the content on paste, loads the name of the entity and sets the MBID as a data attribute.
 	 * @param {string} id ID and name of the input element.
@@ -233,13 +248,14 @@
 				if (entity) {
 					if (typeof allowedEntityTypes === 'undefined' || allowedEntityTypes.includes(entity.type)) {
 						const result = await fetchEntity(entityURL);
+						result.type ||= kebabToTitleCase(entity.type); // fallback for missing type
 						mbidInput.setAttribute(mbidAttribute, result.id);
 						mbidInput.value = result.name || result.title; // releases only have a title attribute
 						mbidInput.classList.add('success');
 						mbidInput.title = getEntityTooltip(result);
 						return result;
 					} else {
-						throw new Error(`Entity type '${entity.type}' is not allowed`);
+						throw new Error(`Entity type '${kebabToTitleCase(entity.type)}' is not allowed`);
 					}
 				}
 			} catch (error) {
@@ -571,23 +587,29 @@
 		.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
 		.map((p) => p.textContent.trim());
 
-	let broadcasters = [], date = {}, station, duration;
+	let broadcasters = [], date = {}, duration = '';
 
 	sidebarText.forEach((line) => {
+		// line format: `<broadcaster> <YYYY>`, year is optional
 		const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
 		if (productionMatch) {
 			broadcasters.push(...productionMatch[1].split(/\s+\/\s+/));
+			productionMatch[2];
 		}
 
-		const broadcastMatch = line.match(/^Erstsendung:\s+(\d{2}\.\d{2}\.\d{4})\s+\|\s+(?:(.+?)\s+\|\s+)?(\d+'\d{2})$/);
-		if (broadcastMatch) {
-			date = zipObject(['day', 'month', 'year'], broadcastMatch[1].split('.'));
-			station = broadcastMatch[2];
-			duration = broadcastMatch[3].replace("'", ':');
-
-			if (station) {
-				broadcasters.push(station);
-			}
+		// line format: `Erstsendung: <DD.MM.YYYY> | <station> | <m'ss>`, station and duration are optional
+		if (/^Erstsendung/.test(line)) {
+			line.split('|').forEach((fragment, column) => {
+				const dateMatch = fragment.match(/\d{2}\.\d{2}\.\d{4}/);
+				const durationMatch = fragment.match(/\d+'\d{2}/);
+				if (dateMatch) {
+					date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
+				} else if (durationMatch) {
+					duration = durationMatch[0].replace("'", ':');
+				} else if (column === 1) {
+					broadcasters.push(fragment.trim()); // name of the radio station
+				}
+			});
 		}
 	});
 
@@ -695,7 +717,7 @@
 		/** @type {HTMLButtonElement} */
 		const copyButton = createElement('<button type="button" title="Copy voice actor credits to clipboard">Copy credits</button>');
 		copyButton.addEventListener('click', () => {
-			navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1]} - ${credit[0]}`).join('\n'));
+			navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1] ?? ''} - ${credit[0]}`).join('\n'));
 		});
 		copyButton.style.marginTop = '5px';
 		importerContainer.appendChild(copyButton);
