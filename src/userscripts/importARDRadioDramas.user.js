@@ -34,24 +34,29 @@ const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
 	.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
 	.map((p) => p.textContent.trim());
 
-let broadcasters = [], productionYear, date = {}, station, duration;
+let broadcasters = [], productionYear, date = {}, duration = '';
 
 sidebarText.forEach((line) => {
+	// line format: `<broadcaster> <YYYY>`, year is optional
 	const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
 	if (productionMatch) {
 		broadcasters.push(...productionMatch[1].split(/\s+\/\s+/));
 		productionYear = productionMatch[2];
 	}
 
-	const broadcastMatch = line.match(/^Erstsendung:\s+(\d{2}\.\d{2}\.\d{4})\s+\|\s+(?:(.+?)\s+\|\s+)?(\d+'\d{2})$/);
-	if (broadcastMatch) {
-		date = zipObject(['day', 'month', 'year'], broadcastMatch[1].split('.'));
-		station = broadcastMatch[2];
-		duration = broadcastMatch[3].replace("'", ':');
-
-		if (station) {
-			broadcasters.push(station);
-		}
+	// line format: `Erstsendung: <DD.MM.YYYY> | <station> | <m'ss>`, station and duration are optional
+	if (/^Erstsendung/.test(line)) {
+		line.split('|').forEach((fragment, column) => {
+			const dateMatch = fragment.match(/\d{2}\.\d{2}\.\d{4}/);
+			const durationMatch = fragment.match(/\d+'\d{2}/);
+			if (dateMatch) {
+				date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
+			} else if (durationMatch) {
+				duration = durationMatch[0].replace("'", ':');
+			} else if (column === 1) {
+				broadcasters.push(fragment.trim()); // name of the radio station
+			}
+		});
 	}
 });
 
