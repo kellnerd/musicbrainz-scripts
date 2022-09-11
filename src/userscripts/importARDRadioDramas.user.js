@@ -159,7 +159,7 @@ async function injectUI(release) {
 	/** @type {HTMLButtonElement} */
 	const copyButton = createElement('<button type="button" title="Copy voice actor credits to clipboard">Copy credits</button>');
 	copyButton.addEventListener('click', () => {
-		navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1]} - ${credit[0]}`).join('\n'));
+		navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1] ?? ''} - ${credit[0]}`).join('\n'));
 	});
 	copyButton.style.marginTop = '5px';
 	importerContainer.appendChild(copyButton);
