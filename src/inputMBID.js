@@ -1,6 +1,7 @@
 import { extractEntityFromURL, getEntityTooltip } from './entity.js';
 import { fetchEntity } from './publicAPI.js';
 import { toScalar } from '../utils/array/scalar.js';
+import { kebabToTitleCase } from '../utils/string/casingStyle.js';
 
 /**
  * Creates an input element where you can paste an MBID or an MB entity URL.
@@ -50,13 +51,14 @@ export function createMBIDInput(id, allowedEntityTypes, initialValue) {
 			if (entity) {
 				if (typeof allowedEntityTypes === 'undefined' || allowedEntityTypes.includes(entity.type)) {
 					const result = await fetchEntity(entityURL);
+					result.type ||= kebabToTitleCase(entity.type); // fallback for missing type
 					mbidInput.setAttribute(mbidAttribute, result.id);
 					mbidInput.value = result.name || result.title; // releases only have a title attribute
 					mbidInput.classList.add('success');
 					mbidInput.title = getEntityTooltip(result);
 					return result;
 				} else {
-					throw new Error(`Entity type '${entity.type}' is not allowed`);
+					throw new Error(`Entity type '${kebabToTitleCase(entity.type)}' is not allowed`);
 				}
 			}
 		} catch (error) {
