@@ -1,4 +1,3 @@
-import { isRelBackward } from './common.js';
 import { waitFor } from '../../utils/async/polling.js';
 
 /**
@@ -25,10 +24,6 @@ export async function createDialog({
 		type: 'update-dialog-location',
 		location: {
 			source,
-			// TODO: Why do the options below have no effect?
-			// targetType,
-			// linkTypeId,
-			// backward: isRelBackward(source.entityType, targetType),
 		},
 	});
 
