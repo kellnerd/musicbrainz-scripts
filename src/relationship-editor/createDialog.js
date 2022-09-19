@@ -65,27 +65,29 @@ export async function createDialog({
 
 	if (!target) return;
 
-	/** @type {AutocompleteActionT} */
-	const autocompleteAction = (typeof target === 'string') ? {
-		type: 'type-value', // TODO: trigger search
+	/** @type {AutocompleteActionT[]} */
+	const autocompleteActions = (typeof target === 'string') ? [{
+		type: 'type-value',
 		value: target,
-		// TODO: nothing happens for the action below, only the icon is spinning?
-		// type: 'search-after-timeout',
-		// searchTerm: target,
-	} : {
+	}, {
+		type: 'search-after-timeout',
+		searchTerm: target,
+	}] : [{
 		type: 'select-item',
 		item: entityToSelectItem(target),
-	};
+	}];
 
 	// autofill the target entity as good as possible
-	MB.relationshipEditor.relationshipDialogDispatch({
-		type: 'update-target-entity',
-		source,
-		action: {
-			type: 'update-autocomplete',
+	autocompleteActions.forEach((autocompleteAction) => {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'update-target-entity',
 			source,
-			action: autocompleteAction,
-		},
+			action: {
+				type: 'update-autocomplete',
+				source,
+				action: autocompleteAction,
+			},
+		});
 	});
 
 	// TODO: accept/close dialog or attach callback to get selected target entity
