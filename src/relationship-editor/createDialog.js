@@ -1,12 +1,15 @@
 import { waitFor } from '../../utils/async/polling.js';
+import { qs } from '../../utils/dom/select.js';
 
 /**
  * Creates a dialog to add a relationship to the given source entity.
+ * If a target entity or name has been specified, this function returns only after the dialog has been closed.
  * @param {Object} options 
  * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
  * @param {CoreEntityT | string} [options.target] Target entity object or name.
  * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
  * @param {number} [options.linkTypeId]
+ * @returns {Promise<CoreEntityT | undefined>} The selected target entity if the dialog was accepted by the user.
  */
 export async function createDialog({
 	source = MB.relationshipEditor.state.entity,
@@ -39,6 +42,8 @@ export async function createDialog({
 	}
 
 	if (linkTypeId) {
+		// the available items are only valid for the current target type
+		// TODO: ensure that the items have already been updated after a target type change
 		const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
 		const linkTypeItem = availableLinkTypes.find((item) => (item.id == linkTypeId));
 
@@ -85,8 +90,16 @@ export async function createDialog({
 		});
 	});
 
-	// TODO: accept/close dialog or attach callback to get selected target entity
-	const selectedTargetEntity = MB.relationshipEditor.relationshipDialogState.targetEntity.target;
+	// wait for the user to accept or cancel the dialog
+	return new Promise((resolve, reject) => {
+		qs('#add-relationship-dialog-root button.positive').addEventListener('click',
+			() => resolve(MB.relationshipEditor.relationshipDialogState.targetEntity.target)
+		);
+		// TODO: wait for a custom event as any click outside the dialog also cancels it
+		qs('#add-relationship-dialog-root button.negative').addEventListener('click',
+			() => reject('Add relationship dialog was cancelled')
+		);
+	});
 }
 
 /**
