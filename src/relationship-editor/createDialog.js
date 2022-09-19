@@ -93,11 +93,13 @@ export async function createDialog({
 	// wait for the user to accept or cancel the dialog
 	return new Promise((resolve, reject) => {
 		qs('#add-relationship-dialog-root button.positive').addEventListener('click',
-			() => resolve(MB.relationshipEditor.relationshipDialogState.targetEntity.target)
+			() => resolve(MB.relationshipEditor.relationshipDialogState.targetEntity.target),
+			{ once: true }
 		);
 		// TODO: wait for a custom event as any click outside the dialog also cancels it
 		qs('#add-relationship-dialog-root button.negative').addEventListener('click',
-			() => reject('Add relationship dialog was cancelled')
+			() => reject('Add relationship dialog was cancelled'),
+			{ once: true }
 		);
 	});
 }
