@@ -92,15 +92,15 @@ export async function createDialog({
 
 	// wait for the user to accept or cancel the dialog
 	return new Promise((resolve, reject) => {
-		qs('#add-relationship-dialog-root button.positive').addEventListener('click',
-			() => resolve(MB.relationshipEditor.relationshipDialogState.targetEntity.target),
-			{ once: true }
-		);
-		// TODO: wait for a custom event as any click outside the dialog also cancels it
-		qs('#add-relationship-dialog-root button.negative').addEventListener('click',
-			() => reject('Add relationship dialog was cancelled'),
-			{ once: true }
-		);
+		document.addEventListener('mb-close-relationship-dialog', (event) => {
+			/** @type {RelationshipDialogStateT} */
+			const state = event.dialogState;
+			if (event.closeEventType === 'accept') {
+				resolve(state.targetEntity.target);
+			} else { // cancelled
+				resolve();
+			}
+		}, { once: true });
 	});
 }
 
@@ -121,4 +121,5 @@ function entityToSelectItem(entity) {
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT}  EntityItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
+ * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT} RelationshipDialogStateT
  */
