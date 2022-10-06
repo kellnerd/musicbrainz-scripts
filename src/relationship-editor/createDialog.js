@@ -90,16 +90,14 @@ export async function createDialog({
 
 /**
  * Resolves after the current/next relationship dialog has been closed.
- * @returns {Promise<CoreEntityT | undefined>} The selected target entity if the dialog was accepted by the user.
+ * @returns {Promise<RelationshipDialogStateT | undefined>} The final state of the dialog if it was accepted by the user.
  */
 export async function closingDialog() {
-	return new Promise((resolve, reject) => {
+	return new Promise((resolve) => {
 		// wait for the user to accept or cancel the dialog
 		document.addEventListener('mb-close-relationship-dialog', (event) => {
-			/** @type {RelationshipDialogStateT} */
-			const state = event.dialogState;
 			if (event.closeEventType === 'accept') {
-				resolve(state.targetEntity.target);
+				resolve(event.dialogState);
 			} else { // cancelled
 				resolve();
 			}
