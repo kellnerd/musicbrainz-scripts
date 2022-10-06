@@ -107,6 +107,61 @@ export async function closingDialog() {
 	});
 }
 
+/** @param {string} creditedAs Credited name of the target entity. */
+export function creditTargetAs(creditedAs) {
+	MB.relationshipEditor.relationshipDialogDispatch({
+		type: 'update-target-entity',
+		source,
+		action: {
+			type: 'update-credit',
+			action: {
+				type: 'set-credit',
+				creditedAs,
+			},
+		},
+	});
+}
+
+/**
+ * Sets the begin or end date of the current dialog.
+ * @param {PartialDateT} date
+ */
+export function setDate(date, isBegin = true) {
+	MB.relationshipEditor.relationshipDialogDispatch({
+		type: 'update-date-period',
+		action: {
+			type: isBegin ? 'update-begin-date' : 'update-end-date',
+			action: {
+				type: 'set-date',
+				date: date,
+			},
+		},
+	});
+}
+
+/** @param {DatePeriodRoleT} datePeriod */
+export function setDatePeriod(datePeriod) {
+	setDate(datePeriod.begin_date, true);
+	setDate(datePeriod.end_date, false);
+
+	MB.relationshipEditor.relationshipDialogDispatch({
+		type: 'update-date-period',
+		action: {
+			type: 'set-ended',
+			enabled: datePeriod.ended,
+		},
+	});
+}
+
+/** @param {number} year */
+export function setYear(year) {
+	setDatePeriod({
+		begin_date: { year },
+		end_date: { year },
+		ended: true,
+	});
+}
+
 /**
  * @param {EntityItemT} entity 
  * @returns {OptionItemT}
