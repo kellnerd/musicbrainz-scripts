@@ -1,15 +1,12 @@
 import { waitFor } from '../../utils/async/polling.js';
-import { qs } from '../../utils/dom/select.js';
 
 /**
  * Creates a dialog to add a relationship to the given source entity.
- * If a target entity or name has been specified, this function returns only after the dialog has been closed.
  * @param {Object} options 
  * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
  * @param {CoreEntityT | string} [options.target] Target entity object or name.
  * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
  * @param {number} [options.linkTypeId]
- * @returns {Promise<CoreEntityT | undefined>} The selected target entity if the dialog was accepted by the user.
  */
 export async function createDialog({
 	source = MB.relationshipEditor.state.entity,
@@ -89,9 +86,15 @@ export async function createDialog({
 			},
 		});
 	});
+}
 
-	// wait for the user to accept or cancel the dialog
+/**
+ * Resolves after the current/next relationship dialog has been closed.
+ * @returns {Promise<CoreEntityT | undefined>} The selected target entity if the dialog was accepted by the user.
+ */
+export async function closingDialog() {
 	return new Promise((resolve, reject) => {
+		// wait for the user to accept or cancel the dialog
 		document.addEventListener('mb-close-relationship-dialog', (event) => {
 			/** @type {RelationshipDialogStateT} */
 			const state = event.dialogState;
