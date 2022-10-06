@@ -7,12 +7,15 @@ import { waitFor } from '../../utils/async/polling.js';
  * @param {CoreEntityT | string} [options.target] Target entity object or name.
  * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
  * @param {number} [options.linkTypeId]
+ * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
+ * The source entity only acts as a placeholder in this case.
  */
 export async function createDialog({
 	source = MB.relationshipEditor.state.entity,
 	target,
 	targetType,
 	linkTypeId,
+	batchSelection = false,
 } = {}) {
 	// prefer an explicit target entity option over only a target type
 	if (target && typeof target !== 'string') {
@@ -24,6 +27,7 @@ export async function createDialog({
 		type: 'update-dialog-location',
 		location: {
 			source,
+			batchSelection,
 		},
 	});
 
