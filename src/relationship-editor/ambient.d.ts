@@ -10,6 +10,8 @@ import type {
 	SeededRelationshipT,
 } from '../types/MBS/scripts/relationship-editor/state';
 
+import * as Tree from 'weight-balanced-tree';
+
 declare global {
 	namespace MB {
 		const relationshipEditor: {
@@ -19,5 +21,7 @@ declare global {
 			readonly relationshipDialogState?: RelationshipDialogStateT;
 			readonly getRelationshipStateId: (relationship: RelationshipT | SeededRelationshipT | null) => number;
 		};
+
+		const tree: typeof Tree;
 	}
 }

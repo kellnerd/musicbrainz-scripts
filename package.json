@@ -26,6 +26,7 @@
     "extract-comments": "^1.1.0",
     "rollup": "^2.56.0",
     "rollup-plugin-ignore": "^1.0.10",
-    "terser": "^5.14.2"
+    "terser": "^5.14.2",
+    "weight-balanced-tree": "^0.6.1"
   }
 }
