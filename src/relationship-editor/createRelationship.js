@@ -28,16 +28,8 @@ export function createRelationship({
 			entity0: backward ? target : source,
 			entity1: backward ? source : target,
 			linkTypeID: linkTypeId,
-			id: uniqueNegativeId(),
+			id: MB.relationshipEditor.getRelationshipStateId(),
 		},
 		oldRelationshipState: null,
 	});
 }
-
-/** Generates unique negative numbers to be used as ID for new relationships. */
-function uniqueNegativeId() {
-	return nextUniqueId++;
-}
-
-// avoid collisions with numbers assigned by MBS (which are decreasing from -1)
-let nextUniqueId = Number.MIN_SAFE_INTEGER;

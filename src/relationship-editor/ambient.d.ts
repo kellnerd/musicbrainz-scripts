@@ -7,6 +7,7 @@ import type {
 	RelationshipDialogStateT,
 	RelationshipEditorStateT,
 	ReleaseRelationshipEditorStateT,
+	SeededRelationshipT,
 } from '../types/MBS/scripts/relationship-editor/state';
 
 declare global {
@@ -16,6 +17,7 @@ declare global {
 			readonly state: RelationshipEditorStateT | ReleaseRelationshipEditorStateT;
 			readonly relationshipDialogDispatch?: (action: DialogActionT) => void;
 			readonly relationshipDialogState?: RelationshipDialogStateT;
+			readonly getRelationshipStateId: (relationship: RelationshipT | SeededRelationshipT | null) => number;
 		};
 	}
 }
