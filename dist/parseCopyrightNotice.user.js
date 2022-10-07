@@ -865,16 +865,57 @@
 		}
 	}
 
+	// Adapted from https://stackoverflow.com/a/46012210
+
+	Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+
+	const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+
+	/**
+	 * Sets the value of a textarea input element which has been manipulated by React.
+	 * @param {HTMLTextAreaElement} input 
+	 * @param {string} value 
+	 */
+	function setReactTextareaValue(input, value) {
+		nativeTextareaValueSetter.call(input, value);
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
+	/**
+	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
+	 * @param {string} elementId String that specifies the ID value.
+	 */
+	function dom(elementId) {
+		return document.getElementById(elementId);
+	}
+
+	/**
+	 * Returns the first element that is a descendant of node that matches selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qs(selectors, node = document) {
+		return node.querySelector(selectors);
+	}
+
+	/**
+	 * Returns all element descendants of node that match selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qsa(selectors, node = document) {
+		return node.querySelectorAll(selectors);
+	}
+
 	/**
 	 * Adds the given message and a footer for the active userscript to the edit note.
 	 * @param {string} message Edit note message.
 	 */
 	function addMessageToEditNote(message) {
 		/** @type {HTMLTextAreaElement} */
-		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
+		const editNoteInput = qs('#edit-note-text, .edit-note');
 		const previousContent = editNoteInput.value.split(editNoteSeparator);
-		editNoteInput.value = buildEditNote(...previousContent, message);
-		editNoteInput.dispatchEvent(new Event('change'));
+		setReactTextareaValue(editNoteInput, buildEditNote(...previousContent, message));
 	}
 
 	/**
@@ -1018,32 +1059,6 @@
 			[/licen[sc]ed?/g, 'licensed'],
 			[/(distributed|manufactured|marketed)(\sby)?/, '$1 by'],
 		]);
-	}
-
-	/**
-	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
-	 * @param {string} elementId String that specifies the ID value.
-	 */
-	function dom(elementId) {
-		return document.getElementById(elementId);
-	}
-
-	/**
-	 * Returns the first element that is a descendant of node that matches selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qs(selectors, node = document) {
-		return node.querySelector(selectors);
-	}
-
-	/**
-	 * Returns all element descendants of node that match selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qsa(selectors, node = document) {
-		return node.querySelectorAll(selectors);
 	}
 
 	/** Resolves as soon as the React relationship editor is ready. */
