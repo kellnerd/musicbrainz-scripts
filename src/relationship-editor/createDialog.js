@@ -151,7 +151,7 @@ export async function closingDialog() {
 export function creditTargetAs(creditedAs) {
 	MB.relationshipEditor.relationshipDialogDispatch({
 		type: 'update-target-entity',
-		source,
+		source: MB.relationshipEditor.state.dialogLocation.source,
 		action: {
 			type: 'update-credit',
 			action: {

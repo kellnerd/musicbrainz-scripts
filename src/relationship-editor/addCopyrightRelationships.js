@@ -76,11 +76,11 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 							targetType: targetType,
 							linkTypeId,
 						});
-						targetEntity ??= await fillAndProcessDialog({ ...copyrightItem, year });
+						targetEntity = await fillAndProcessDialog({ ...copyrightItem, year });
 					} else { // (1c)
 						createRelationship({
 							target: targetEntity,
-							linkTypeId,
+							linkTypeID: linkTypeId,
 							entity0_credit: copyrightItem.name,
 							...(year ? createDatePeriodForYear(year) : {}),
 						});
@@ -101,7 +101,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 							target: targetEntity,
 							linkTypeId,
 						});
-						targetEntity ??= await fillAndProcessDialog(copyrightItem);
+						targetEntity = await fillAndProcessDialog(copyrightItem);
 					} else {
 						// do not fill the date if there are multiple unspecific years
 						let datePeriod = {};
@@ -113,7 +113,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 							createRelationship({ // TODO: try batch-creation
 								source: recording,
 								target: targetEntity,
-								linkTypeId,
+								linkTypeID: linkTypeId,
 								entity0_credit: copyrightItem.name,
 								...datePeriod,
 							});
@@ -149,10 +149,10 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 			const creditedName = finalState.targetEntity.creditedAs;
 			nameToMBIDCache.set([targetEntity.entityType, creditedName || targetEntity.name], targetEntity.gid);
 			addedRelCount++;
+			return targetEntity;
 		} else {
 			skippedDialogs = true;
+			return copyrightItem.name; // keep name as target entity
 		}
-
-		return targetEntity;
 	}
 }

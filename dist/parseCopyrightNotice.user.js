@@ -206,7 +206,7 @@
 		return {
 			begin_date: { year },
 			end_date: { year },
-			ended,
+			ended: true,
 		};
 	}
 
@@ -618,7 +618,7 @@
 	function creditTargetAs(creditedAs) {
 		MB.relationshipEditor.relationshipDialogDispatch({
 			type: 'update-target-entity',
-			source,
+			source: MB.relationshipEditor.state.dialogLocation.source,
 			action: {
 				type: 'update-credit',
 				action: {
@@ -784,11 +784,11 @@
 								targetType: targetType,
 								linkTypeId,
 							});
-							targetEntity ??= await fillAndProcessDialog({ ...copyrightItem, year });
+							targetEntity = await fillAndProcessDialog({ ...copyrightItem, year });
 						} else { // (1c)
 							createRelationship({
 								target: targetEntity,
-								linkTypeId,
+								linkTypeID: linkTypeId,
 								entity0_credit: copyrightItem.name,
 								...(year ? createDatePeriodForYear(year) : {}),
 							});
@@ -809,7 +809,7 @@
 								target: targetEntity,
 								linkTypeId,
 							});
-							targetEntity ??= await fillAndProcessDialog(copyrightItem);
+							targetEntity = await fillAndProcessDialog(copyrightItem);
 						} else {
 							// do not fill the date if there are multiple unspecific years
 							let datePeriod = {};
@@ -821,7 +821,7 @@
 								createRelationship({ // TODO: try batch-creation
 									source: recording,
 									target: targetEntity,
-									linkTypeId,
+									linkTypeID: linkTypeId,
 									entity0_credit: copyrightItem.name,
 									...datePeriod,
 								});
@@ -857,11 +857,11 @@
 				const creditedName = finalState.targetEntity.creditedAs;
 				nameToMBIDCache.set([targetEntity.entityType, creditedName || targetEntity.name], targetEntity.gid);
 				addedRelCount++;
+				return targetEntity;
 			} else {
 				skippedDialogs = true;
+				return copyrightItem.name; // keep name as target entity
 			}
-
-			return targetEntity;
 		}
 	}
 

@@ -4,7 +4,7 @@ export function createDatePeriodForYear(year) {
 	return {
 		begin_date: { year },
 		end_date: { year },
-		ended,
+		ended: true,
 	};
 }
 
