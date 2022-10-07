@@ -1,5 +1,6 @@
 import { addMessageToEditNote } from './editNote.js';
 import { parserDefaults } from './parseCopyrightNotice.js';
+import { readyRelationshipEditor } from './reactHydration.js';
 import { releaseLoadingFinished } from './relationshipEditor.js';
 import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
 import { createElement, injectStylesheet } from '../utils/dom/create.js';
@@ -61,7 +62,9 @@ const uiReadyEventType = 'credit-parser-ui-ready';
  * Injects the basic UI of the credit parser and waits until the UI has been expanded before it continues with the build tasks.
  * @param {...(() => void)} buildTasks Handlers which can be registered for additional UI build tasks.
  */
-export function buildCreditParserUI(...buildTasks) {
+export async function buildCreditParserUI(...buildTasks) {
+	await readyRelationshipEditor();
+
 	/** @type {HTMLDetailsElement} */
 	const existingUI = dom('credit-parser');
 
@@ -69,7 +72,8 @@ export function buildCreditParserUI(...buildTasks) {
 	if (!existingUI) {
 		// inject credit parser between the sections for track and release relationships,
 		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
-		qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
+		qs('#content > h2:nth-of-type(2), .release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
+		// TODO: drop first selector once the new React relationship editor has been deployed
 		injectStylesheet(css, 'credit-parser');
 	}
 
@@ -113,7 +117,10 @@ function initializeUI() {
 	creditInput.addEventListener('input', automaticHeight);
 
 	addButton('Load annotation', (creditInput) => {
-		const annotation = MB.releaseRelationshipEditor.source.latest_annotation;
+		/** @type {ReleaseT} */
+		const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
+		// TODO: drop fallback once the new React relationship editor has been deployed
+		const annotation = release.latest_annotation;
 		if (annotation) {
 			creditInput.value = annotation.text;
 			creditInput.dispatchEvent(new Event('input'));

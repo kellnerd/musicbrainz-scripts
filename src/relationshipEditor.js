@@ -1,3 +1,4 @@
+import { hasReactRelEditor } from './relationship-editor/common.js';
 import { extractEntityFromURL } from './entity.js';
 import {
 	fetchEntity,
@@ -111,7 +112,9 @@ export function getTargetEntity(dialog) {
 		.find((entity) => entity.entityType === dialog.targetType());
 }
 
+// TODO: drop once the new React relationship editor has been deployed
 /** Resolves after the release relationship editor has finished loading. */
 export function releaseLoadingFinished() {
+	if (hasReactRelEditor()) return Promise.resolve();
 	return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
 }
