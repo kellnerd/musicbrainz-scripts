@@ -93,6 +93,29 @@ export async function createDialog({
 }
 
 /**
+ * Creates a dialog to batch-add a relationship to the selected entities of the given source type.
+ * @param {'recordings' | 'works'} sourceType
+ * @param {Omit<Parameters<typeof createDialog>[0], 'batchSelection' | 'source'>} options
+ */
+export function createBatchDialog(sourceType, {
+	target,
+	targetType,
+	linkTypeId,
+} = {}) {
+	/** @type {ReleaseRelationshipEditorStateT} */
+	const releaseState = MB.relationshipEditor.state;
+	const sourceTree = (sourceType === 'work') ? releaseState.selectedWorks : releaseState.selectedRecordings;
+
+	return createDialog({
+		source: sourceTree.value, // use the root node entity as a placeholder
+		target,
+		targetType,
+		linkTypeId,
+		batchSelection: true,
+	});
+}
+
+/**
  * Resolves after the current/next relationship dialog has been closed.
  * @returns {Promise<RelationshipDialogFinalStateT>} The final state of the dialog when it was closed by the user.
  */
@@ -179,5 +202,6 @@ function entityToSelectItem(entity) {
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT}  EntityItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
+ * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ReleaseRelationshipEditorStateT} ReleaseRelationshipEditorStateT
  * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & {closeEventType: 'accept' | 'cancel'}} RelationshipDialogFinalStateT
  */
