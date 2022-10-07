@@ -14,6 +14,11 @@ import * as Tree from 'weight-balanced-tree';
 
 declare global {
 	namespace MB {
+		function entity(data: CoreEntityT, type?: CoreEntityTypeT): CoreEntityT;
+		// function entity(data: CoreEntityT, type?: CoreEntityTypeT): CoreEntityT & Record<string,any>;
+
+		function getSourceEntityInstance(): CoreEntityT;
+
 		const relationshipEditor: {
 			readonly dispatch: (action: RelationshipEditorActionT | ReleaseRelationshipEditorActionT) => void;
 			readonly state: RelationshipEditorStateT | ReleaseRelationshipEditorStateT;

@@ -23,6 +23,7 @@ export async function createDialog({
 	}
 
 	// open dialog modal for the source entity
+	console.info('Creating relationship dialog');
 	MB.relationshipEditor.dispatch({
 		type: 'update-dialog-location',
 		location: {
@@ -70,7 +71,7 @@ export async function createDialog({
 	const autocompleteActions = (typeof target === 'string') ? [{
 		type: 'type-value',
 		value: target,
-	}, {
+	}, { // TODO: Does search block future actions?
 		type: 'search-after-timeout',
 		searchTerm: target,
 	}] : [{
@@ -112,6 +113,22 @@ export function createBatchDialog(sourceType, {
 		targetType,
 		linkTypeId,
 		batchSelection: true,
+	});
+}
+
+/** @param {string} searchTerm */
+export function triggerSearch(searchTerm) {
+	MB.relationshipEditor.relationshipDialogDispatch({
+		type: 'update-target-entity',
+		source: MB.relationshipEditor.state.dialogLocation.source,
+		action: {
+			type: 'update-autocomplete',
+			source,
+			action: {
+				type: 'search-after-timeout',
+				searchTerm,
+			},
+		},
 	});
 }
 

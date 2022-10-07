@@ -17,6 +17,7 @@ export function createRelationship({
 }) {
 	const backward = isRelBackward(source.entityType, target.entityType);
 
+	console.info('Creating relationship');
 	MB.relationshipEditor.dispatch({
 		type: 'update-relationship-state',
 		sourceEntity: source,
