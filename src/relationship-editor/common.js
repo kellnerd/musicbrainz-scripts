@@ -24,7 +24,7 @@ export function isRelBackward(sourceType, targetType) {
 // Taken from root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
 export const RELATIONSHIP_DEFAULTS = {
 	_original: null,
-	_status: REL_STATUS_ADD,
+	_status: 1, // add relationship
 	attributes: null,
 	begin_date: null,
 	editsPending: false,
@@ -36,5 +36,3 @@ export const RELATIONSHIP_DEFAULTS = {
 	linkOrder: 0,
 	linkTypeID: null,
 };
-
-const REL_STATUS_ADD = 1;
