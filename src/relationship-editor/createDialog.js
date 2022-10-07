@@ -94,17 +94,15 @@ export async function createDialog({
 
 /**
  * Resolves after the current/next relationship dialog has been closed.
- * @returns {Promise<RelationshipDialogStateT | undefined>} The final state of the dialog if it was accepted by the user.
+ * @returns {Promise<RelationshipDialogFinalStateT>} The final state of the dialog when it was closed by the user.
  */
 export async function closingDialog() {
 	return new Promise((resolve) => {
 		// wait for the user to accept or cancel the dialog
 		document.addEventListener('mb-close-relationship-dialog', (event) => {
-			if (event.closeEventType === 'accept') {
-				resolve(event.dialogState);
-			} else { // cancelled
-				resolve();
-			}
+			const finalState = event.dialogState;
+			finalState.closeEventType = event.closeEventType;
+			resolve(finalState);
 		}, { once: true });
 	});
 }
@@ -181,5 +179,5 @@ function entityToSelectItem(entity) {
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT}  EntityItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
- * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT} RelationshipDialogStateT
+ * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & {closeEventType: 'accept' | 'cancel'}} RelationshipDialogFinalStateT
  */
