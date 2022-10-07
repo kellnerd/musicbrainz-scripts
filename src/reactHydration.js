@@ -1,3 +1,4 @@
+import { waitFor } from '../utils/async/polling.js';
 import { qs } from '../utils/dom/select.js';
 
 /**
@@ -19,9 +20,8 @@ export function onReactHydrated(element, callback) {
 
 /** Resolves as soon as the React relationship editor is ready. */
 export function readyRelationshipEditor() {
-	return new Promise((resolve) => {
-		const reactRelEditor = qs('.release-relationship-editor');
-		if (reactRelEditor) onReactHydrated(reactRelEditor, resolve);
-		else resolve(); // TODO: reject after the new React relationship editor has been deployed everywhere
-	});
+	const reactRelEditor = qs('.release-relationship-editor');
+	if (!reactRelEditor) return Promise.resolve(); // TODO: drop once the new React relationship editor has been deployed
+	// wait for the loading message to disappear (takes ~1s)
+	return waitFor(() => !qs('.release-relationship-editor > .loading-message'), 100);
 }
