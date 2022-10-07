@@ -5,16 +5,15 @@ import {
 
 /**
  * Creates a relationship between the given source and target entity.
- * @param {Object} options 
+ * @param {Partial<RelationshipT> & { source?: CoreEntityT, target: CoreEntityT }} options 
  * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
  * @param {CoreEntityT} options.target Target entity.
- * @param {number} [options.linkTypeId]
+ * @param {Partial<RelationshipT>} props Relationship properties.
  */
 export function createRelationship({
 	source = MB.relationshipEditor.state.entity,
 	target,
-	linkTypeId,
-	// TODO: support credited names and relationship attributes
+	...props
 }) {
 	const backward = isRelBackward(source.entityType, target.entityType);
 
@@ -27,8 +26,8 @@ export function createRelationship({
 			...RELATIONSHIP_DEFAULTS,
 			entity0: backward ? target : source,
 			entity1: backward ? source : target,
-			linkTypeID: linkTypeId,
 			id: MB.relationshipEditor.getRelationshipStateId(),
+			...props,
 		},
 		oldRelationshipState: null,
 	});
