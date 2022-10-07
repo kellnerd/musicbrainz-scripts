@@ -1,4 +1,13 @@
 
+/** @returns {DatePeriodRoleT} */
+export function createDatePeriodForYear(year) {
+	return {
+		begin_date: { year },
+		end_date: { year },
+		ended,
+	};
+}
+
 /**
  * @param {CoreEntityTypeT} sourceType 
  * @param {CoreEntityTypeT} targetType 
