@@ -71,7 +71,7 @@ export async function createDialog({
 	const autocompleteActions = (typeof target === 'string') ? [{
 		type: 'type-value',
 		value: target,
-	}, { // TODO: Does search block future actions?
+	}, { // search does not block future actions, TODO: focus first result
 		type: 'search-after-timeout',
 		searchTerm: target,
 	}] : [{
@@ -200,6 +200,42 @@ export function setYear(year) {
 		end_date: { year },
 		ended: true,
 	});
+}
+
+// WIP
+export function addVocalAttribute(id, creditedAs) {
+	MB.relationshipEditor.relationshipDialogDispatch({
+		type: 'update-attribute',
+		action: {
+			type: 'update-multiselect-attribute',
+			// rootKey,
+			action: {
+				type: 'update-value-autocomplete',
+				// valueKey,
+				action: {
+					type: 'select-item',
+					item: {
+						id,
+					},
+				},
+			},
+		},
+	});
+
+	if (creditedAs) {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'update-attribute',
+			action: {
+				type: 'update-multiselect-attribute',
+				// rootKey,
+				action: {
+					type: 'set-value-credit',
+					// valueKey,
+					creditedAs,
+				},
+			},
+		});
+	}
 }
 
 /**
