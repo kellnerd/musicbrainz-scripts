@@ -10,16 +10,12 @@ import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 import {
 	fetchEntity,
 } from '../publicAPI.js';
-import {
-	createVoiceActorDialog,
-} from '../relationshipEditor.js';
 import { seedURLForEntity } from '../seeding.js';
 import {
 	addVoiceActorRelationship,
 	importVoiceActorsFromDiscogs,
 } from '../voiceActorCredits.js';
-import { createElement } from '../../utils/dom/create.js';
-import { dom, qs } from '../../utils/dom/select.js';
+import { dom } from '../../utils/dom/select.js';
 import { getPattern } from '../../utils/regex/parse.js';
 import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
 
@@ -28,18 +24,6 @@ const UI = `
 	<div id="credit-import-status" class="row no-label"></div>
 	<div id="credit-import-errors" class="row no-label error"></div>
 </div>`;
-
-// TODO: only show button for certain RG types (audiobook, audio drama, spoken word) of the MB release?
-function injectAddVoiceActorButton() {
-	const addIcon = qs('span.add-rel.btn > img')?.src;
-	const addVoiceActorButton = createElement(`
-	<span class="add-rel btn" id="add-voice-actor-credit">
-		<img class="bottom" src="${addIcon}">Add voice actor relationship
-	</span>`);
-
-	addVoiceActorButton.addEventListener('click', (event) => createVoiceActorDialog().open(event));
-	dom('release-rels').appendChild(addVoiceActorButton);
-}
 
 function buildVoiceActorCreditParserUI() {
 	const creditSeparatorInput = dom('credit-separator');
@@ -108,5 +92,4 @@ function buildVoiceActorCreditImporterUI() {
 	}, 'Import credits from Discogs');
 }
 
-injectAddVoiceActorButton();
 buildCreditParserUI(buildVoiceActorCreditParserUI, buildVoiceActorCreditImporterUI);
