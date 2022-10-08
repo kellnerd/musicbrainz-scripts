@@ -5,6 +5,6 @@
  * - Automatically matches artists whose Discogs pages are linked to MB (unlinked artists can be selected from the already opened inline search).
  */
 
-import { createVoiceActorDialog } from '../relationshipEditor.js';
+import { createVoiceActorDialog } from '../relationship-editor/voiceActorCredits.js';
 
-createVoiceActorDialog().open();
+createVoiceActorDialog();
