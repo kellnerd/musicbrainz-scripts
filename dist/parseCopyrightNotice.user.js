@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Parse copyright notice
-// @version      2022.10.7
+// @version      2022.10.10
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -20,7 +20,6 @@
 	/**
 	 * Fetches the entity with the given MBID from the internal API ws/js.
 	 * @param {MB.MBID} gid MBID of the entity.
-	 * @returns {Promise<MB.RE.TargetEntity>}
 	 */
 	async function fetchEntity(gid) {
 		const result = await fetch(`/ws/js/entity/${gid}`);
@@ -151,55 +150,11 @@
 		}
 	}
 
-	/** @type {SimpleCache<[entityType: MB.EntityType, name: string], MB.MBID>} */
+	/** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
 	const nameToMBIDCache = new SimpleCache({
 		name: 'nameToMBIDCache',
 		storage: window.localStorage,
 	});
-
-	/** MBS relationship link type IDs (incomplete). */
-	const LINK_TYPES = {
-		release: {
-			artist: {
-				'©': 709,
-				'℗': 710,
-			},
-			label: {
-				'©': 708,
-				'℗': 711,
-				'licensed from': 712,
-				'licensed to': 833,
-				'distributed by': 361,
-				'manufactured by': 360,
-				'marketed by': 848,
-			},
-		},
-		recording: {
-			artist: {
-				'℗': 869,
-			},
-			label: {
-				'℗': 867,
-			},
-		},
-	};
-
-	/**
-	 * Returns the internal ID of the requested relationship link type.
-	 * @param {MB.EntityType} sourceType Type of the source entity.
-	 * @param {MB.EntityType} targetType Type of the target entity.
-	 * @param {string} relType 
-	 * @returns {number}
-	 */
-	function getLinkTypeId(sourceType, targetType, relType) {
-		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
-
-		if (linkTypeId) {
-			return linkTypeId;
-		} else {
-			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
-		}
-	}
 
 	/** @returns {DatePeriodRoleT} */
 	function createDatePeriodForYear(year) {
@@ -248,6 +203,23 @@
 	}
 
 	/**
+	 * Retries the given operation until the result is no longer undefined.
+	 * @template T
+	 * @param {() => MaybePromise<T>} operation 
+	 * @param {Object} [options]
+	 * @param {number} [options.retries] Maximum number of retries.
+	 * @param {number} [options.wait] Number of ms to wait before the next try, disabled by default.
+	 * @returns The final result of the operation.
+	 */
+	async function retry(operation, { retries = 10, wait = 0 } = {}) {
+		do {
+			const result = await operation();
+			if (result !== undefined) return result;
+			if (wait) await delay(wait);
+		} while (retries--)
+	}
+
+	/**
 	 * Periodically calls the given function until it returns `true` and resolves afterwards.
 	 * @param {(...params) => boolean} pollingFunction
 	 * @param {number} pollingInterval
@@ -269,7 +241,7 @@
 	 */
 	function createAddRelationshipDialog(targetEntity, backward = false) {
 		const viewModel = MB.sourceRelationshipEditor
-			// releases have multiple relationship editors (not really, you edit RGs etc. by specifying a different source), edit the release itself
+			// releases have multiple relationship editors, edit the release itself
 			?? MB.releaseRelationshipEditor;
 		return new MB.relationshipEditor.UI.AddDialog({
 			viewModel,
@@ -336,6 +308,52 @@
 	function releaseLoadingFinished() {
 		if (hasReactRelEditor()) return Promise.resolve();
 		return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
+	}
+
+	/**
+	 * MBS relationship link type IDs (incomplete).
+	 * @type {Record<CoreEntityTypeT, Record<CoreEntityTypeT, Record<string, number>>>}
+	 */
+	const LINK_TYPES = {
+		release: {
+			artist: {
+				'©': 709,
+				'℗': 710,
+			},
+			label: {
+				'©': 708,
+				'℗': 711,
+				'licensed from': 712,
+				'licensed to': 833,
+				'distributed by': 361,
+				'manufactured by': 360,
+				'marketed by': 848,
+			},
+		},
+		recording: {
+			artist: {
+				'℗': 869,
+			},
+			label: {
+				'℗': 867,
+			},
+		},
+	};
+
+	/**
+	 * Returns the internal ID of the requested relationship link type.
+	 * @param {CoreEntityTypeT} sourceType Type of the source entity.
+	 * @param {CoreEntityTypeT} targetType Type of the target entity.
+	 * @param {string} relType 
+	 */
+	function getLinkTypeId(sourceType, targetType, relType) {
+		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
+
+		if (linkTypeId) {
+			return linkTypeId;
+		} else {
+			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
+		}
 	}
 
 	/**
@@ -484,12 +502,38 @@
 	}
 
 	/**
+	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
+	 * @param {string} elementId String that specifies the ID value.
+	 */
+	function dom(elementId) {
+		return document.getElementById(elementId);
+	}
+
+	/**
+	 * Returns the first element that is a descendant of node that matches selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qs(selectors, node = document) {
+		return node.querySelector(selectors);
+	}
+
+	/**
+	 * Returns all element descendants of node that match selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qsa(selectors, node = document) {
+		return node.querySelectorAll(selectors);
+	}
+
+	/**
 	 * Creates a dialog to add a relationship to the given source entity.
 	 * @param {Object} options 
 	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
 	 * @param {CoreEntityT | string} [options.target] Target entity object or name.
 	 * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
-	 * @param {number} [options.linkTypeId]
+	 * @param {number} [options.linkTypeId] Internal ID of the relationship type.
 	 * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
 	 * The source entity only acts as a placeholder in this case.
 	 */
@@ -500,13 +544,14 @@
 		linkTypeId,
 		batchSelection = false,
 	} = {}) {
+		const onlyTargetName = (typeof target === 'string');
+
 		// prefer an explicit target entity option over only a target type
-		if (target && typeof target !== 'string') {
+		if (target && !onlyTargetName) {
 			targetType = target.entityType;
 		}
 
 		// open dialog modal for the source entity
-		console.info('Creating relationship dialog');
 		MB.relationshipEditor.dispatch({
 			type: 'update-dialog-location',
 			location: {
@@ -527,10 +572,12 @@
 		}
 
 		if (linkTypeId) {
-			// the available items are only valid for the current target type
-			// TODO: ensure that the items have already been updated after a target type change
-			const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
-			const linkTypeItem = availableLinkTypes.find((item) => (item.id == linkTypeId));
+			const linkTypeItem = await retry(() => {
+				// the available items are only valid for the current target type,
+				// ensure that they have already been updated after a target type change
+				const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
+				return availableLinkTypes.find((item) => (item.id == linkTypeId));
+			}, { wait: 10 });
 
 			if (linkTypeItem) {
 				MB.relationshipEditor.relationshipDialogDispatch({
@@ -551,10 +598,10 @@
 		if (!target) return;
 
 		/** @type {AutocompleteActionT[]} */
-		const autocompleteActions = (typeof target === 'string') ? [{
+		const autocompleteActions = onlyTargetName ? [{
 			type: 'type-value',
 			value: target,
-		}, { // TODO: Does search block future actions?
+		}, { // search does not block future actions
 			type: 'search-after-timeout',
 			searchTerm: target,
 		}] : [{
@@ -574,27 +621,22 @@
 				},
 			});
 		});
+
+		// focus target entity input if it could not be auto-selected
+		if (onlyTargetName) {
+			qs('input.relationship-target').focus();
+		}
 	}
 
 	/**
-	 * Creates a dialog to batch-add a relationship to the selected entities of the given source type.
-	 * @param {'recordings' | 'works'} sourceType
+	 * Creates a dialog to batch-add a relationship to each of the selected source entities.
+	 * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
 	 * @param {Omit<Parameters<typeof createDialog>[0], 'batchSelection' | 'source'>} options
 	 */
-	function createBatchDialog(sourceType, {
-		target,
-		targetType,
-		linkTypeId,
-	} = {}) {
-		/** @type {ReleaseRelationshipEditorStateT} */
-		const releaseState = MB.relationshipEditor.state;
-		const sourceTree = (sourceType === 'work') ? releaseState.selectedWorks : releaseState.selectedRecordings;
-
+	function createBatchDialog(sourceSelection, options = {}) {
 		return createDialog({
-			source: sourceTree.value, // use the root node entity as a placeholder
-			target,
-			targetType,
-			linkTypeId,
+			...options,
+			source: sourceSelection.value, // use the root node entity as a placeholder
 			batchSelection: true,
 		});
 	}
@@ -692,22 +734,25 @@
 
 	/**
 	 * Creates a relationship between the given source and target entity.
-	 * @param {Partial<RelationshipT> & { source?: CoreEntityT, target: CoreEntityT }} options 
+	 * @param {Partial<RelationshipT> & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
 	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
 	 * @param {CoreEntityT} options.target Target entity.
+	 * @param {number} [options.batchSelectionCount] Batch-edit all selected entities which have the same type as the source.
+	 * The source entity only acts as a placeholder in this case.
 	 * @param {Partial<RelationshipT>} props Relationship properties.
 	 */
 	function createRelationship({
 		source = MB.relationshipEditor.state.entity,
 		target,
+		batchSelectionCount = null,
 		...props
 	}) {
 		const backward = isRelBackward(source.entityType, target.entityType);
 
-		console.info('Creating relationship');
 		MB.relationshipEditor.dispatch({
 			type: 'update-relationship-state',
 			sourceEntity: source,
+			batchSelectionCount,
 			creditsToChangeForSource: '',
 			creditsToChangeForTarget: '',
 			newRelationshipState: {
@@ -718,6 +763,21 @@
 				...props,
 			},
 			oldRelationshipState: null,
+		});
+	}
+
+	/**
+	 * Creates the same relationship between each of the selected source entities and the given target entity.
+	 * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
+	 * @param {CoreEntityT} target Target entity.
+	 * @param {Partial<RelationshipT>} props Relationship properties.
+	 */
+	function batchCreateRelationships(sourceSelection, target, props) {
+		return createRelationship({
+			source: sourceSelection.value, // use the root node entity as a placeholder
+			target,
+			batchSelectionCount: sourceSelection.size,
+			...props,
 		});
 	}
 
@@ -746,8 +806,8 @@
 			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 			.map(simplifyName);
 
-		/** @type {RecordingT[]} */
-		const selectedRecordings = MB.tree.toArray(MB.relationshipEditor.state.selectedRecordings);
+		/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+		const selectedRecordings = MB.relationshipEditor.state.selectedRecordings;
 
 		let addedRelCount = 0;
 		let skippedDialogs = false;
@@ -801,11 +861,11 @@
 				}
 
 				// also add phonographic copyright rels to all selected recordings
-				if (type === '℗' && selectedRecordings.length) {
+				if (type === '℗' && selectedRecordings) {
 					try {
 						const linkTypeId = getLinkTypeId(targetType, 'recording', type);
 						if (typeof targetEntity === 'string') {
-							await createBatchDialog('recordings', {
+							await createBatchDialog(selectedRecordings, {
 								target: targetEntity,
 								linkTypeId,
 							});
@@ -817,16 +877,12 @@
 								datePeriod = createDatePeriodForYear(copyrightItem.year);
 							}
 
-							selectedRecordings.forEach((recording) => {
-								createRelationship({ // TODO: try batch-creation
-									source: recording,
-									target: targetEntity,
-									linkTypeID: linkTypeId,
-									entity0_credit: copyrightItem.name,
-									...datePeriod,
-								});
-								addedRelCount++;
+							batchCreateRelationships(selectedRecordings, targetEntity, {
+								linkTypeID: linkTypeId,
+								entity0_credit: copyrightItem.name,
+								...datePeriod,
 							});
+							addedRelCount += selectedRecordings.size;
 						}
 					} catch (error) {
 						console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
@@ -879,32 +935,6 @@
 	function setReactTextareaValue(input, value) {
 		nativeTextareaValueSetter.call(input, value);
 		input.dispatchEvent(new Event('input', { bubbles: true }));
-	}
-
-	/**
-	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
-	 * @param {string} elementId String that specifies the ID value.
-	 */
-	function dom(elementId) {
-		return document.getElementById(elementId);
-	}
-
-	/**
-	 * Returns the first element that is a descendant of node that matches selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qs(selectors, node = document) {
-		return node.querySelector(selectors);
-	}
-
-	/**
-	 * Returns all element descendants of node that match selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qsa(selectors, node = document) {
-		return node.querySelectorAll(selectors);
 	}
 
 	/**
