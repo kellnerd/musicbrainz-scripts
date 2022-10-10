@@ -24,7 +24,7 @@ export function fetchEntity(url, inc) {
 
 /**
  * Returns the entity of the desired type which is associated to the given resource URL.
- * @param {MB.EntityType} entityType Desired type of the entity.
+ * @param {CoreEntityTypeT} entityType Desired type of the entity.
  * @param {string} resourceURL 
  * @returns {Promise<MB.Entity>} The first matching entity. (TODO: handle ambiguous URLs)
  */

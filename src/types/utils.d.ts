@@ -27,3 +27,5 @@ type SubstitutionRule = [
 ];
 
 type FormDataRecord = Record<string, MaybeArray<string>>;
+
+type KeyMapping<Source, Target> = Record<keyof Source, keyof Target>;

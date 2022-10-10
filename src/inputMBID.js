@@ -7,7 +7,7 @@ import { kebabToTitleCase } from '../utils/string/casingStyle.js';
  * Creates an input element where you can paste an MBID or an MB entity URL.
  * It automatically validates the content on paste, loads the name of the entity and sets the MBID as a data attribute.
  * @param {string} id ID and name of the input element.
- * @param {MB.EntityType[]} [allowedEntityTypes] Entity types which are allowed for this input, defaults to all.
+ * @param {CoreEntityTypeT[]} [allowedEntityTypes] Entity types which are allowed for this input, defaults to all.
  * @param {string} [initialValue] Initial value of the input element.
  */
 export function createMBIDInput(id, allowedEntityTypes, initialValue) {
