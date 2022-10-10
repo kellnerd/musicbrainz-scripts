@@ -1,4 +1,5 @@
 import { retry, waitFor } from '../../utils/async/polling.js';
+import { qs } from '../../utils/dom/select.js';
 
 /**
  * Creates a dialog to add a relationship to the given source entity.
@@ -17,13 +18,14 @@ export async function createDialog({
 	linkTypeId,
 	batchSelection = false,
 } = {}) {
+	const onlyTargetName = (typeof target === 'string');
+
 	// prefer an explicit target entity option over only a target type
-	if (target && typeof target !== 'string') {
+	if (target && !onlyTargetName) {
 		targetType = target.entityType;
 	}
 
 	// open dialog modal for the source entity
-	console.info('Creating relationship dialog');
 	MB.relationshipEditor.dispatch({
 		type: 'update-dialog-location',
 		location: {
@@ -70,10 +72,10 @@ export async function createDialog({
 	if (!target) return;
 
 	/** @type {AutocompleteActionT[]} */
-	const autocompleteActions = (typeof target === 'string') ? [{
+	const autocompleteActions = onlyTargetName ? [{
 		type: 'type-value',
 		value: target,
-	}, { // search does not block future actions, TODO: focus first result
+	}, { // search does not block future actions
 		type: 'search-after-timeout',
 		searchTerm: target,
 	}] : [{
@@ -93,6 +95,11 @@ export async function createDialog({
 			},
 		});
 	});
+
+	// focus target entity input if it could not be auto-selected
+	if (onlyTargetName) {
+		qs('input.relationship-target').focus();
+	}
 }
 
 /**
