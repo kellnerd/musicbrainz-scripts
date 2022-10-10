@@ -7,7 +7,7 @@ import { qs } from '../../utils/dom/select.js';
  * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
  * @param {CoreEntityT | string} [options.target] Target entity object or name.
  * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
- * @param {number} [options.linkTypeId]
+ * @param {number} [options.linkTypeId] Internal ID of the relationship type.
  * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
  * The source entity only acts as a placeholder in this case.
  */
@@ -103,24 +103,14 @@ export async function createDialog({
 }
 
 /**
- * Creates a dialog to batch-add a relationship to the selected entities of the given source type.
- * @param {'recordings' | 'works'} sourceType
+ * Creates a dialog to batch-add a relationship to each of the selected source entities.
+ * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
  * @param {Omit<Parameters<typeof createDialog>[0], 'batchSelection' | 'source'>} options
  */
-export function createBatchDialog(sourceType, {
-	target,
-	targetType,
-	linkTypeId,
-} = {}) {
-	/** @type {ReleaseRelationshipEditorStateT} */
-	const releaseState = MB.relationshipEditor.state;
-	const sourceTree = (sourceType === 'work') ? releaseState.selectedWorks : releaseState.selectedRecordings;
-
+export function createBatchDialog(sourceSelection, options = {}) {
 	return createDialog({
-		source: sourceTree.value, // use the root node entity as a placeholder
-		target,
-		targetType,
-		linkTypeId,
+		...options,
+		source: sourceSelection.value, // use the root node entity as a placeholder
 		batchSelection: true,
 	});
 }

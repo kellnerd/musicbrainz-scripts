@@ -97,7 +97,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 				try {
 					const linkTypeId = getLinkTypeId(targetType, 'recording', type);
 					if (typeof targetEntity === 'string') {
-						await createBatchDialog('recordings', {
+						await createBatchDialog(selectedRecordings, {
 							target: targetEntity,
 							linkTypeId,
 						});
