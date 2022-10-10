@@ -1,4 +1,4 @@
-import { waitFor } from '../../utils/async/polling.js';
+import { retry, waitFor } from '../../utils/async/polling.js';
 
 /**
  * Creates a dialog to add a relationship to the given source entity.
@@ -44,10 +44,12 @@ export async function createDialog({
 	}
 
 	if (linkTypeId) {
-		// the available items are only valid for the current target type
-		// TODO: ensure that the items have already been updated after a target type change
-		const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
-		const linkTypeItem = availableLinkTypes.find((item) => (item.id == linkTypeId));
+		const linkTypeItem = await retry(() => {
+			// the available items are only valid for the current target type,
+			// ensure that they have already been updated after a target type change
+			const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
+			return availableLinkTypes.find((item) => (item.id == linkTypeId));
+		}, { wait: 10 });
 
 		if (linkTypeItem) {
 			MB.relationshipEditor.relationshipDialogDispatch({
