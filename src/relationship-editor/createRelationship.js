@@ -5,22 +5,25 @@ import {
 
 /**
  * Creates a relationship between the given source and target entity.
- * @param {Partial<RelationshipT> & { source?: CoreEntityT, target: CoreEntityT }} options 
+ * @param {Partial<RelationshipT> & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
  * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
  * @param {CoreEntityT} options.target Target entity.
+ * @param {number} [options.batchSelectionCount] Batch-edit all selected entities which have the same type as the source.
+ * The source entity only acts as a placeholder in this case.
  * @param {Partial<RelationshipT>} props Relationship properties.
  */
 export function createRelationship({
 	source = MB.relationshipEditor.state.entity,
 	target,
+	batchSelectionCount = null,
 	...props
 }) {
 	const backward = isRelBackward(source.entityType, target.entityType);
 
-	console.info('Creating relationship');
 	MB.relationshipEditor.dispatch({
 		type: 'update-relationship-state',
 		sourceEntity: source,
+		batchSelectionCount,
 		creditsToChangeForSource: '',
 		creditsToChangeForTarget: '',
 		newRelationshipState: {
@@ -31,5 +34,20 @@ export function createRelationship({
 			...props,
 		},
 		oldRelationshipState: null,
+	});
+}
+
+/**
+ * Creates the same relationship between each of the selected source entities and the given target entity.
+ * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
+ * @param {CoreEntityT} target Target entity.
+ * @param {Partial<RelationshipT>} props Relationship properties.
+ */
+export function batchCreateRelationships(sourceSelection, target, props) {
+	return createRelationship({
+		source: sourceSelection.value, // use the root node entity as a placeholder
+		target,
+		batchSelectionCount: sourceSelection.size,
+		...props,
 	});
 }
