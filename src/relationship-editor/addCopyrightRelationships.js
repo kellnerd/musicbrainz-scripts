@@ -6,7 +6,7 @@ import {
 	creditTargetAs,
 	setYear,
 } from './createDialog.js';
-import { createRelationship } from './createRelationship.js';
+import { batchCreateRelationships, createRelationship } from './createRelationship.js';
 import { entityCache } from '../entityCache.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { getLinkTypeId } from '../relationshipData.js';
@@ -38,8 +38,8 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 		.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 		.map(simplifyName);
 
-	/** @type {RecordingT[]} */
-	const selectedRecordings = MB.tree.toArray(MB.relationshipEditor.state.selectedRecordings);
+	/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+	const selectedRecordings = MB.relationshipEditor.state.selectedRecordings;
 
 	let addedRelCount = 0;
 	let skippedDialogs = false;
@@ -93,7 +93,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 			}
 
 			// also add phonographic copyright rels to all selected recordings
-			if (type === '℗' && selectedRecordings.length) {
+			if (type === '℗' && selectedRecordings) {
 				try {
 					const linkTypeId = getLinkTypeId(targetType, 'recording', type);
 					if (typeof targetEntity === 'string') {
@@ -109,16 +109,12 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 							datePeriod = createDatePeriodForYear(copyrightItem.year);
 						}
 
-						selectedRecordings.forEach((recording) => {
-							createRelationship({ // TODO: try batch-creation
-								source: recording,
-								target: targetEntity,
-								linkTypeID: linkTypeId,
-								entity0_credit: copyrightItem.name,
-								...datePeriod,
-							});
-							addedRelCount++;
+						batchCreateRelationships(selectedRecordings, targetEntity, {
+							linkTypeID: linkTypeId,
+							entity0_credit: copyrightItem.name,
+							...datePeriod,
 						});
+						addedRelCount += selectedRecordings.size;
 					}
 				} catch (error) {
 					console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
