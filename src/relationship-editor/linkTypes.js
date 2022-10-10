@@ -1,5 +1,8 @@
 
-/** MBS relationship link type IDs (incomplete). */
+/**
+ * MBS relationship link type IDs (incomplete).
+ * @type {Record<CoreEntityTypeT, Record<CoreEntityTypeT, Record<string, number>>>}
+ */
 export const LINK_TYPES = {
 	release: {
 		artist: {
@@ -28,10 +31,9 @@ export const LINK_TYPES = {
 
 /**
  * Returns the internal ID of the requested relationship link type.
- * @param {MB.EntityType} sourceType Type of the source entity.
- * @param {MB.EntityType} targetType Type of the target entity.
+ * @param {CoreEntityTypeT} sourceType Type of the source entity.
+ * @param {CoreEntityTypeT} targetType Type of the target entity.
  * @param {string} relType 
- * @returns {number}
  */
 export function getLinkTypeId(sourceType, targetType, relType) {
 	const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];

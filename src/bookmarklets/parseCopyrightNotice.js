@@ -7,7 +7,7 @@
  */
 
 import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
-import { LINK_TYPES } from '../relationshipData.js';
+import { LINK_TYPES } from '../relationship-editor/linkTypes.js';
 import {
 	closingDialog,
 	createAddRelationshipDialog,

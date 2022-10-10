@@ -7,9 +7,9 @@ import {
 	setYear,
 } from './createDialog.js';
 import { batchCreateRelationships, createRelationship } from './createRelationship.js';
+import { getLinkTypeId } from './linkTypes.js';
 import { entityCache } from '../entityCache.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
-import { getLinkTypeId } from '../relationshipData.js';
 import { preferArray } from '../../utils/array/scalar.js';
 import { simplifyName } from '../../utils/string/simplify.js';
 
