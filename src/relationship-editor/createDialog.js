@@ -125,22 +125,6 @@ export function createBatchDialog(sourceType, {
 	});
 }
 
-/** @param {string} searchTerm */
-export function triggerSearch(searchTerm) {
-	MB.relationshipEditor.relationshipDialogDispatch({
-		type: 'update-target-entity',
-		source: MB.relationshipEditor.state.dialogLocation.source,
-		action: {
-			type: 'update-autocomplete',
-			source,
-			action: {
-				type: 'search-after-timeout',
-				searchTerm,
-			},
-		},
-	});
-}
-
 /**
  * Resolves after the current/next relationship dialog has been closed.
  * @returns {Promise<RelationshipDialogFinalStateT>} The final state of the dialog when it was closed by the user.
