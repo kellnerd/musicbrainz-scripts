@@ -2,7 +2,30 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 
 import { GITHUB } from './github.js';
-import { camelToTitleCase } from '../utils/string/casingStyle.js';
+import { preferArray } from '../utils/array/scalar.js';
+
+/** @type {Array<keyof UserscriptMetadata>} */
+const metadataOrder = [
+	'name',
+	'version',
+	'namespace',
+	'author',
+	'description',
+	'icon',
+	'homepageURL',
+	'downloadURL',
+	'updateURL',
+	'supportURL',
+	'require',
+	'resource',
+	'grant',
+	'run-at',
+	'inject-into',
+	'match',
+	'include',
+	'exclude-match',
+	'exclude',
+];
 
 /**
  * Generates the metadata block for the given userscript from the corresponding .meta.js ES module.
@@ -11,44 +34,33 @@ import { camelToTitleCase } from '../utils/string/casingStyle.js';
 export async function generateMetadataBlock(userscriptPath) {
 	const baseName = path.basename(userscriptPath, '.user.js');
 	const date = new Date(); // current date will be used as version identifier
+	const maxKeyLength = Math.max(...metadataOrder.map((key) => key.length));
 
-	const metadata = await loadMetadata(userscriptPath);
-	const metadataBlock = ['// ==UserScript=='];
+	/** @type {UserscriptDefaultMetadata} */
+	const defaultMetadata = {
+		author: GITHUB.owner,
+		namespace: GITHUB.repoUrl,
+		homepageURL: GITHUB.readmeUrl(baseName),
+		downloadURL: GITHUB.userscriptRawUrl(baseName),
+		updateURL: GITHUB.userscriptRawUrl(baseName),
+		supportURL: GITHUB.supportUrl,
+	};
 
-	function addProperty(key, value) {
-		metadataBlock.push(`// @${key.padEnd(12)} ${value}`);
-	}
+	/** @type {UserscriptMetadata} */
+	const metadata = {
+		...defaultMetadata,
+		version: [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('.'),
+		grant: 'none',
+		...await loadMetadata(userscriptPath),
+	};
 
-	function parse(key, fallback = undefined) {
-		const value = metadata[key] || fallback;
-		if (value) {
-			if (Array.isArray(value)) {
-				value.forEach((value) => addProperty(key, value));
-			} else {
-				addProperty(key, value);
-			}
-		}
-	}
+	const metadataBlock = metadataOrder.flatMap((key) => {
+		return preferArray(metadata[key])
+			.filter((value) => value)
+			.map((value) => `// @${key.padEnd(maxKeyLength)} ${value}`);
+	});
 
-	parse('name', camelToTitleCase(baseName));
-	addProperty('version', [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('.'));
-	addProperty('namespace', GITHUB.repoUrl);
-	parse('author');
-	parse('description');
-	parse('icon');
-	addProperty('homepageURL', GITHUB.readmeUrl(baseName));
-	addProperty('downloadURL', GITHUB.userscriptRawUrl(baseName));
-	addProperty('updateURL', GITHUB.userscriptRawUrl(baseName));
-	parse('supportURL', GITHUB.supportUrl);
-	parse('require');
-	parse('resource');
-	parse('grant', 'none');
-	parse('run-at');
-	parse('inject-into');
-	parse('match');
-	parse('include');
-	parse('exclude');
-
+	metadataBlock.unshift('// ==UserScript==');
 	metadataBlock.push('// ==/UserScript==\n');
 
 	return metadataBlock.join('\n');
@@ -57,6 +69,7 @@ export async function generateMetadataBlock(userscriptPath) {
 /**
  * Loads the metadata for the given userscript from the .meta.js ES module of the same name.
  * @param {string} userscriptPath
+ * @returns {Promise<UserscriptMetadata>}
  */
 export async function loadMetadata(userscriptPath) {
 	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.meta.js');

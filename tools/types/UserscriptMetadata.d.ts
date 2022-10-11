@@ -1,5 +1,6 @@
 type UserscriptSpecificMetadata = {
 	name: string;
+	version?: string;
 	description: string;
 	icon?: string | URL;
 	require?: string | URL;
