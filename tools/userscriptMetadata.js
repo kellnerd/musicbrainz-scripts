@@ -69,7 +69,7 @@ export async function generateMetadataBlock(userscriptPath) {
 /**
  * Loads the metadata for the given userscript from the .meta.js ES module of the same name.
  * @param {string} userscriptPath
- * @returns {Promise<UserscriptMetadata>}
+ * @returns {Promise<EnhancedUserscriptMetadata>}
  */
 export async function loadMetadata(userscriptPath) {
 	const metadataPath = userscriptPath.replace(/\.user\.js$/, '.meta.js');
