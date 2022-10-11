@@ -1,4 +1,4 @@
-// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/88a1a97b0709233f1919a217fc33a7fa381a98dc/root/static/scripts/common/components/Autocomplete2/types.js
+// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/01d046625c7751b05358e6d5225b55b57f327b6e/root/static/scripts/common/components/Autocomplete2/types.js
 
 export type SearchableTypeT = EntityItemT['entityType'];
 
@@ -27,13 +27,13 @@ export type StateT<T extends EntityItemT> = {
   readonly page: number;
   readonly pendingSearch: string | null;
   readonly placeholder?: string;
-  readonly recentItems: ReadonlyArray<ItemT<T>> | null;
+  readonly recentItems: ReadonlyArray<OptionItemT<T>> | null;
   readonly recentItemsKey: string;
   readonly results: ReadonlyArray<ItemT<T>> | null;
   readonly selectedItem: OptionItemT<T> | null;
-  readonly staticItems?: ReadonlyArray<ItemT<T>>;
-  readonly staticItemsFilter?: (arg0: ItemT<T>, arg1: string) => boolean;
+  readonly staticItems?: ReadonlyArray<OptionItemT<T>>;
   readonly statusMessage: string;
+  readonly totalPages: number | null | undefined;
   readonly width?: string;
 };
 
@@ -73,6 +73,7 @@ export type ActionT<T extends EntityItemT> = SearchActionT | {
   readonly type: 'show-ws-results';
   readonly entities: ReadonlyArray<T>;
   readonly page: number;
+  readonly totalPages: number;
 } | {
   readonly type: 'show-lookup-error';
 } | {

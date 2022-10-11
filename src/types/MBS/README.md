@@ -1,6 +1,6 @@
 ## MusicBrainz Server Type Definitions
 
-The files inside this directory are TypeScript versions of the original Flow type definitions from [musicbrainz-server](https://github.com/metabrainz/musicbrainz-server/blob/4ceee72bb11d5780c7f6fd1ee547b68fb1ae7473/root/types/) which are GPL licensed:
+The files inside this directory are TypeScript versions of the original Flow type definitions from [musicbrainz-server](https://github.com/metabrainz/musicbrainz-server/blob/b3276aa546378904fff3219980675894bc35e3e4/root/types) which are GPL licensed:
 
 >	Copyright (C) MetaBrainz Foundation
 >

@@ -1,9 +1,9 @@
-// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/88a1a97b0709233f1919a217fc33a7fa381a98dc/root/static/scripts/relationship-editor/types.js
+// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/01d046625c7751b05358e6d5225b55b57f327b6e/root/static/scripts/relationship-editor/types.js
 
 import * as tree from 'weight-balanced-tree';
 
 import type {
-  ItemT as AutocompleteItemT,
+  OptionItemT as AutocompleteOptionItemT,
   StateT as AutocompleteStateT,
 } from '../autocomplete2';
 import type { LazyReleaseStateT } from '../release';
@@ -255,7 +255,7 @@ export type MultiselectLanguageValueStateT = {
 
 export type MultiselectLanguageStateT = {
   readonly max: number | null;
-  readonly staticItems: ReadonlyArray<AutocompleteItemT<LanguageT>>;
+  readonly staticItems: ReadonlyArray<AutocompleteOptionItemT<LanguageT>>;
   readonly values: ReadonlyArray<MultiselectLanguageValueStateT>;
 };
 
@@ -271,11 +271,6 @@ export type ReleaseWithMediumsAndReleaseGroupT = Readonly<
 
 // Associates a recording ID with all of the medium IDs it appears on.
 export type RecordingMediumsT = Map<number, Array<MediumWithRecordingsT>>;
-
-// Associates a work with all of its recordings.
-export type WorkRecordingsT = tree.ImmutableTree<
-  [number, tree.ImmutableTree<RecordingT> | null]
-> | null;
 
 export type MediumWorkStateT = {
   readonly isSelected: boolean;
@@ -311,7 +306,6 @@ export type ReleaseRelationshipEditorStateT = LazyReleaseStateT &
     readonly selectedWorks: tree.ImmutableTree<WorkT> | null;
     readonly submissionError: string | null | undefined;
     readonly submissionInProgress: boolean;
-    readonly workRecordings: WorkRecordingsT;
   };
 
 export type RelationshipSourceGroupsContextT = {

@@ -1,4 +1,4 @@
-// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/30aff7b53cf839aea88a18a57cb7c8e3a1fa98eb/root/static/scripts/relationship-editor/types/actions.js
+// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/4331e163adfb79e9c7f1ad49b6e1f551c68567dd/root/static/scripts/relationship-editor/types/actions.js
 
 import * as tree from 'weight-balanced-tree';
 
@@ -11,6 +11,7 @@ import type { LazyReleaseActionT } from '../release';
 import type {
   CreditChangeOptionT,
   MediumRecordingStateTreeT,
+  MediumWorkStateT,
   RelationshipDialogLocationT,
   RelationshipPhraseGroupT,
   RelationshipStateT,
@@ -179,6 +180,10 @@ export type ReleaseRelationshipEditorActionT =
     readonly relationships: ReadonlyArray<RelationshipT>;
     readonly type: 'load-work-relationships';
     readonly work: WorkT;
+  } | {
+    readonly recording: RecordingT;
+    readonly type: 'remove-work';
+    readonly workState: MediumWorkStateT;
   } | {
     readonly isSelected: boolean;
     readonly type: 'toggle-select-all-recordings';

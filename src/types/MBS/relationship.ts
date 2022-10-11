@@ -19,7 +19,6 @@ declare type LinkAttrTypeT = OptionTreeT<'link_attribute_type'> & {
   readonly instrument_type_name?: string;
   l_description?: string;
   l_name?: string;
-  l_name_normalized?: string;
   level?: number;
   readonly root_gid: string;
   readonly root_id: number;
@@ -43,7 +42,6 @@ declare type LinkTypeT = OptionTreeT<'link_type'> & {
   }>;
   readonly has_dates: boolean;
   readonly id: number;
-
   /*
    * The l_* properties are not sent by the server, but cached client-
    * side by the relationship editor.
@@ -51,7 +49,6 @@ declare type LinkTypeT = OptionTreeT<'link_type'> & {
   l_description?: string;
   l_link_phrase?: string;
   l_name?: string;
-  l_name_normalized?: string;
   l_reverse_link_phrase?: string;
   readonly link_phrase: string;
   readonly long_link_phrase: string;
@@ -95,5 +92,14 @@ declare type RelationshipT = Readonly<
       readonly target: CoreEntityT;
       readonly target_type: CoreEntityTypeT;
       readonly verbosePhrase: string;
+    }
+>;
+
+declare type SeededRelationshipT = Readonly<
+    RelationshipT & {
+        readonly entity0_id: number | null;
+        readonly entity1_id: number | null;
+        readonly id: null;
+        readonly linkTypeID: number | null;
     }
 >;

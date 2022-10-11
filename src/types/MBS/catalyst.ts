@@ -56,8 +56,9 @@ declare type CatalystStashT = {
   readonly release_artwork?: ArtworkT;
   readonly release_artwork_count?: number;
   readonly release_cdtoc_count?: number;
+  readonly seeded_relationships?: ReadonlyArray<SeededRelationshipT> | null | undefined,
   readonly server_languages?: ReadonlyArray<ServerLanguageT>;
-  readonly source_entity?: CoreEntityT;
+  readonly source_entity?: CoreEntityT | null | undefined;
   readonly subscribed?: boolean;
   readonly to_merge?: ReadonlyArray<CoreEntityT>;
   readonly top_tags?: ReadonlyArray<AggregatedTagT>;
@@ -89,8 +90,9 @@ declare type SanitizedCatalystContextT = {
   readonly stash: {
     readonly current_language: string;
     readonly genre_map?: Readonly<Record<string, GenreT>>;
+    readonly seeded_relationships?: ReadonlyArray<SeededRelationshipT> | null | undefined,
     readonly server_languages?: ReadonlyArray<ServerLanguageT>;
-    readonly source_entity?: CoreEntityT;
+    readonly source_entity?: CoreEntityT | null | undefined;
   };
   readonly user: ActiveEditorT | null;
 };
