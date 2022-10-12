@@ -11,6 +11,18 @@ export async function fetchEntity(gid) {
 }
 
 /**
+ * Fetches the core entity with the given MBID from the internal API ws/js.
+ * @param {MB.MBID} gid MBID of the entity.
+ * @param {string[]} inc Include parameters for ws/js.
+ * @returns {Promise<CoreEntityT>}
+ */
+export async function fetchCoreEntity(gid, inc = []) {
+	const query = new URLSearchParams({ inc: inc.join(' ') });
+	const result = await fetch(`/ws/js/entity/${gid}?${query}`);
+	return result.json();
+}
+
+/**
  * Searches for entities of the given type.
  * @param {MB.EntityType} entityType 
  * @param {string} query 

@@ -5,6 +5,7 @@ import {
 	RG_EDIT_FIELDS,
 	RG_SOURCE_DATA,
 } from './data/releaseGroup.js';
+import { fetchCoreEntity } from './internalAPI.js';
 import { limit } from '../utils/async/rateLimit.js';
 import { flatten } from '../utils/object/flatten.js';
 import { urlSearchMultiParams } from '../utils/url/searchParams.js';
@@ -15,8 +16,7 @@ import { urlSearchMultiParams } from '../utils/url/searchParams.js';
  * @returns {Promise<Object>}
  */
 export async function getReleaseGroupEditData(mbid) {
-	const editUrl = buildEditUrl('release-group', mbid);
-	const sourceData = await fetchEditSourceData(editUrl);
+	const sourceData = await fetchEditSourceData(mbid);
 	return parseSourceData(sourceData, true);
 }
 
@@ -32,7 +32,7 @@ async function _editReleaseGroup(mbid, editData) {
 	const editUrl = buildEditUrl('release-group', mbid);
 
 	// build body of the edit request and preserve values of unaffected properties
-	const sourceData = await fetchEditSourceData(editUrl);
+	const sourceData = await fetchEditSourceData(mbid);
 	const editBody = flatten({
 		'edit-release-group': {
 			...parseSourceData(sourceData), // preserve old values (MBS discards some of them if they are missing)
@@ -79,15 +79,11 @@ export function replaceNamesByIds(editData) {
 }
 
 /**
- * Fetches the given edit page and extracts the JSON edit source data of the entity from it.
- * @param {string} editUrl URL of the entity edit page.
- * @returns {Promise<Object>} JSON edit source data.
+ * Fetches the JSON edit source data of the given entity.
+ * @param {string} mbid MBID of the entity.
  */
-async function fetchEditSourceData(editUrl) {
-	const response = await fetch(editUrl);
-	const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
-	console.debug(sourceData);
-	return JSON.parse(sourceData);
+function fetchEditSourceData(mbid) {
+	return fetchCoreEntity(mbid, ['rels']);
 }
 
 /**
@@ -145,7 +141,7 @@ function parseRelationshipSourceData(sourceData) {
 		rel: [],
 		url: [],
 	};
-	sourceData.relationships.forEach((rel) => {
+	sourceData.relationships?.forEach((rel) => {
 		const relData = {
 			relationship_id: rel.id, // internal ID, left out for new relationships
 			link_type_id: rel.linkTypeID, // internal ID of the rel type, always required
