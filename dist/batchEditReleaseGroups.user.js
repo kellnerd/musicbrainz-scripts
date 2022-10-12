@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         MusicBrainz: Batch‐edit release groups
-// @version      2022.7.3
+// @version      2022.10.12
 // @namespace    https://github.com/kellnerd/musicbrainz-scripts
 // @author       kellnerd
 // @description  Batch‐edit selected release groups from artist’s overview pages.
@@ -130,6 +130,18 @@
 	];
 
 	/**
+	 * Fetches the core entity with the given MBID from the internal API ws/js.
+	 * @param {MB.MBID} gid MBID of the entity.
+	 * @param {string[]} inc Include parameters for ws/js.
+	 * @returns {Promise<CoreEntityT>}
+	 */
+	async function fetchCoreEntity(gid, inc = []) {
+		const query = new URLSearchParams({ inc: inc.join(' ') });
+		const result = await fetch(`/ws/js/entity/${gid}?${query}`);
+		return result.json();
+	}
+
+	/**
 	 * Returns a promise that resolves after the given delay.
 	 * @param {number} ms Delay in milliseconds.
 	 */
@@ -217,8 +229,7 @@
 	 * @returns {Promise<Object>}
 	 */
 	async function getReleaseGroupEditData(mbid) {
-		const editUrl = buildEditUrl('release-group', mbid);
-		const sourceData = await fetchEditSourceData(editUrl);
+		const sourceData = await fetchEditSourceData(mbid);
 		return parseSourceData(sourceData, true);
 	}
 
@@ -234,7 +245,7 @@
 		const editUrl = buildEditUrl('release-group', mbid);
 
 		// build body of the edit request and preserve values of unaffected properties
-		const sourceData = await fetchEditSourceData(editUrl);
+		const sourceData = await fetchEditSourceData(mbid);
 		const editBody = flatten({
 			'edit-release-group': {
 				...parseSourceData(sourceData), // preserve old values (MBS discards some of them if they are missing)
@@ -280,14 +291,11 @@
 	}
 
 	/**
-	 * Fetches the given edit page and extracts the JSON edit source data of the entity from it.
-	 * @param {string} editUrl URL of the entity edit page.
-	 * @returns {Promise<Object>} JSON edit source data.
+	 * Fetches the JSON edit source data of the given entity.
+	 * @param {string} mbid MBID of the entity.
 	 */
-	async function fetchEditSourceData(editUrl) {
-		const response = await fetch(editUrl);
-		const sourceData = /sourceData: (.*),\n/.exec(await response.text())?.[1];
-		return JSON.parse(sourceData);
+	function fetchEditSourceData(mbid) {
+		return fetchCoreEntity(mbid, ['rels']);
 	}
 
 	/**
@@ -344,7 +352,7 @@
 			rel: [],
 			url: [],
 		};
-		sourceData.relationships.forEach((rel) => {
+		sourceData.relationships?.forEach((rel) => {
 			const relData = {
 				relationship_id: rel.id, // internal ID, left out for new relationships
 				link_type_id: rel.linkTypeID, // internal ID of the rel type, always required
@@ -594,8 +602,8 @@
 		dom('userscript-errors').innerHTML = '';
 	}
 
-	const UI =
-`<details id="batch-edit-tools">
+	const UI = `
+<details id="batch-edit-tools">
 <summary>
 	<h2>Batch‐edit release groups</h2>
 </summary>
@@ -625,16 +633,16 @@
 		<p>Please work with small batches and make all edits votable to play it safe.</p>
 	</div>
 </form>
-</details>`	;
+</details>`;
 
-	const styles =
-`summary {
-	color: #EB743B;
+	const styles = `
+details#batch-edit-tools summary {
 	cursor: pointer;
+	display: block;
 }
-summary > h2 {
-	display: inline;
-}`	;
+details#batch-edit-tools summary > h2 {
+	display: list-item;
+}`;
 
 	function addEditDataTemplateButton(label, description, editData) {
 		const button = createElement(`<button type="button" title="Load JSON for “${description}”">${label}</button>`);
