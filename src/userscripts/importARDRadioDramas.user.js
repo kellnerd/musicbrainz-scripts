@@ -53,9 +53,8 @@ sidebarText.forEach((line) => {
 				date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
 			} else if (durationMatch) {
 				duration = durationMatch[0].replace("'", ':');
-			} else if (column === 1) {
-				broadcasters.push(fragment.trim()); // name of the radio station
-			}
+			} 
+			// do not use the radio station (which first aired the episode) as broadcaster
 		});
 	}
 });
