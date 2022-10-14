@@ -34,7 +34,7 @@ const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
 	.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
 	.map((p) => p.textContent.trim());
 
-let broadcasters = [], productionYear, date = {}, duration = '';
+let broadcasters = [], productionYear, radioEvents = [], duration = '';
 
 sidebarText.forEach((line) => {
 	// line format: `<broadcaster> <YYYY>`, year is optional
@@ -44,18 +44,22 @@ sidebarText.forEach((line) => {
 		productionYear = productionMatch[2];
 	}
 
-	// line format: `Erstsendung: <DD.MM.YYYY> | <station> | <m'ss>`, station and duration are optional
-	if (/^Erstsendung/.test(line)) {
+	// line format: `(Deutsche) Erstsendung: <DD.MM.YYYY> | <station> | (ca.) <m'ss>`;
+	// parts in parentheses, station and duration are optional
+	if (/Erstsendung/.test(line)) {
+		const event = {};
 		line.split('|').forEach((fragment, column) => {
 			const dateMatch = fragment.match(/\d{2}\.\d{2}\.\d{4}/);
 			const durationMatch = fragment.match(/\d+'\d{2}/);
 			if (dateMatch) {
-				date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
+				event.date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
 			} else if (durationMatch) {
 				duration = durationMatch[0].replace("'", ':');
-			} 
-			// do not use the radio station (which first aired the episode) as broadcaster
+			} else if (column === 1) {
+				event.station = fragment.trim();
+			}
 		});
+		radioEvents.push(event);
 	}
 });
 
@@ -93,10 +97,7 @@ const release = {
 		})),
 	},
 	type: ['Broadcast', 'Audio drama'],
-	events: [{
-		country: 'DE',
-		date,
-	}],
+	events: radioEvents.map(makeReleaseEvent),
 	labels: broadcasters.map((name) => ({ name })),
 	language: 'deu',
 	script: 'Latn',
@@ -120,6 +121,25 @@ const release = {
 
 if (disambiguationComment) release.comment = disambiguationComment;
 
+
+/**
+ * @param {Object} radioEvent
+ * @param {PartialDateT} radioEvent.date
+ * @param {string} radioEvent.station
+ */
+function makeReleaseEvent(radioEvent) {
+	return {
+		date: radioEvent.date,
+		country: getCountryOfStation(radioEvent.station),
+	};
+}
+
+// TODO: find a list of all stations used by dra.de and improve (AT/CH/DD/LI?)
+function getCountryOfStation(station) {
+	if (/\bORF\b|Ö\d/.test(station)) return 'AT';
+	else if (/\bSRF\b/.test(station)) return 'CH';
+	else return 'DE';
+}
 
 /** @param {MB.ReleaseSeed} release */
 async function injectUI(release) {
