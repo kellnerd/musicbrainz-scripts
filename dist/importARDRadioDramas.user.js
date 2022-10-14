@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name         MusicBrainz: Import ARD radio dramas
-// @version      2022.9.11
-// @namespace    https://github.com/kellnerd/musicbrainz-scripts
-// @author       kellnerd
-// @description  Imports German broadcast releases from the ARD radio drama database.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#import-ard-radio-dramas
-// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
-// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
-// @grant        none
-// @match        *://hoerspiele.dra.de/vollinfo.php
+// @name          MusicBrainz: Import ARD radio dramas
+// @version       2022.10.14
+// @namespace     https://github.com/kellnerd/musicbrainz-scripts
+// @author        kellnerd
+// @description   Imports German broadcast releases from the ARD radio drama database.
+// @homepageURL   https://github.com/kellnerd/musicbrainz-scripts#import-ard-radio-dramas
+// @downloadURL   https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
+// @updateURL     https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
+// @supportURL    https://github.com/kellnerd/musicbrainz-scripts/issues
+// @grant         none
+// @match         *://hoerspiele.dra.de/vollinfo.php
 // ==/UserScript==
 
 (function () {
@@ -37,6 +37,24 @@
 	});
 
 	/**
+	 * Returns the first element that is a descendant of node that matches selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qs(selectors, node = document) {
+		return node.querySelector(selectors);
+	}
+
+	/**
+	 * Returns all element descendants of node that match selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qsa(selectors, node = document) {
+		return node.querySelectorAll(selectors);
+	}
+
+	/**
 	 * Builds an edit note for the given message sections and adds a footer section for the active userscript.
 	 * Automatically de-duplicates the sections to reduce auto-generated message and footer spam.
 	 * @param {...string} sections Edit note sections.
@@ -60,7 +78,7 @@
 	/**
 	 * Extracts the entity type and ID from a MusicBrainz URL (can be incomplete and/or with additional path components and query parameters).
 	 * @param {string} url URL of a MusicBrainz entity page.
-	 * @returns {{ type: MB.EntityType | 'mbid', mbid: MB.MBID } | undefined} Type and ID.
+	 * @returns {{ type: CoreEntityTypeT | 'mbid', mbid: MB.MBID } | undefined} Type and ID.
 	 */
 	function extractEntityFromURL(url) {
 		const entity = url.match(/(area|artist|event|genre|instrument|label|mbid|place|recording|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
@@ -71,7 +89,7 @@
 	}
 
 	/**
-	 * @param {MB.EntityType} entityType 
+	 * @param {CoreEntityTypeT} entityType 
 	 * @param {MB.MBID | 'add' | 'create'} mbid MBID of an existing entity or `create` for the entity creation page (`add` for releases).
 	 */
 	function buildEntityURL(entityType, mbid) {
@@ -204,7 +222,7 @@
 	 * Creates an input element where you can paste an MBID or an MB entity URL.
 	 * It automatically validates the content on paste, loads the name of the entity and sets the MBID as a data attribute.
 	 * @param {string} id ID and name of the input element.
-	 * @param {MB.EntityType[]} [allowedEntityTypes] Entity types which are allowed for this input, defaults to all.
+	 * @param {CoreEntityTypeT[]} [allowedEntityTypes] Entity types which are allowed for this input, defaults to all.
 	 * @param {string} [initialValue] Initial value of the input element.
 	 */
 	function createMBIDInput(id, allowedEntityTypes, initialValue) {
@@ -381,7 +399,7 @@
 		}
 	}
 
-	/** @type {SimpleCache<[entityType: MB.EntityType, name: string], MB.MBID>} */
+	/** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
 	const nameToMBIDCache = new SimpleCache({
 		name: 'nameToMBIDCache',
 		storage: window.localStorage,
@@ -416,7 +434,7 @@
 
 	/**
 	 * @param {{ mbid: MB.MBID }} entity 
-	 * @param {MB.EntityType} type 
+	 * @param {CoreEntityTypeT} type 
 	 * @param {string} name 
 	 * @returns Type and name of the entity if it was not found in the cache.
 	 */
@@ -534,24 +552,6 @@
 	}
 
 	/**
-	 * Returns the first element that is a descendant of node that matches selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qs(selectors, node = document) {
-		return node.querySelector(selectors);
-	}
-
-	/**
-	 * Returns all element descendants of node that match selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qsa(selectors, node = document) {
-		return node.querySelectorAll(selectors);
-	}
-
-	/**
 	 * Creates an object from the given arrays of keys and corresponding values.
 	 * @param {string[]} keys
 	 * @param {any[]} values
@@ -587,7 +587,7 @@
 		.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
 		.map((p) => p.textContent.trim());
 
-	let broadcasters = [], date = {}, duration = '';
+	let broadcasters = [], radioEvents = [], duration = '';
 
 	sidebarText.forEach((line) => {
 		// line format: `<broadcaster> <YYYY>`, year is optional
@@ -597,19 +597,22 @@
 			productionMatch[2];
 		}
 
-		// line format: `Erstsendung: <DD.MM.YYYY> | <station> | <m'ss>`, station and duration are optional
-		if (/^Erstsendung/.test(line)) {
+		// line format: `(Deutsche) Erstsendung: <DD.MM.YYYY> | <station> | (ca.) <m'ss>`;
+		// parts in parentheses, station and duration are optional
+		if (/Erstsendung/.test(line)) {
+			const event = {};
 			line.split('|').forEach((fragment, column) => {
 				const dateMatch = fragment.match(/\d{2}\.\d{2}\.\d{4}/);
 				const durationMatch = fragment.match(/\d+'\d{2}/);
 				if (dateMatch) {
-					date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
+					event.date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
 				} else if (durationMatch) {
 					duration = durationMatch[0].replace("'", ':');
 				} else if (column === 1) {
-					broadcasters.push(fragment.trim()); // name of the radio station
+					event.station = fragment.trim();
 				}
 			});
+			radioEvents.push(event);
 		}
 	});
 
@@ -647,10 +650,7 @@
 			})),
 		},
 		type: ['Broadcast', 'Audio drama'],
-		events: [{
-			country: 'DE',
-			date,
-		}],
+		events: radioEvents.map(makeReleaseEvent),
 		labels: broadcasters.map((name) => ({ name })),
 		language: 'deu',
 		script: 'Latn',
@@ -674,6 +674,25 @@
 
 	if (disambiguationComment) release.comment = disambiguationComment;
 
+
+	/**
+	 * @param {Object} radioEvent
+	 * @param {PartialDateT} radioEvent.date
+	 * @param {string} radioEvent.station
+	 */
+	function makeReleaseEvent(radioEvent) {
+		return {
+			date: radioEvent.date,
+			country: getCountryOfStation(radioEvent.station),
+		};
+	}
+
+	// TODO: find a list of all stations used by dra.de and improve (AT/CH/DD/LI?)
+	function getCountryOfStation(station) {
+		if (/\bORF\b|Ö\d/.test(station)) return 'AT';
+		else if (/\bSRF\b/.test(station)) return 'CH';
+		else return 'DE';
+	}
 
 	/** @param {MB.ReleaseSeed} release */
 	async function injectUI(release) {
