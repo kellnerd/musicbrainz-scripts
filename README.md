@@ -114,6 +114,15 @@ javascript:(()=>{function e(e,t){$("input.partial-date-"+e).val(t).trigger("chan
 javascript:$("input[id^=medium-title]").val((e,t)=>t.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i,"").trim()).trigger("change"),void $("#edit-note-text").val((e,t)=>"Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n"+t).trigger("change");
 ```
 
+### [Detect Cover Art Types](src/detectCoverArtTypes.js)
+
+- Detects and fills the image types and comment of all pending uploads using their filenames.
+- Treats filename parts in parentheses as image comments.
+
+```js
+javascript:(()=>{function t(t,e=document){return e.querySelector(t)}function e(t,e=document){return e.querySelectorAll(t)}const n='ul.cover-art-type-checkboxes input[type="checkbox"]';(({additionalTypes:c=[],commentPattern:o}={})=>{const a=e('tbody[data-bind="foreach: files_to_upload"] > tr'),r={};e(n,a[0]).forEach(t=>{t.parentElement.textContent.trim().toLowerCase().split("/").forEach(e=>r[e]=t.value)});const i=RegExp(String.raw`(?<=\W|_|^)(${Object.keys(r).join("|")})(?=\W|_|$)`,"gi");a.forEach(a=>{const l=t('.file-info span[data-bind="text: name"]',a).textContent,s=Array.from(l.matchAll(i),t=>t[0]);if(c&&s.push(...c),s.length&&((t,c=[])=>{e(n,t).forEach(t=>{c.includes(t.value)&&(t.checked=!0,t.dispatchEvent(new Event("click")))})})(a,s.map(t=>r[t.toLowerCase()])),o){const e=l.match(o);e&&((e,n)=>{const c=t("input.comment",e);c.value=n,c.dispatchEvent(new Event("change"))})(a,e[0])}})})({commentPattern:/(?<=\().+?(?=\))/})})();
+```
+
 ### [Enumerate Track Titles](src/enumerateTrackTitles.js)
 
 - Renames all tracks using their absolute track number and a customizable prefix (which can be empty).
