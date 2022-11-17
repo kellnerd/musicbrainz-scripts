@@ -10,6 +10,7 @@ import type { ActionT as DateRangeFieldsetActionT } from '../date-range';
 import type { LazyReleaseActionT } from '../release';
 import type {
   CreditChangeOptionT,
+  ExternalLinkAttrT,
   MediumRecordingStateTreeT,
   MediumWorkStateT,
   RelationshipDialogLocationT,
@@ -32,6 +33,9 @@ export type DialogLinkOrderActionT = {
 
 export type DialogActionT = {
   readonly type: 'change-direction';
+} | {
+  readonly attributes: ReadonlyArray<ExternalLinkAttrT>;
+  readonly type: 'set-attributes';
 } | {
   readonly action: DialogEntityCreditActionT;
   readonly type: 'update-source-entity';

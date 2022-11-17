@@ -185,40 +185,15 @@ export function setYear(year) {
 	});
 }
 
-// WIP
-export function addVocalAttribute(id, creditedAs) {
+/**
+ * Sets the relationship attributes of the current dialog.
+ * @param {ExternalLinkAttrT[]} attributes 
+ */
+export function setAttributes(...attributes) {
 	MB.relationshipEditor.relationshipDialogDispatch({
-		type: 'update-attribute',
-		action: {
-			type: 'update-multiselect-attribute',
-			// rootKey,
-			action: {
-				type: 'update-value-autocomplete',
-				// valueKey,
-				action: {
-					type: 'select-item',
-					item: {
-						id,
-					},
-				},
-			},
-		},
+		type: 'set-attributes',
+		attributes,
 	});
-
-	if (creditedAs) {
-		MB.relationshipEditor.relationshipDialogDispatch({
-			type: 'update-attribute',
-			action: {
-				type: 'update-multiselect-attribute',
-				// rootKey,
-				action: {
-					type: 'set-value-credit',
-					// valueKey,
-					creditedAs,
-				},
-			},
-		});
-	}
 }
 
 /**
@@ -238,6 +213,7 @@ function entityToSelectItem(entity) {
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT}  EntityItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
+ * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
  * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ReleaseRelationshipEditorStateT} ReleaseRelationshipEditorStateT
  * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & {closeEventType: 'accept' | 'cancel'}} RelationshipDialogFinalStateT
  */

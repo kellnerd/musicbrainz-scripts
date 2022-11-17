@@ -191,6 +191,18 @@ export type DialogLinkAttributeStateT = {
   type: LinkAttrTypeT;
 };
 
+/*
+ * Represents a LinkAttrT that may come from an external userscript.
+ * The primary difference is that typeID/typeName are not required.
+ */
+export type ExternalLinkAttrT = {
+  readonly credited_as?: string;
+  readonly text_value?: string;
+  readonly type: {
+    readonly gid: string;
+  };
+};
+
 export type DialogLinkTypeStateT = {
   readonly autocomplete: AutocompleteStateT<LinkTypeT>;
   readonly error: React.ReactNode;

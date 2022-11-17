@@ -1,8 +1,8 @@
 import {
-	addVocalAttribute,
 	closingDialog,
 	createDialog,
 	creditTargetAs,
+	setAttributes,
 } from './createDialog.js';
 import { createRelationship } from './createRelationship.js';
 import { entityCache } from '../entityCache.js';
@@ -131,8 +131,10 @@ export async function createVoiceActorDialog({ artist, roleName, artistCredit } 
 		creditTargetAs(artistCredit);
 	}
 
-	// set spoken vocals attribute and credited name
-	addVocalAttribute('d3a36e62-a7c4-4eb9-839f-adfebe87ac12', roleName);
+	setAttributes({
+		type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
+		credited_as: roleName,
+	});
 }
 
 /**
