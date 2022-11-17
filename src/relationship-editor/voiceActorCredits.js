@@ -2,7 +2,6 @@ import {
 	closingDialog,
 	createDialog,
 	creditTargetAs,
-	setAttributes,
 } from './createDialog.js';
 import { createRelationship } from './createRelationship.js';
 import { entityCache } from '../entityCache.js';
@@ -124,17 +123,17 @@ async function letUserSelectVoiceActor(artistName, roleName, artistCredit) {
 export async function createVoiceActorDialog({ artist, roleName, artistCredit } = {}) {
 	await createDialog({
 		target: artist,
+		targetType: 'artist',
 		linkTypeId: 60, // performance -> performer -> vocals
+		attributes: [{
+			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
+			credited_as: roleName,
+		}],
 	});
 
 	if (artistCredit) {
 		creditTargetAs(artistCredit);
 	}
-
-	setAttributes({
-		type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
-		credited_as: roleName,
-	});
 }
 
 /**

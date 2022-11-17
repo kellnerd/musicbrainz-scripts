@@ -8,6 +8,7 @@ import { qs } from '../../utils/dom/select.js';
  * @param {CoreEntityT | string} [options.target] Target entity object or name.
  * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
  * @param {number} [options.linkTypeId] Internal ID of the relationship type.
+ * @param {ExternalLinkAttrT[]} [options.attributes] Attributes for the relationship type.
  * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
  * The source entity only acts as a placeholder in this case.
  */
@@ -16,6 +17,7 @@ export async function createDialog({
 	target,
 	targetType,
 	linkTypeId,
+	attributes,
 	batchSelection = false,
 } = {}) {
 	const onlyTargetName = (typeof target === 'string');
@@ -69,13 +71,17 @@ export async function createDialog({
 		}
 	}
 
+	if (attributes) {
+		setAttributes(attributes);
+	}
+
 	if (!target) return;
 
 	/** @type {AutocompleteActionT[]} */
 	const autocompleteActions = onlyTargetName ? [{
 		type: 'type-value',
 		value: target,
-	}, { // search does not block future actions
+	}, { // search dropdown is unaffected by future actions which set credits or date periods
 		type: 'search-after-timeout',
 		searchTerm: target,
 	}] : [{
@@ -189,7 +195,7 @@ export function setYear(year) {
  * Sets the relationship attributes of the current dialog.
  * @param {ExternalLinkAttrT[]} attributes 
  */
-export function setAttributes(...attributes) {
+export function setAttributes(attributes) {
 	MB.relationshipEditor.relationshipDialogDispatch({
 		type: 'set-attributes',
 		attributes,
