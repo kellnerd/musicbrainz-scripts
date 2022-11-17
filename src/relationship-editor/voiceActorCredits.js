@@ -31,7 +31,7 @@ export async function addVoiceActor(artistName, roleName, bypassCache = false) {
 		// pre-fill dialog and collect mappings for freshly matched artists
 		const artistMatch = await letUserSelectVoiceActor(artistName, roleName, artistName);
 
-		if (artistMatch.gid) {
+		if (artistMatch?.gid) {
 			nameToMBIDCache.set(['artist', artistName], artistMatch.gid);
 			return 'done';
 		} else {
@@ -79,17 +79,16 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 			// pre-fill dialog and collect mappings for freshly matched artists
 			const artistMatch = await letUserSelectVoiceActor(actor.name, roleName, artistCredit);
 
-			if (artistMatch.gid) {
+			if (artistMatch?.gid) {
 				discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
+				unmappedArtists.push({
+					MBID: artistMatch.gid,
+					name: artistMatch.name,
+					comment: artistMatch.comment,
+					externalURL: buildDiscogsURL('artist', actor.id),
+					externalName: actor.name,
+				});
 			}
-
-			unmappedArtists.push({
-				MBID: artistMatch.gid,
-				name: artistMatch.name,
-				comment: artistMatch.comment,
-				externalURL: buildDiscogsURL('artist', actor.id),
-				externalName: actor.name,
-			});
 		}
 	}
 
@@ -109,7 +108,10 @@ async function letUserSelectVoiceActor(artistName, roleName, artistCredit) {
 	// let the user select the matching entity
 	const finalState = await closingDialog();
 
-	return finalState.targetEntity.target;
+	// only use the selected target artist of accepted dialogs
+	if (finalState.closeEventType === 'accept') {
+		return finalState.targetEntity.target;
+	}
 }
 
 /**
