@@ -3,10 +3,13 @@
  * - Adds a link to the relevant guideline to the edit note.
  */
 
-$('input[id^=medium-title]')
-	.val((index, value) => value.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i, '').trim())
-	.trigger('change');
+import { dom, qsa } from '../../utils/dom/select.js';
+import { setInputValue } from '../../utils/dom/setInputValue.js';
 
-$('#edit-note-text')
-	.val((index, value) => 'Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n' + value)
-	.trigger('change');
+qsa('input[id^=medium-title]').forEach((titleInput) =>
+	setInputValue(titleInput, titleInput.value.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i, '').trim())
+);
+
+const editNoteInput = dom('edit-note-text');
+setInputValue(editNoteInput,
+	'Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n' + editNoteInput.value);

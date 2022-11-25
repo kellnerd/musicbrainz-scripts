@@ -111,7 +111,7 @@ javascript:(()=>{function e(e,t){$("input.partial-date-"+e).val(t).trigger("chan
 - Adds a link to the relevant guideline to the edit note.
 
 ```js
-javascript:$("input[id^=medium-title]").val((e,t)=>t.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i,"").trim()).trigger("change"),void $("#edit-note-text").val((e,t)=>"Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n"+t).trigger("change");
+javascript:(()=>{function e(e,t,i=new Event("change")){e.value=t,e.dispatchEvent(i)}((e,t=document)=>t.querySelectorAll(e))("input[id^=medium-title]").forEach(t=>e(t,t.value.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i,"").trim()));const t=document.getElementById("edit-note-text");e(t,"Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n"+t.value)})();
 ```
 
 ### [Detect Cover Art Types](src/detectCoverArtTypes.js)
