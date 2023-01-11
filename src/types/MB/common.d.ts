@@ -28,10 +28,4 @@ namespace MB {
 
 	/** Format: `YYYY-MM-DDThh:mm:ssZ` */
 	type DateTimeString = string;
-
-	type Date = {
-		year: number | null;
-		month: number | null;
-		day: number | null;
-	};
 }

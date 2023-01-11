@@ -45,7 +45,7 @@ namespace MB {
 		 */
 		events: Array<Partial<{
 			/** The date of the release event. Each field is an integer. */
-			date: Partial<Date>;
+			date: PartialDateT;
 			/** The country of the release event. May be any valid country ISO code (for example: `GB`, `US`, `FR`). */
 			country: string;
 		}>>;
