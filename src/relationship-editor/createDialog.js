@@ -216,10 +216,10 @@ function entityToSelectItem(entity) {
 }
 
 /**
- * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT}  EntityItemT
+ * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT} EntityItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
  * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
  * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
  * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ReleaseRelationshipEditorStateT} ReleaseRelationshipEditorStateT
- * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & {closeEventType: 'accept' | 'cancel'}} RelationshipDialogFinalStateT
+ * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & { closeEventType: 'accept' | 'cancel' }} RelationshipDialogFinalStateT
  */
