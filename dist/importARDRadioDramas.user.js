@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Import ARD radio dramas
-// @version       2022.10.14
+// @version       2022.10.22
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Imports German broadcast releases from the ARD radio drama database.
@@ -230,7 +230,7 @@
 		const mbidInput = document.createElement('input');
 		mbidInput.className = 'mbid';
 		mbidInput.name = mbidInput.id = id;
-		mbidInput.placeholder = 'MBID or MB entity URL';
+		mbidInput.placeholder = `MBID or URL (${allowedEntityTypes?.join('/') ?? 'any entity'})`;
 
 		const mbidAttribute = 'data-mbid';
 		const defaultEntityTypeRoute = toScalar(allowedEntityTypes) ?? 'mbid';
