@@ -1452,7 +1452,6 @@ textarea#credit-input {
 	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
 	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
 	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
-	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ReleaseRelationshipEditorStateT} ReleaseRelationshipEditorStateT
 	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & { closeEventType: 'accept' | 'cancel' }} RelationshipDialogFinalStateT
 	 */
 
@@ -1509,9 +1508,9 @@ textarea#credit-input {
 	}
 
 	/**
-	 * @typedef  {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
+	 * @typedef {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
 	 * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
-	 * @typedef {Omit<LinkAttrT, 'typeID' | 'typeName'>} ExternalLinkAttrT
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
 	 */
 
 	/**
