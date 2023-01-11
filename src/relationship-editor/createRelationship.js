@@ -71,7 +71,7 @@ export function createAttributeTree(...attributes) {
 }
 
 /**
- * @typedef  {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
+ * @typedef {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
  * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
- * @typedef {Omit<LinkAttrT, 'typeID' | 'typeName'>} ExternalLinkAttrT
+ * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
  */
