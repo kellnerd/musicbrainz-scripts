@@ -4,7 +4,7 @@
  */
 
 import { fetchEntity } from '../internalAPI.js';
-import { createRelationship } from '../relationship-editor/createRelationship.js';
+import { createAttributeTree, createRelationship } from '../relationship-editor/createRelationship.js';
 
 /**
  * Adds the default relationships between the currently edited source entity and the given target entities.
@@ -19,10 +19,10 @@ async function relateThisSeriesToParts(mbids) {
 		createRelationship({
 			target: targetEntity,
 			linkTypeID: 742, // depends on the target entity type, for RGs only so far
-			attributes: [{
+			attributes: createAttributeTree({
 				type: { gid: 'a59c5830-5ec7-38fe-9a21-c7ea54f6650a' }, // number (in a series)
 				text_value: seriesNumberMatch ?? '',
-			}],
+			}),
 		});
 	}
 }

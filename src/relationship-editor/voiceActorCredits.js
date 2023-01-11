@@ -3,7 +3,7 @@ import {
 	createDialog,
 	creditTargetAs,
 } from './createDialog.js';
-import { createRelationship } from './createRelationship.js';
+import { createAttributeTree, createRelationship } from './createRelationship.js';
 import { entityCache } from '../entityCache.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { fetchVoiceActors as fetchVoiceActorsFromDiscogs } from '../discogs/api.js';
@@ -149,11 +149,9 @@ export function createVoiceActorRelationship({ artist, roleName, artistCredit })
 		target: artist,
 		linkTypeID: 60, // performance -> performer -> vocals
 		entity0_credit: artistCredit,
-		attributes: [{
-			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' },
-			typeID: 561,
-			typeName: 'spoken vocals',
+		attributes: createAttributeTree({
+			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
 			credited_as: roleName,
-		}],
+		}),
 	});
 }

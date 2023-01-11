@@ -1,3 +1,4 @@
+import type { LinkedEntitiesT } from '../types/MBS/scripts/release';
 import type {
 	DialogActionT,
 	RelationshipEditorActionT,
@@ -18,6 +19,8 @@ declare global {
 		// function entity(data: CoreEntityT, type?: CoreEntityTypeT): CoreEntityT & Record<string,any>;
 
 		function getSourceEntityInstance(): CoreEntityT;
+
+		const linkedEntities: Partial<LinkedEntitiesT>;
 
 		const relationshipEditor: {
 			readonly dispatch: (action: RelationshipEditorActionT | ReleaseRelationshipEditorActionT) => void;

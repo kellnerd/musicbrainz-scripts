@@ -5,12 +5,12 @@ import {
 
 /**
  * Creates a relationship between the given source and target entity.
- * @param {Partial<RelationshipT> & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
+ * @param {RelationshipProps & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
  * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
  * @param {CoreEntityT} options.target Target entity.
  * @param {number} [options.batchSelectionCount] Batch-edit all selected entities which have the same type as the source.
  * The source entity only acts as a placeholder in this case.
- * @param {Partial<RelationshipT>} props Relationship properties.
+ * @param {RelationshipProps} props Relationship properties.
  */
 export function createRelationship({
 	source = MB.relationshipEditor.state.entity,
@@ -41,7 +41,7 @@ export function createRelationship({
  * Creates the same relationship between each of the selected source entities and the given target entity.
  * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
  * @param {CoreEntityT} target Target entity.
- * @param {Partial<RelationshipT>} props Relationship properties.
+ * @param {RelationshipProps} props Relationship properties.
  */
 export function batchCreateRelationships(sourceSelection, target, props) {
 	return createRelationship({
@@ -51,3 +51,27 @@ export function batchCreateRelationships(sourceSelection, target, props) {
 		...props,
 	});
 }
+
+/**
+ * Converts the given relationship attribute(s) into a tree which contains their full attribute type properties.
+ * @param {ExternalLinkAttrT[]} attributes Distinct attributes, ordered by type ID.
+ * @returns {LinkAttrTree}
+ */
+export function createAttributeTree(...attributes) {
+	return MB.tree.fromDistinctAscArray(attributes
+		.map((attribute) => {
+			const attributeType = MB.linkedEntities.link_attribute_type[attribute.type.gid];
+			return {
+				...attribute,
+				type: attributeType,
+				typeID: attributeType.id,
+			};
+		})
+	);
+}
+
+/**
+ * @typedef  {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
+ * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
+ * @typedef {Omit<LinkAttrT, 'typeID' | 'typeName'>} ExternalLinkAttrT
+ */
