@@ -1,6 +1,6 @@
 import { SimpleCache } from '../utils/cache/SimpleCache.js';
 
-/** @type {SimpleCache<[entityType: MB.EntityType, name: string], MB.MBID>} */
+/** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
 export const nameToMBIDCache = new SimpleCache({
 	name: 'nameToMBIDCache',
 	storage: window.localStorage,
@@ -35,7 +35,7 @@ function loadCachedLabels(release) {
 
 /**
  * @param {{ mbid: MB.MBID }} entity 
- * @param {MB.EntityType} type 
+ * @param {CoreEntityTypeT} type 
  * @param {string} name 
  * @returns Type and name of the entity if it was not found in the cache.
  */

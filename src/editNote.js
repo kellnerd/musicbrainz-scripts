@@ -1,3 +1,5 @@
+import { setReactTextareaValue } from '../utils/dom/react.js';
+import { qs } from '../utils/dom/select.js';
 
 /**
  * Adds the given message and a footer for the active userscript to the edit note.
@@ -5,10 +7,9 @@
  */
 export function addMessageToEditNote(message) {
 	/** @type {HTMLTextAreaElement} */
-	const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
+	const editNoteInput = qs('#edit-note-text, .edit-note');
 	const previousContent = editNoteInput.value.split(editNoteSeparator);
-	editNoteInput.value = buildEditNote(...previousContent, message);
-	editNoteInput.dispatchEvent(new Event('change'));
+	setReactTextareaValue(editNoteInput, buildEditNote(...previousContent, message));
 }
 
 /**

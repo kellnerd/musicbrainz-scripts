@@ -23,7 +23,7 @@ const productionCredits = Array.from(qsa('.vollinfoblock p > span.prefix')).map(
 	return line.split(/:\s+/, 2); // split prefix (attribute name) and content (attribute values)
 });
 
-const voiceActorCredits = Array.from(document.querySelectorAll('.mitwirkende tr')).map((row) => {
+const voiceActorCredits = Array.from(qsa('.mitwirkende tr')).map((row) => {
 	// three cells which should contain: 1. actor/actress, 2. empty, 3. role(s) or empty
 	const cells = row.childNodes;
 	if (cells.length !== 3 || cells[0].nodeName !== 'TD') return; // skip headers and empty rows
@@ -34,24 +34,32 @@ const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
 	.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
 	.map((p) => p.textContent.trim());
 
-let broadcasters = [], productionYear, date = {}, station, duration;
+let broadcasters = [], productionYear, radioEvents = [], duration = '';
 
 sidebarText.forEach((line) => {
+	// line format: `<broadcaster> <YYYY>`, year is optional
 	const productionMatch = line.match(/^(\D+?)(?:\s+(\d{4}))?$/);
 	if (productionMatch) {
 		broadcasters.push(...productionMatch[1].split(/\s+\/\s+/));
 		productionYear = productionMatch[2];
 	}
 
-	const broadcastMatch = line.match(/^Erstsendung:\s+(\d{2}\.\d{2}\.\d{4})\s+\|\s+(?:(.+?)\s+\|\s+)?(\d+'\d{2})$/);
-	if (broadcastMatch) {
-		date = zipObject(['day', 'month', 'year'], broadcastMatch[1].split('.'));
-		station = broadcastMatch[2];
-		duration = broadcastMatch[3].replace("'", ':');
-
-		if (station) {
-			broadcasters.push(station);
-		}
+	// line format: `(Deutsche) Erstsendung: <DD.MM.YYYY> | <station> | (ca.) <m'ss>`;
+	// parts in parentheses, station and duration are optional
+	if (/Erstsendung/.test(line)) {
+		const event = {};
+		line.split('|').forEach((fragment, column) => {
+			const dateMatch = fragment.match(/\d{2}\.\d{2}\.\d{4}/);
+			const durationMatch = fragment.match(/\d+'\d{2}/);
+			if (dateMatch) {
+				event.date = zipObject(['day', 'month', 'year'], dateMatch[0].split('.'));
+			} else if (durationMatch) {
+				duration = durationMatch[0].replace("'", ':');
+			} else if (column === 1) {
+				event.station = fragment.trim();
+			}
+		});
+		radioEvents.push(event);
 	}
 });
 
@@ -89,10 +97,7 @@ const release = {
 		})),
 	},
 	type: ['Broadcast', 'Audio drama'],
-	events: [{
-		country: 'DE',
-		date,
-	}],
+	events: radioEvents.map(makeReleaseEvent),
 	labels: broadcasters.map((name) => ({ name })),
 	language: 'deu',
 	script: 'Latn',
@@ -116,6 +121,25 @@ const release = {
 
 if (disambiguationComment) release.comment = disambiguationComment;
 
+
+/**
+ * @param {Object} radioEvent
+ * @param {PartialDateT} radioEvent.date
+ * @param {string} radioEvent.station
+ */
+function makeReleaseEvent(radioEvent) {
+	return {
+		date: radioEvent.date,
+		country: getCountryOfStation(radioEvent.station),
+	};
+}
+
+// TODO: find a list of all stations used by dra.de and improve (AT/CH/DD/LI?)
+function getCountryOfStation(station) {
+	if (/\bORF\b|Ö\d/.test(station)) return 'AT';
+	else if (/\bSRF\b/.test(station)) return 'CH';
+	else return 'DE';
+}
 
 /** @param {MB.ReleaseSeed} release */
 async function injectUI(release) {
@@ -154,6 +178,15 @@ async function injectUI(release) {
 	const importerContainer = qs('.sectionC .noPrint > p');
 	importerContainer.prepend(entityMappings);
 	injectImporterForm();
+
+	// inject a button to copy credits
+	/** @type {HTMLButtonElement} */
+	const copyButton = createElement('<button type="button" title="Copy voice actor credits to clipboard">Copy credits</button>');
+	copyButton.addEventListener('click', () => {
+		navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1] ?? ''} - ${credit[0]}`).join('\n'));
+	});
+	copyButton.style.marginTop = '5px';
+	importerContainer.appendChild(copyButton);
 
 	function injectImporterForm() {
 		const form = createReleaseSeederForm(release);

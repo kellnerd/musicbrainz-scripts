@@ -1,18 +1,18 @@
 // ==UserScript==
-// @name         MusicBrainz: Guess Unicode punctuation
-// @version      2022.6.26
-// @namespace    https://github.com/kellnerd/musicbrainz-scripts
-// @author       kellnerd
-// @description  Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#guess-unicode-punctuation
-// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/guessUnicodePunctuation.user.js
-// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/guessUnicodePunctuation.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
-// @grant        none
-// @include      /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/create(\?.+?)?(#.+?)?$/
-// @include      /^https?://((beta|test)\.)?musicbrainz\.org/release/add(\?.+?)?(#.+?)?$/
-// @include      /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/[0-9a-f-]{36}/edit(_annotation)?(\?.+?)?(#.+?)?$/
-// @include      /^https?://((beta|test)\.)?musicbrainz\.org/artist/[0-9a-f-]{36}/credit/\d+/edit(\?.+?)?(#.+?)?$/
+// @name          MusicBrainz: Guess Unicode punctuation
+// @version       2022.6.26
+// @namespace     https://github.com/kellnerd/musicbrainz-scripts
+// @author        kellnerd
+// @description   Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
+// @homepageURL   https://github.com/kellnerd/musicbrainz-scripts#guess-unicode-punctuation
+// @downloadURL   https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/guessUnicodePunctuation.user.js
+// @updateURL     https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/guessUnicodePunctuation.user.js
+// @supportURL    https://github.com/kellnerd/musicbrainz-scripts/issues
+// @grant         none
+// @include       /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/create(\?.+?)?(#.+?)?$/
+// @include       /^https?://((beta|test)\.)?musicbrainz\.org/release/add(\?.+?)?(#.+?)?$/
+// @include       /^https?://((beta|test)\.)?musicbrainz\.org/(area|artist|event|instrument|label|place|recording|release|release-group|series|work)/[0-9a-f-]{36}/edit(_annotation)?(\?.+?)?(#.+?)?$/
+// @include       /^https?://((beta|test)\.)?musicbrainz\.org/artist/[0-9a-f-]{36}/credit/\d+/edit(\?.+?)?(#.+?)?$/
 // ==/UserScript==
 
 (function () {
@@ -310,13 +310,13 @@
 		icon: '<button class="icon guess-punctuation" type="button" title="Guess punctuation"></button>',
 	};
 
-	const styles =
-`button.icon.guess-punctuation {
+	const styles = `
+button.icon.guess-punctuation {
 	background-image: url(${guessPunctuationIcon});
 }
 input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 	background-color: yellow !important;
-}`	;
+}`;
 
 	/**
 	 * Inserts a "Guess punctuation" icon button to the right of the given input field.

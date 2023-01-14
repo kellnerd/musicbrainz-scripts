@@ -3,7 +3,6 @@ import { createRecordMapper } from '../utils/object/createRecordMapper.js';
 /**
  * Fetches the entity with the given MBID from the internal API ws/js.
  * @param {MB.MBID} gid MBID of the entity.
- * @returns {Promise<MB.RE.TargetEntity>}
  */
 export async function fetchEntity(gid) {
 	const result = await fetch(`/ws/js/entity/${gid}`);
@@ -24,9 +23,9 @@ export async function fetchCoreEntity(gid, inc = []) {
 
 /**
  * Searches for entities of the given type.
- * @param {MB.EntityType} entityType 
+ * @param {CoreEntityTypeT} entityType 
  * @param {string} query 
- * @returns {Promise<MB.InternalEntity[]>}
+ * @returns {Promise<CoreEntityT[]>}
  */
 export async function searchEntity(entityType, query) {
 	const result = await fetch(`/ws/js/${entityType}?q=${encodeURIComponent(query)}`);
@@ -35,6 +34,7 @@ export async function searchEntity(entityType, query) {
 
 /**
  * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
+ * @type {KeyMapping<ArtistT, MB.Artist>}
  */
 const ARTIST_INTERNAL_FIELDS = {
 	gid: 'id', // MBID
@@ -45,6 +45,6 @@ const ARTIST_INTERNAL_FIELDS = {
 
 /**
  * Creates a ws/js compatible artist object from an API response.
- * @type {(artist: MB.Artist) => Partial<MB.InternalArtist>}
+ * @type {(artist: MB.Artist) => Partial<ArtistT>}
  */
 export const internalArtist = createRecordMapper(ARTIST_INTERNAL_FIELDS);

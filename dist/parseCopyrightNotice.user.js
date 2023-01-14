@@ -1,17 +1,17 @@
 // ==UserScript==
-// @name         MusicBrainz: Parse copyright notice
-// @version      2022.6.26
-// @namespace    https://github.com/kellnerd/musicbrainz-scripts
-// @author       kellnerd
-// @description  Parses copyright notices and automates the process of creating release and recording relationships for these.
-// @homepageURL  https://github.com/kellnerd/musicbrainz-scripts#parse-copyright-notice
-// @downloadURL  https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/parseCopyrightNotice.user.js
-// @updateURL    https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/parseCopyrightNotice.user.js
-// @supportURL   https://github.com/kellnerd/musicbrainz-scripts/issues
-// @grant        GM.getValue
-// @grant        GM.setValue
-// @run-at       document-idle
-// @match        *://*.musicbrainz.org/release/*/edit-relationships
+// @name          MusicBrainz: Parse copyright notice
+// @version       2023.1.11
+// @namespace     https://github.com/kellnerd/musicbrainz-scripts
+// @author        kellnerd
+// @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
+// @homepageURL   https://github.com/kellnerd/musicbrainz-scripts#parse-copyright-notice
+// @downloadURL   https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/parseCopyrightNotice.user.js
+// @updateURL     https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/parseCopyrightNotice.user.js
+// @supportURL    https://github.com/kellnerd/musicbrainz-scripts/issues
+// @grant         GM.getValue
+// @grant         GM.setValue
+// @run-at        document-idle
+// @match         *://*.musicbrainz.org/release/*/edit-relationships
 // ==/UserScript==
 
 (function () {
@@ -20,7 +20,6 @@
 	/**
 	 * Fetches the entity with the given MBID from the internal API ws/js.
 	 * @param {MB.MBID} gid MBID of the entity.
-	 * @returns {Promise<MB.RE.TargetEntity>}
 	 */
 	async function fetchEntity(gid) {
 		const result = await fetch(`/ws/js/entity/${gid}`);
@@ -151,55 +150,49 @@
 		}
 	}
 
-	/** @type {SimpleCache<[entityType: MB.EntityType, name: string], MB.MBID>} */
+	/** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
 	const nameToMBIDCache = new SimpleCache({
 		name: 'nameToMBIDCache',
 		storage: window.localStorage,
 	});
 
-	/** MBS relationship link type IDs (incomplete). */
-	const LINK_TYPES = {
-		release: {
-			artist: {
-				'©': 709,
-				'℗': 710,
-			},
-			label: {
-				'©': 708,
-				'℗': 711,
-				'licensed from': 712,
-				'licensed to': 833,
-				'distributed by': 361,
-				'manufactured by': 360,
-				'marketed by': 848,
-			},
-		},
-		recording: {
-			artist: {
-				'℗': 869,
-			},
-			label: {
-				'℗': 867,
-			},
-		},
-	};
+	/** @returns {DatePeriodRoleT} */
+	function createDatePeriodForYear(year) {
+		return {
+			begin_date: { year },
+			end_date: { year },
+			ended: true,
+		};
+	}
+
+	// TODO: drop once the new React relationship editor has been deployed, together with the other fallbacks for the old one
+	function hasReactRelEditor() {
+		return !!MB.getSourceEntityInstance;
+	}
 
 	/**
-	 * Returns the internal ID of the requested relationship link type.
-	 * @param {MB.EntityType} sourceType Type of the source entity.
-	 * @param {MB.EntityType} targetType Type of the target entity.
-	 * @param {string} relType 
-	 * @returns {number}
+	 * @param {CoreEntityTypeT} sourceType 
+	 * @param {CoreEntityTypeT} targetType 
 	 */
-	function getLinkTypeId(sourceType, targetType, relType) {
-		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
-
-		if (linkTypeId) {
-			return linkTypeId;
-		} else {
-			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
-		}
+	function isRelBackward(sourceType, targetType) {
+		return sourceType > targetType;
 	}
+
+	// Taken from root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+	const RELATIONSHIP_DEFAULTS = {
+		_original: null,
+		_status: 1, // add relationship
+		attributes: null,
+		begin_date: null,
+		editsPending: false,
+		end_date: null,
+		ended: false,
+		entity0_credit: '',
+		entity1_credit: '',
+		id: null,
+		linkOrder: 0,
+		linkTypeID: null,
+	};
 
 	/**
 	 * Returns a promise that resolves after the given delay.
@@ -207,6 +200,23 @@
 	 */
 	function delay(ms) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
+	/**
+	 * Retries the given operation until the result is no longer undefined.
+	 * @template T
+	 * @param {() => MaybePromise<T>} operation 
+	 * @param {Object} [options]
+	 * @param {number} [options.retries] Maximum number of retries.
+	 * @param {number} [options.wait] Number of ms to wait before the next try, disabled by default.
+	 * @returns The final result of the operation.
+	 */
+	async function retry(operation, { retries = 10, wait = 0 } = {}) {
+		do {
+			const result = await operation();
+			if (result !== undefined) return result;
+			if (wait) await delay(wait);
+		} while (retries--)
 	}
 
 	/**
@@ -260,7 +270,7 @@
 	 * Resolves after the given dialog has been closed.
 	 * @param {MB.RE.Dialog} dialog
 	 */
-	function closingDialog(dialog) {
+	function closingDialog$1(dialog) {
 		return new Promise((resolve) => {
 			if (dialog) {
 				// wait until the jQuery UI dialog has been closed
@@ -293,9 +303,57 @@
 			.find((entity) => entity.entityType === dialog.targetType());
 	}
 
+	// TODO: drop once the new React relationship editor has been deployed
 	/** Resolves after the release relationship editor has finished loading. */
 	function releaseLoadingFinished() {
+		if (hasReactRelEditor()) return Promise.resolve();
 		return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
+	}
+
+	/**
+	 * MBS relationship link type IDs (incomplete).
+	 * @type {Record<CoreEntityTypeT, Record<CoreEntityTypeT, Record<string, number>>>}
+	 */
+	const LINK_TYPES = {
+		release: {
+			artist: {
+				'©': 709,
+				'℗': 710,
+			},
+			label: {
+				'©': 708,
+				'℗': 711,
+				'licensed from': 712,
+				'licensed to': 833,
+				'distributed by': 361,
+				'manufactured by': 360,
+				'marketed by': 848,
+			},
+		},
+		recording: {
+			artist: {
+				'℗': 869,
+			},
+			label: {
+				'℗': 867,
+			},
+		},
+	};
+
+	/**
+	 * Returns the internal ID of the requested relationship link type.
+	 * @param {CoreEntityTypeT} sourceType Type of the source entity.
+	 * @param {CoreEntityTypeT} targetType Type of the target entity.
+	 * @param {string} relType 
+	 */
+	function getLinkTypeId(sourceType, targetType, relType) {
+		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
+
+		if (linkTypeId) {
+			return linkTypeId;
+		} else {
+			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
+		}
 	}
 
 	/**
@@ -339,7 +397,7 @@
 	 * @param {boolean} [customOptions.useAllYears] Adds one (release) relationship for each given year instead of a single undated relationship, disabled by default.
 	 * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
 	 */
-	async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
+	async function addCopyrightRelationships$1(copyrightInfo, customOptions = {}) {
 		// provide default options
 		const options = {
 			bypassCache: false,
@@ -428,7 +486,7 @@
 				addedRelCount++;
 			} else { // (2b)
 				openDialogAndTriggerAutocomplete(dialog);
-				await closingDialog(dialog);
+				await closingDialog$1(dialog);
 
 				// remember the entity which the user has chosen for the given name
 				targetEntity = getTargetEntity(dialog);
@@ -444,15 +502,473 @@
 	}
 
 	/**
+	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
+	 * @param {string} elementId String that specifies the ID value.
+	 */
+	function dom(elementId) {
+		return document.getElementById(elementId);
+	}
+
+	/**
+	 * Returns the first element that is a descendant of node that matches selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qs(selectors, node = document) {
+		return node.querySelector(selectors);
+	}
+
+	/**
+	 * Returns all element descendants of node that match selectors.
+	 * @param {string} selectors 
+	 * @param {ParentNode} node 
+	 */
+	function qsa(selectors, node = document) {
+		return node.querySelectorAll(selectors);
+	}
+
+	/**
+	 * Creates a dialog to add a relationship to the given source entity.
+	 * @param {Object} options 
+	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
+	 * @param {CoreEntityT | string} [options.target] Target entity object or name.
+	 * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
+	 * @param {number} [options.linkTypeId] Internal ID of the relationship type.
+	 * @param {ExternalLinkAttrT[]} [options.attributes] Attributes for the relationship type.
+	 * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
+	 * The source entity only acts as a placeholder in this case.
+	 */
+	async function createDialog({
+		source = MB.relationshipEditor.state.entity,
+		target,
+		targetType,
+		linkTypeId,
+		attributes,
+		batchSelection = false,
+	} = {}) {
+		const onlyTargetName = (typeof target === 'string');
+
+		// prefer an explicit target entity option over only a target type
+		if (target && !onlyTargetName) {
+			targetType = target.entityType;
+		}
+
+		// open dialog modal for the source entity
+		MB.relationshipEditor.dispatch({
+			type: 'update-dialog-location',
+			location: {
+				source,
+				batchSelection,
+			},
+		});
+
+		// TODO: currently it takes ~2ms until `relationshipDialogDispatch` is exposed
+		await waitFor(() => !!MB.relationshipEditor.relationshipDialogDispatch, 1);
+
+		if (targetType) {
+			MB.relationshipEditor.relationshipDialogDispatch({
+				type: 'update-target-type',
+				source,
+				targetType,
+			});
+		}
+
+		if (linkTypeId) {
+			const linkTypeItem = await retry(() => {
+				// the available items are only valid for the current target type,
+				// ensure that they have already been updated after a target type change
+				const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
+				return availableLinkTypes.find((item) => (item.id == linkTypeId));
+			}, { wait: 10 });
+
+			if (linkTypeItem) {
+				MB.relationshipEditor.relationshipDialogDispatch({
+					type: 'update-link-type',
+					source,
+					action: {
+						type: 'update-autocomplete',
+						source,
+						action: {
+							type: 'select-item',
+							item: linkTypeItem,
+						},
+					},
+				});
+			}
+		}
+
+		if (attributes) {
+			setAttributes(attributes);
+		}
+
+		if (!target) return;
+
+		/** @type {AutocompleteActionT[]} */
+		const autocompleteActions = onlyTargetName ? [{
+			type: 'type-value',
+			value: target,
+		}, { // search dropdown is unaffected by future actions which set credits or date periods
+			type: 'search-after-timeout',
+			searchTerm: target,
+		}] : [{
+			type: 'select-item',
+			item: entityToSelectItem(target),
+		}];
+
+		// autofill the target entity as good as possible
+		autocompleteActions.forEach((autocompleteAction) => {
+			MB.relationshipEditor.relationshipDialogDispatch({
+				type: 'update-target-entity',
+				source,
+				action: {
+					type: 'update-autocomplete',
+					source,
+					action: autocompleteAction,
+				},
+			});
+		});
+
+		// focus target entity input if it could not be auto-selected
+		if (onlyTargetName) {
+			qs('input.relationship-target').focus();
+		}
+	}
+
+	/**
+	 * Creates a dialog to batch-add a relationship to each of the selected source entities.
+	 * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
+	 * @param {Omit<Parameters<typeof createDialog>[0], 'batchSelection' | 'source'>} options
+	 */
+	function createBatchDialog(sourceSelection, options = {}) {
+		return createDialog({
+			...options,
+			source: sourceSelection.value, // use the root node entity as a placeholder
+			batchSelection: true,
+		});
+	}
+
+	/**
+	 * Resolves after the current/next relationship dialog has been closed.
+	 * @returns {Promise<RelationshipDialogFinalStateT>} The final state of the dialog when it was closed by the user.
+	 */
+	async function closingDialog() {
+		return new Promise((resolve) => {
+			// wait for the user to accept or cancel the dialog
+			document.addEventListener('mb-close-relationship-dialog', (event) => {
+				const finalState = event.dialogState;
+				finalState.closeEventType = event.closeEventType;
+				resolve(finalState);
+			}, { once: true });
+		});
+	}
+
+	/** @param {string} creditedAs Credited name of the target entity. */
+	function creditTargetAs(creditedAs) {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'update-target-entity',
+			source: MB.relationshipEditor.state.dialogLocation.source,
+			action: {
+				type: 'update-credit',
+				action: {
+					type: 'set-credit',
+					creditedAs,
+				},
+			},
+		});
+	}
+
+	/**
+	 * Sets the begin or end date of the current dialog.
+	 * @param {PartialDateT} date
+	 */
+	function setDate(date, isBegin = true) {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'update-date-period',
+			action: {
+				type: isBegin ? 'update-begin-date' : 'update-end-date',
+				action: {
+					type: 'set-date',
+					date: date,
+				},
+			},
+		});
+	}
+
+	/** @param {DatePeriodRoleT} datePeriod */
+	function setDatePeriod(datePeriod) {
+		setDate(datePeriod.begin_date, true);
+		setDate(datePeriod.end_date, false);
+
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'update-date-period',
+			action: {
+				type: 'set-ended',
+				enabled: datePeriod.ended,
+			},
+		});
+	}
+
+	/** @param {number} year */
+	function setYear(year) {
+		setDatePeriod({
+			begin_date: { year },
+			end_date: { year },
+			ended: true,
+		});
+	}
+
+	/**
+	 * Sets the relationship attributes of the current dialog.
+	 * @param {ExternalLinkAttrT[]} attributes 
+	 */
+	function setAttributes(attributes) {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'set-attributes',
+			attributes,
+		});
+	}
+
+	/**
+	 * @param {EntityItemT} entity 
+	 * @returns {OptionItemT}
+	 */
+	function entityToSelectItem(entity) {
+		return {
+			type: 'option',
+			id: entity.id,
+			name: entity.name,
+			entity,
+		};
+	}
+
+	/**
+	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT} EntityItemT
+	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
+	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & { closeEventType: 'accept' | 'cancel' }} RelationshipDialogFinalStateT
+	 */
+
+	/**
+	 * Creates a relationship between the given source and target entity.
+	 * @param {RelationshipProps & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
+	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
+	 * @param {CoreEntityT} options.target Target entity.
+	 * @param {number} [options.batchSelectionCount] Batch-edit all selected entities which have the same type as the source.
+	 * The source entity only acts as a placeholder in this case.
+	 * @param {RelationshipProps} props Relationship properties.
+	 */
+	function createRelationship({
+		source = MB.relationshipEditor.state.entity,
+		target,
+		batchSelectionCount = null,
+		...props
+	}) {
+		const backward = isRelBackward(source.entityType, target.entityType);
+
+		MB.relationshipEditor.dispatch({
+			type: 'update-relationship-state',
+			sourceEntity: source,
+			batchSelectionCount,
+			creditsToChangeForSource: '',
+			creditsToChangeForTarget: '',
+			newRelationshipState: {
+				...RELATIONSHIP_DEFAULTS,
+				entity0: backward ? target : source,
+				entity1: backward ? source : target,
+				id: MB.relationshipEditor.getRelationshipStateId(),
+				...props,
+			},
+			oldRelationshipState: null,
+		});
+	}
+
+	/**
+	 * Creates the same relationship between each of the selected source entities and the given target entity.
+	 * @param {import('weight-balanced-tree').ImmutableTree<CoreEntityT>} sourceSelection Selected source entities.
+	 * @param {CoreEntityT} target Target entity.
+	 * @param {RelationshipProps} props Relationship properties.
+	 */
+	function batchCreateRelationships(sourceSelection, target, props) {
+		return createRelationship({
+			source: sourceSelection.value, // use the root node entity as a placeholder
+			target,
+			batchSelectionCount: sourceSelection.size,
+			...props,
+		});
+	}
+
+	/**
+	 * @typedef {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
+	 * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
+	 */
+
+	/**
+	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
+	 * Lets the user choose the appropriate target label or artist and waits for the dialog to close before continuing with the next one.
+	 * @param {CopyrightItem[]} copyrightInfo List of copyright items.
+	 * @param {object} [customOptions]
+	 * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
+	 * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
+	 * @param {boolean} [customOptions.useAllYears] Adds one (release) relationship for each given year instead of a single undated relationship, disabled by default.
+	 * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
+	 */
+	async function addCopyrightRelationships(copyrightInfo, customOptions = {}) {
+		// provide default options
+		const options = {
+			bypassCache: false,
+			forceArtist: false,
+			useAllYears: false,
+			...customOptions,
+		};
+
+		/** @type {ReleaseT} */
+		const release = MB.getSourceEntityInstance();
+		const releaseArtistNames = release.artistCredit.names // all release artists
+			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
+			.map(simplifyName);
+
+		/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+		const selectedRecordings = MB.relationshipEditor.state.selectedRecordings;
+
+		let addedRelCount = 0;
+		let skippedDialogs = false;
+
+		for (const copyrightItem of copyrightInfo) {
+			// detect artists who own the copyright of their own release
+			const targetType = options.forceArtist || releaseArtistNames.includes(simplifyName(copyrightItem.name)) ? 'artist' : 'label';
+
+			/**
+			 * There are multiple ways to fill the relationship's target entity:
+			 * (1) Directly map the name to an MBID (if the name is already cached).
+			 * (2) Just fill in the name and let the user select an entity (in manual mode or when the cache is bypassed).
+			 */
+			const targetMBID = !options.bypassCache && await nameToMBIDCache.get(targetType, copyrightItem.name); // (1a)
+			let targetEntity = targetMBID
+				? await entityCache.get(targetMBID) // (1b)
+				: copyrightItem.name; // (2a)
+
+			for (const type of copyrightItem.types) {
+				// add all copyright rels to the release
+				try {
+					const linkTypeId = getLinkTypeId(targetType, 'release', type);
+					let years = preferArray(copyrightItem.year);
+
+					// do not use all years if there are multiple unspecific ones (unless enabled)
+					if (years.length !== 1 && !options.useAllYears) {
+						years = [undefined]; // prefer a single undated relationship
+					}
+
+					for (const year of years) {
+						if (typeof targetEntity === 'string') { // (2b)
+							await createDialog({
+								target: targetEntity,
+								targetType: targetType,
+								linkTypeId,
+							});
+							targetEntity = await fillAndProcessDialog({ ...copyrightItem, year });
+						} else { // (1c)
+							createRelationship({
+								target: targetEntity,
+								linkTypeID: linkTypeId,
+								entity0_credit: copyrightItem.name,
+								...(year ? createDatePeriodForYear(year) : {}),
+							});
+							addedRelCount++;
+						}
+					}
+				} catch (error) {
+					console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
+					skippedDialogs = true;
+				}
+
+				// also add phonographic copyright rels to all selected recordings
+				if (type === '℗' && selectedRecordings) {
+					try {
+						const linkTypeId = getLinkTypeId(targetType, 'recording', type);
+						if (typeof targetEntity === 'string') {
+							await createBatchDialog(selectedRecordings, {
+								target: targetEntity,
+								linkTypeId,
+							});
+							targetEntity = await fillAndProcessDialog(copyrightItem);
+						} else {
+							// do not fill the date if there are multiple unspecific years
+							let datePeriod = {};
+							if (copyrightItem.year && !Array.isArray(copyrightItem.year)) {
+								datePeriod = createDatePeriodForYear(copyrightItem.year);
+							}
+
+							batchCreateRelationships(selectedRecordings, targetEntity, {
+								linkTypeID: linkTypeId,
+								entity0_credit: copyrightItem.name,
+								...datePeriod,
+							});
+							addedRelCount += selectedRecordings.size;
+						}
+					} catch (error) {
+						console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
+						skippedDialogs = true;
+					}
+				}
+			}
+		}
+
+		return addedRelCount > 0 ? (skippedDialogs ? 'partial' : 'done') : 'skipped';
+
+		/**
+		 * @param {CopyrightItem} copyrightItem
+		 */
+		async function fillAndProcessDialog(copyrightItem) {
+			creditTargetAs(copyrightItem.name);
+
+			// do not fill the date if there are multiple unspecific years
+			if (copyrightItem.year && !Array.isArray(copyrightItem.year)) {
+				setYear(copyrightItem.year);
+			}
+
+			// remember the entity which the user has chosen for the given name
+			const finalState = await closingDialog();
+
+			if (finalState.closeEventType === 'accept') {
+				const targetEntity = finalState.targetEntity.target;
+				const creditedName = finalState.targetEntity.creditedAs;
+				nameToMBIDCache.set([targetEntity.entityType, creditedName || targetEntity.name], targetEntity.gid);
+				addedRelCount++;
+				return targetEntity;
+			} else {
+				skippedDialogs = true;
+				return copyrightItem.name; // keep name as target entity
+			}
+		}
+	}
+
+	// Adapted from https://stackoverflow.com/a/46012210
+
+	Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+
+	const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+
+	/**
+	 * Sets the value of a textarea input element which has been manipulated by React.
+	 * @param {HTMLTextAreaElement} input 
+	 * @param {string} value 
+	 */
+	function setReactTextareaValue(input, value) {
+		nativeTextareaValueSetter.call(input, value);
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
+	/**
 	 * Adds the given message and a footer for the active userscript to the edit note.
 	 * @param {string} message Edit note message.
 	 */
 	function addMessageToEditNote(message) {
 		/** @type {HTMLTextAreaElement} */
-		const editNoteInput = document.querySelector('#edit-note-text, .edit-note');
+		const editNoteInput = qs('#edit-note-text, .edit-note');
 		const previousContent = editNoteInput.value.split(editNoteSeparator);
-		editNoteInput.value = buildEditNote(...previousContent, message);
-		editNoteInput.dispatchEvent(new Event('change'));
+		setReactTextareaValue(editNoteInput, buildEditNote(...previousContent, message));
 	}
 
 	/**
@@ -598,6 +1114,14 @@
 		]);
 	}
 
+	/** Resolves as soon as the React relationship editor is ready. */
+	function readyRelationshipEditor() {
+		const reactRelEditor = qs('.release-relationship-editor');
+		if (!reactRelEditor) return Promise.resolve(); // TODO: drop once the new React relationship editor has been deployed
+		// wait for the loading message to disappear (takes ~1s)
+		return waitFor(() => !qs('.release-relationship-editor > .loading-message'), 100);
+	}
+
 	// adapted from https://stackoverflow.com/a/25621277
 
 	/**
@@ -640,23 +1164,6 @@
 		}
 		style.innerText = css;
 		document.head.append(style);
-	}
-
-	/**
-	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
-	 * @param {string} elementId String that specifies the ID value.
-	 */
-	function dom(elementId) {
-		return document.getElementById(elementId);
-	}
-
-	/**
-	 * Returns the first element that is a descendant of node that matches selectors.
-	 * @param {string} selectors 
-	 * @param {ParentNode} node 
-	 */
-	function qs(selectors, node = document) {
-		return node.querySelector(selectors);
 	}
 
 	/** Pattern to match an ES RegExp string representation. */
@@ -772,19 +1279,21 @@
 		return persistElement(element, 'value', 'change', defaultValue);
 	}
 
-	const creditParserUI =
-`<details id="credit-parser">
+	const creditParserUI = `
+<details id="credit-parser">
 <summary>
 	<h2>Credit Parser</h2>
 </summary>
 <form>
+	<details id="credit-parser-config">
+		<summary><h3>Advanced configuration</h3></summary>
+		<ul id="credit-patterns"></ul>
+	</details>
 	<div class="row">
 		<textarea name="credit-input" id="credit-input" cols="120" rows="1" placeholder="Paste credits here…"></textarea>
 	</div>
 	<div class="row">
 		Identified relationships will be added to the release and/or the matching recordings and works (only if these are selected).
-	</div>
-	<div class="row" id="credit-patterns">
 	</div>
 	<div class="row">
 		<input type="checkbox" name="remove-parsed-lines" id="remove-parsed-lines" />
@@ -795,71 +1304,89 @@
 	<div class="row buttons">
 	</div>
 </form>
-</details>`	;
+</details>`;
 
-	const css =
-`details#credit-parser > summary {
+	const css = `
+details#credit-parser summary {
 	cursor: pointer;
 	display: block;
 }
-details#credit-parser > summary > h2 {
+details#credit-parser summary > h2, details#credit-parser summary > h3 {
 	display: list-item;
 }
 textarea#credit-input {
 	overflow-y: hidden;
 }
-form div.row span.col:not(:last-child)::after {
-	content: " | ";
-}
-form div.row span.col label {
-	margin-right: 0;
-}
 #credit-parser label[title] {
 	border-bottom: 1px dotted;
 	cursor: help;
-}`	;
+}`;
+
+	const uiReadyEventType = 'credit-parser-ui-ready';
 
 	/**
 	 * Injects the basic UI of the credit parser and waits until the UI has been expanded before it continues with the build tasks.
 	 * @param {...(() => void)} buildTasks Handlers which can be registered for additional UI build tasks.
 	 */
-	function buildCreditParserUI(...buildTasks) {
-		// possibly called by multiple userscripts, do not inject the UI again
-		if (dom('credit-parser')) return;
+	async function buildCreditParserUI(...buildTasks) {
+		await readyRelationshipEditor();
 
-		// inject credit parser between the sections for track and release relationships,
-		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
-		qs('#content > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
-		injectStylesheet(css, 'credit-parser');
+		/** @type {HTMLDetailsElement} */
+		const existingUI = dom('credit-parser');
+
+		// possibly called by multiple userscripts, do not inject the UI again
+		if (!existingUI) {
+			// inject credit parser between the sections for track and release relationships,
+			// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
+			qs('#content > h2:nth-of-type(2), .release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
+			// TODO: drop first selector once the new React relationship editor has been deployed
+			injectStylesheet(css, 'credit-parser');
+		}
+
+		// execute all additional build tasks once the UI is open and ready
+		if (existingUI && existingUI.open) {
+			// our custom event already happened because the UI builder code is synchronous
+			buildTasks.forEach((task) => task());
+		} else {
+			// wait for our custom event if the UI is not (fully) initialized or is collapsed
+			buildTasks.forEach((task) => document.addEventListener(uiReadyEventType, () => task(), { once: true }));
+		}
+
+		if (existingUI) return;
 
 		// continue initialization of the UI once it has been opened
 		persistDetails('credit-parser', true).then((UI) => {
 			if (UI.open) {
-				initializeUI(buildTasks);
+				initializeUI();
 			} else {
-				UI.addEventListener('toggle', function toggleHandler(event) {
-					UI.removeEventListener(event.type, toggleHandler);
-					initializeUI(buildTasks);
-				});			
+				UI.addEventListener('toggle', initializeUI, { once: true });
 			}
 		});
 	}
 
-	/**
-	 * @param {Array<() => void>} buildTasks
-	 */
-	function initializeUI(buildTasks) {
+	function initializeUI() {
 		const creditInput = dom('credit-input');
 
 		// persist the state of the UI
 		persistCheckbox('remove-parsed-lines');
 		persistCheckbox('parser-autofocus');
+		persistDetails('credit-parser-config').then((config) => {
+			// hidden pattern inputs have a zero width, so they have to be resized if the config has not been open initially
+			if (!config.open) {
+				config.addEventListener('toggle', () => {
+					qsa('input.pattern', config).forEach((input) => automaticWidth.call(input));
+				}, { once: true });
+			}
+		});
 
 		// auto-resize the credit textarea on input
 		creditInput.addEventListener('input', automaticHeight);
 
 		addButton('Load annotation', (creditInput) => {
-			const annotation = MB.releaseRelationshipEditor.source.latest_annotation;
+			/** @type {ReleaseT} */
+			const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
+			// TODO: drop fallback once the new React relationship editor has been deployed
+			const annotation = release.latest_annotation;
 			if (annotation) {
 				creditInput.value = annotation.text;
 				creditInput.dispatchEvent(new Event('input'));
@@ -873,14 +1400,19 @@ form div.row span.col label {
 		});
 
 		addPatternInput({
+			label: 'Credit separator',
+			description: 'Splits a credit into role and artist (disabled when empty)',
+			defaultValue: /\s[–-]\s|:\s|\t+/,
+		});
+
+		addPatternInput({
 			label: 'Name separator',
-			description: 'Splits the extracted name into multiple names (disabled by default when empty)',
+			description: 'Splits the extracted name into multiple names (disabled when empty)',
 			defaultValue: parserDefaults.nameSeparatorRE,
 		});
 
-		for (const task of buildTasks) {
-			task();
-		}
+		// trigger all additional UI build tasks
+		document.dispatchEvent(new CustomEvent(uiReadyEventType));
 
 		// focus the credit parser input once all relationships have been loaded (and displayed)
 		releaseLoadingFinished().then(() => {
@@ -997,11 +1529,10 @@ form div.row span.col label {
 		});
 
 		// inject label, input, reset button and explanation link
-		const span = document.createElement('span');
-		span.className = 'col';
-		span.insertAdjacentHTML('beforeend', `<label class="inline" for="${id}" title="${config.description}">${config.label}:</label>`);
-		span.append(' ', patternInput, ' ', resetButton, ' ', explanationLink);
-		dom('credit-patterns').appendChild(span);
+		const container = document.createElement('li');
+		container.insertAdjacentHTML('beforeend', `<label for="${id}" title="${config.description}">${config.label}:</label>`);
+		container.append(' ', patternInput, ' ', resetButton, ' ', explanationLink);
+		dom('credit-patterns').appendChild(container);
 
 		// persist the input and calls the setter for the initial value (persisted value or the default)
 		persistInput(patternInput, config.defaultValue).then(setInput);
@@ -1026,6 +1557,9 @@ form div.row span.col label {
 
 		nameToMBIDCache.load();
 
+		// TODO: drop once the new React relationship editor has been deployed
+		const addCopyrightRels = hasReactRelEditor() ? addCopyrightRelationships : addCopyrightRelationships$1;
+
 		addParserButton('Parse copyright notice', async (creditLine, event) => {
 			const copyrightInfo = parseCopyrightNotice(creditLine, {
 				terminatorRE: getPatternAsRegExp(terminatorInput.value || '/$/'),
@@ -1033,7 +1567,7 @@ form div.row span.col label {
 			});
 
 			if (copyrightInfo.length) {
-				const result = await addCopyrightRelationships(copyrightInfo, {
+				const result = await addCopyrightRels(copyrightInfo, {
 					forceArtist: event.shiftKey,
 					bypassCache: event.ctrlKey,
 					useAllYears: event.altKey,

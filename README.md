@@ -57,7 +57,7 @@ javascript:(()=>{function e(e,s){return s.forEach(([s,r])=>{e=e.replace(s,r)}),e
 
 ### Voice Actor Credits
 
-Simplifies the addition of “spoken vocals” relationships (at release level). Provides additional buttons in the relationship editor to open a pre-filled dialogue or import the credits from Discogs.
+Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/voiceActorCredits.user.js)
@@ -65,6 +65,7 @@ Simplifies the addition of “spoken vocals” relationships (at release level).
 Also available as a bookmarklet with less features:
 
 - Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.
+- Parses voice actor credits from text and remembers name to MBID mappings (userscript only).
 - Imports voice actor credits from linked Discogs pages (userscript only).
 - Automatically matches artists whose Discogs pages are linked to MB (unlinked artists can be selected from the already opened inline search).
 
@@ -110,7 +111,16 @@ javascript:(()=>{function e(e,t){$("input.partial-date-"+e).val(t).trigger("chan
 - Adds a link to the relevant guideline to the edit note.
 
 ```js
-javascript:$("input[id^=medium-title]").val((e,t)=>t.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i,"").trim()).trigger("change"),void $("#edit-note-text").val((e,t)=>"Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n"+t).trigger("change");
+javascript:(()=>{function e(e,t,i=new Event("change")){e.value=t,e.dispatchEvent(i)}((e,t=document)=>t.querySelectorAll(e))("input[id^=medium-title]").forEach(t=>e(t,t.value.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i,"").trim()));const t=document.getElementById("edit-note-text");e(t,"Clear redundant medium titles, see https://musicbrainz.org/doc/Style/Release#Medium_title\n"+t.value)})();
+```
+
+### [Detect Cover Art Types](src/detectCoverArtTypes.js)
+
+- Detects and fills the image types and comment of all pending uploads using their filenames.
+- Treats filename parts in parentheses as image comments.
+
+```js
+javascript:(()=>{function t(t,e=document){return e.querySelector(t)}function e(t,e=document){return e.querySelectorAll(t)}const n='ul.cover-art-type-checkboxes input[type="checkbox"]';(({additionalTypes:c=[],commentPattern:o}={})=>{const a=e('tbody[data-bind="foreach: files_to_upload"] > tr'),r={};e(n,a[0]).forEach(t=>{t.parentElement.textContent.trim().toLowerCase().split("/").forEach(e=>r[e]=t.value)});const i=RegExp(String.raw`(?<=\W|_|^)(${Object.keys(r).join("|")})(?=\W|_|$)`,"gi");a.forEach(a=>{const l=t('.file-info span[data-bind="text: name"]',a).textContent,s=Array.from(l.matchAll(i),t=>t[0]);if(c&&s.push(...c),s.length&&((t,c=[])=>{e(n,t).forEach(t=>{c.includes(t.value)&&(t.checked=!0,t.dispatchEvent(new Event("click")))})})(a,s.map(t=>r[t.toLowerCase()])),o){const e=l.match(o);e&&((e,n)=>{const c=t("input.comment",e);c.value=n,c.dispatchEvent(new Event("change"))})(a,e[0])}})})({commentPattern:/(?<=\().+?(?=\))/})})();
 ```
 
 ### [Enumerate Track Titles](src/enumerateTrackTitles.js)
@@ -149,6 +159,15 @@ javascript:void(async e=>{const t=document.querySelector("h1 bdi").textContent.m
 
 ```js
 javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];(a=>{a&&open("https://magicisrc.kepstin.ca?mbid="+a)})(a)})();
+```
+
+### [Mark Release As Worldwide](src/bookmarklets/markReleaseAsWorldwide.js)
+
+- Removes all release events except for the first one and changes its country to [Worldwide].
+- Allows to replace an exhaustive list of release countries/events with a single release event.
+
+```js
+javascript:$(".remove-release-event:not(:first)").trigger("click"),void $("#country-0").val(240).trigger("change");
 ```
 
 ### [Relate This Entity To Multiple MBID](src/bookmarklets/relateThisEntityToMultipleMBID.js)

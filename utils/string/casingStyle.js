@@ -9,6 +9,16 @@ export function camelToTitleCase(name) {
 }
 
 /**
+ * Converts the name from kebab case into title case.
+ * @param {string} name
+ */
+export function kebabToTitleCase(name) {
+	return name.split('-')
+		.map(upperCaseFirstLetter)
+		.join(' ');
+}
+
+/**
  * Converts a string into an identifier that is compatible with Markdown's heading anchors.
  * @param {string} string
  */

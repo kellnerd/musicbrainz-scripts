@@ -1,4 +1,6 @@
-import { addCopyrightRelationships } from '../copyrightRelationships.js';
+import { addCopyrightRelationships as _addCopyrightRelationships } from '../copyrightRelationships.js';
+import { addCopyrightRelationships } from '../relationship-editor/addCopyrightRelationships.js';
+import { hasReactRelEditor } from '../relationship-editor/common.js';
 import { addParserButton, buildCreditParserUI } from '../creditParserUI.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
@@ -11,6 +13,9 @@ function buildCopyrightParserUI() {
 
 	nameToMBIDCache.load();
 
+	// TODO: drop once the new React relationship editor has been deployed
+	const addCopyrightRels = hasReactRelEditor() ? addCopyrightRelationships : _addCopyrightRelationships;
+
 	addParserButton('Parse copyright notice', async (creditLine, event) => {
 		const copyrightInfo = parseCopyrightNotice(creditLine, {
 			terminatorRE: getPatternAsRegExp(terminatorInput.value || '/$/'),
@@ -18,7 +23,7 @@ function buildCopyrightParserUI() {
 		});
 
 		if (copyrightInfo.length) {
-			const result = await addCopyrightRelationships(copyrightInfo, {
+			const result = await addCopyrightRels(copyrightInfo, {
 				forceArtist: event.shiftKey,
 				bypassCache: event.ctrlKey,
 				useAllYears: event.altKey,

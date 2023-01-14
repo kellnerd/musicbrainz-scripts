@@ -16,7 +16,7 @@ async function build({
 	docBasePath = 'doc',
 	debug = false,
 } = {}) {
-	// build userscript
+	// build userscripts
 	const userscriptNames = await buildUserscripts(userscriptBasePath, debug);
 
 	// prepare bookmarklets
@@ -36,6 +36,7 @@ async function build({
 
 		readme.write(`\n### ${camelToTitleCase(baseName)}\n`);
 		readme.write('\n' + metadata.description + '\n');
+		metadata.features?.forEach((item) => readme.write(`- ${item}\n`));
 		readme.write(sourceAndInstallButton(baseName));
 
 		// also insert the code snippet if there is a bookmarklet of the same name

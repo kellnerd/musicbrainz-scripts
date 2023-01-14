@@ -1,6 +1,5 @@
 import { entityCache } from './entityCache.js';
 import { nameToMBIDCache } from './nameToMBIDCache.js';
-import { getLinkTypeId } from './relationshipData.js';
 import {
 	closingDialog,
 	createAddRelationshipDialog,
@@ -8,6 +7,7 @@ import {
 	getTargetEntity,
 	openDialogAndTriggerAutocomplete,
 } from './relationshipEditor.js';
+import { getLinkTypeId } from './relationship-editor/linkTypes.js';
 import { preferArray } from '../utils/array/scalar.js';
 import { simplifyName } from '../utils/string/simplify.js';
 

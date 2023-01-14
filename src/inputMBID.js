@@ -1,12 +1,13 @@
 import { extractEntityFromURL, getEntityTooltip } from './entity.js';
 import { fetchEntity } from './publicAPI.js';
 import { toScalar } from '../utils/array/scalar.js';
+import { kebabToTitleCase } from '../utils/string/casingStyle.js';
 
 /**
  * Creates an input element where you can paste an MBID or an MB entity URL.
  * It automatically validates the content on paste, loads the name of the entity and sets the MBID as a data attribute.
  * @param {string} id ID and name of the input element.
- * @param {MB.EntityType[]} [allowedEntityTypes] Entity types which are allowed for this input, defaults to all.
+ * @param {CoreEntityTypeT[]} [allowedEntityTypes] Entity types which are allowed for this input, defaults to all.
  * @param {string} [initialValue] Initial value of the input element.
  */
 export function createMBIDInput(id, allowedEntityTypes, initialValue) {
@@ -14,7 +15,7 @@ export function createMBIDInput(id, allowedEntityTypes, initialValue) {
 	const mbidInput = document.createElement('input');
 	mbidInput.className = 'mbid';
 	mbidInput.name = mbidInput.id = id;
-	mbidInput.placeholder = 'MBID or MB entity URL';
+	mbidInput.placeholder = `MBID or URL (${allowedEntityTypes?.join('/') ?? 'any entity'})`;
 
 	const mbidAttribute = 'data-mbid';
 	const defaultEntityTypeRoute = toScalar(allowedEntityTypes) ?? 'mbid';
@@ -50,13 +51,14 @@ export function createMBIDInput(id, allowedEntityTypes, initialValue) {
 			if (entity) {
 				if (typeof allowedEntityTypes === 'undefined' || allowedEntityTypes.includes(entity.type)) {
 					const result = await fetchEntity(entityURL);
+					result.type ||= kebabToTitleCase(entity.type); // fallback for missing type
 					mbidInput.setAttribute(mbidAttribute, result.id);
 					mbidInput.value = result.name || result.title; // releases only have a title attribute
 					mbidInput.classList.add('success');
 					mbidInput.title = getEntityTooltip(result);
 					return result;
 				} else {
-					throw new Error(`Entity type '${entity.type}' is not allowed`);
+					throw new Error(`Entity type '${kebabToTitleCase(entity.type)}' is not allowed`);
 				}
 			}
 		} catch (error) {

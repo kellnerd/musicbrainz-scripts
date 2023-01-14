@@ -1,11 +1,5 @@
 /**
- * - Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
- *   These can only be guessed based on context as the ASCII symbols are ambiguous.
- * - Highlights all updated input fields in order to allow the user to review the changes.
- * - Works for release/medium/track titles and release disambiguation comments (in the release editor)
- *   and for entity names and disambiguation comments (on their respective edit and creation pages).
- * - Detects the selected language (in the release editor) and uses localized quotes (userscript only).
- * - Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
+ * Supports the same fields as the userscript but without language detection and granular control over the affected fields.
  */
 
 import { transformationRulesToPreserveMarkup } from '../guessUnicodePunctuation.js';

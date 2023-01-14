@@ -1,5 +1,6 @@
 type UserscriptSpecificMetadata = {
 	name: string;
+	version?: string;
 	description: string;
 	icon?: string | URL;
 	require?: string | URL;
@@ -23,3 +24,8 @@ type UserscriptDefaultMetadata = {
 }
 
 type UserscriptMetadata = UserscriptSpecificMetadata & Partial<UserscriptDefaultMetadata>;
+
+type EnhancedUserscriptMetadata = UserscriptMetadata & {
+	/** List of features which will be shown in the README, items may contain inline Markdown. */
+	features?: string[];
+};
