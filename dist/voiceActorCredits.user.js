@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2023.1.26
+// @version       2023.1.26.2
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
@@ -554,6 +554,10 @@ textarea#credit-input {
 		const seededCredits = seededData.get('credits');
 		if (seededCredits) {
 			setTextarea(creditInput, seededCredits);
+			const seededEditNote = seededData.get('edit-note');
+			if (seededEditNote) {
+				addMessageToEditNote(seededEditNote);
+			}
 		}
 
 		addButton('Load annotation', (creditInput) => {

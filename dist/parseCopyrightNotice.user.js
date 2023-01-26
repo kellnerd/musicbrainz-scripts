@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2023.1.26
+// @version       2023.1.26.2
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -1387,6 +1387,10 @@ textarea#credit-input {
 		const seededCredits = seededData.get('credits');
 		if (seededCredits) {
 			setTextarea(creditInput, seededCredits);
+			const seededEditNote = seededData.get('edit-note');
+			if (seededEditNote) {
+				addMessageToEditNote(seededEditNote);
+			}
 		}
 
 		addButton('Load annotation', (creditInput) => {
