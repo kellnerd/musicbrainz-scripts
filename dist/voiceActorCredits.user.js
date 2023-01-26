@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2023.1.11
+// @version       2023.1.26
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
@@ -549,14 +549,20 @@ textarea#credit-input {
 		// auto-resize the credit textarea on input
 		creditInput.addEventListener('input', automaticHeight);
 
+		// load seeded data from hash
+		const seededData = new URLSearchParams(window.location.hash.slice(1));
+		const seededCredits = seededData.get('credits');
+		if (seededCredits) {
+			setTextarea(creditInput, seededCredits);
+		}
+
 		addButton('Load annotation', (creditInput) => {
 			/** @type {ReleaseT} */
 			const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
 			// TODO: drop fallback once the new React relationship editor has been deployed
 			const annotation = release.latest_annotation;
 			if (annotation) {
-				creditInput.value = annotation.text;
-				creditInput.dispatchEvent(new Event('input'));
+				setTextarea(creditInput, annotation.text);
 			}
 		});
 
@@ -648,8 +654,7 @@ textarea#credit-input {
 			}
 
 			if (removeParsedLines.checked) {
-				creditInput.value = skippedLines.join('\n');
-				creditInput.dispatchEvent(new Event('input'));
+				setTextarea(creditInput, skippedLines.join('\n'));
 			}
 		}, description);
 	}
@@ -716,6 +721,16 @@ textarea#credit-input {
 		if (value) input.value = value;
 		automaticWidth.call(input);
 		input.dispatchEvent(new Event('change'));
+	}
+
+	/**
+	 * Sets the textarea to the given value and adjusts the height.
+	 * @param {HTMLTextAreaElement} textarea 
+	 * @param {string} value 
+	 */
+	function setTextarea(textarea, value) {
+		textarea.value = value;
+		automaticHeight.call(textarea);
 	}
 
 	/**
