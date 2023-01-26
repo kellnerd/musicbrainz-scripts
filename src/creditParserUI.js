@@ -121,6 +121,10 @@ function initializeUI() {
 	const seededCredits = seededData.get('credits');
 	if (seededCredits) {
 		setTextarea(creditInput, seededCredits);
+		const seededEditNote = seededData.get('edit-note');
+		if (seededEditNote) {
+			addMessageToEditNote(seededEditNote);
+		}
 	}
 
 	addButton('Load annotation', (creditInput) => {
