@@ -116,6 +116,14 @@ function buildUI() {
 			// exclude annotations from the global action as the changes are hard to verify
 		});
 		qs('#release-editor > .buttons').append(globalButton);
+	} else if (['add-alias', 'alias'].includes(pageType)) { // alias creation or edit page
+		// global button after the "Enter edit" button
+		const button = createElement(buttonTemplate.global);
+		button.addEventListener('click', () => {
+			guessUnicodePunctuation(['input[name$=name]']); // TODO: use locale
+			transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
+		});
+		qs('.buttons').append(button);
 	} else if (entityType != 'artist-credit') { // edit pages for all other entity types (except ACs)
 		const entityInputs = [
 			'input[name$=name]', // entity name
