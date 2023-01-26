@@ -122,8 +122,7 @@ function initializeUI() {
 		// TODO: drop fallback once the new React relationship editor has been deployed
 		const annotation = release.latest_annotation;
 		if (annotation) {
-			creditInput.value = annotation.text;
-			creditInput.dispatchEvent(new Event('input'));
+			setTextarea(creditInput, annotation.text);
 		}
 	});
 
@@ -215,8 +214,7 @@ export function addParserButton(label, parser, description) {
 		}
 
 		if (removeParsedLines.checked) {
-			creditInput.value = skippedLines.join('\n');
-			creditInput.dispatchEvent(new Event('input'));
+			setTextarea(creditInput, skippedLines.join('\n'));
 		}
 	}, description);
 }
@@ -283,4 +281,14 @@ function setInput(input, value) {
 	if (value) input.value = value;
 	automaticWidth.call(input);
 	input.dispatchEvent(new Event('change'));
+}
+
+/**
+ * Sets the textarea to the given value and adjusts the height.
+ * @param {HTMLTextAreaElement} textarea 
+ * @param {string} value 
+ */
+function setTextarea(textarea, value) {
+	textarea.value = value;
+	automaticHeight.call(textarea);
 }
