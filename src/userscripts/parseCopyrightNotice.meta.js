@@ -9,6 +9,7 @@ const metadata = {
 		'Also creates phonographic copyright relationships for all selected recordings.',
 		'Detects artists who own the copyright of their own release and defaults to adding artist-release relationships for these credits.',
 		'See the [wiki page](https://github.com/kellnerd/musicbrainz-scripts/wiki/Parse-Copyright-Notices) for more details.',
+		'Allows seeding of the credit input (`credits`) and the edit note (`edit-note`) via custom query parameters, which are encoded into the hash of the URL (*Example*: `/edit-relationships#credits=(C)+2023+Test&edit-note=Seeding+example`).',
 	],
 	grant: [
 		'GM.getValue',

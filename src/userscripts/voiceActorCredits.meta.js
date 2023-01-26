@@ -8,6 +8,7 @@ const metadata = {
 		'Parses a list of voice actor credits from text and remembers name to MBID mappings.',
 		'Imports voice actor credits from linked Discogs release pages.',
 		'Automatically matches artists whose Discogs pages are linked to MB (unlinked artists can be selected from the already opened inline search).',
+		'Allows seeding of the credit input (`credits`) and the edit note (`edit-note`) via custom query parameters, which are encoded into the hash of the URL (*Example*: `/edit-relationships#credits=Narrator+-+John+Doe&edit-note=Seeding+example`).',
 	],
 	grant: [
 		'GM.getValue',
