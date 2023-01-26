@@ -116,6 +116,13 @@ function initializeUI() {
 	// auto-resize the credit textarea on input
 	creditInput.addEventListener('input', automaticHeight);
 
+	// load seeded data from hash
+	const seededData = new URLSearchParams(window.location.hash.slice(1));
+	const seededCredits = seededData.get('credits');
+	if (seededCredits) {
+		setTextarea(creditInput, seededCredits);
+	}
+
 	addButton('Load annotation', (creditInput) => {
 		/** @type {ReleaseT} */
 		const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
