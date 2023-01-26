@@ -11,19 +11,19 @@ While bookmarklets are good for trying things out because they do not require ad
 ### Guess Unicode Punctuation
 
 Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
+- Guesses Unicode punctuation based on context as the ASCII symbols are ambiguous.
+- Highlights all updated input fields in order to allow the user to review the changes.
+- Works for release/medium/track titles and release disambiguation comments (in the release editor).
+- Also supports other entity names and disambiguation comments (on their respective edit and creation pages).
+- Detects the selected language (in the release editor) and uses localized quotes.
+- Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/guessUnicodePunctuation.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/guessUnicodePunctuation.user.js)
 
 Also available as a bookmarklet with less features:
 
-- Searches and replaces ASCII punctuation symbols for all title input fields by their preferred Unicode counterparts.
-  These can only be guessed based on context as the ASCII symbols are ambiguous.
-- Highlights all updated input fields in order to allow the user to review the changes.
-- Works for release/medium/track titles and release disambiguation comments (in the release editor)
-  and for entity names and disambiguation comments (on their respective edit and creation pages).
-- Detects the selected language (in the release editor) and uses localized quotes (userscript only).
-- Experimental support for annotations and edit notes. Preserves apostrophe-based markup (bold, italic) and URLs.
+Supports the same fields as the userscript but without language detection and granular control over the affected fields.
 
 ```js
 javascript:(()=>{function e(e,t){const a="background-color";$(e).css(a,"").each((e,n)=>{let g=n.value;g&&(g=((e,t)=>(t.forEach(([t,a])=>{e=e.replace(t,a)}),e))(g,t),g!=n.value&&$(n).val(g).trigger("change").css(a,"yellow"))})}const t=[[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/gu,"\u201c$1\u201d"],[/(?<=\W|^)'(n)'(?=\W|$)/gi,"\u2019$1\u2019"],[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/gu,"\u2018$1\u2019"],[/(\d+)"/g,"$1\u2033"],[/(\d+)'(\d+)/g,"$1\u2032$2"],[/'/g,"\u2019"],[/(?<!\.)\.{3}(?!\.)/g,"\u2026"],[/ - /g," \u2013 "],[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g,e=>Number.isNaN(Date.parse(e))?e:e.replaceAll("-","\u2010")],[/\d+(-\d+){2,}/g,e=>e.replaceAll("-","\u2012")],[/(\d+)-(\d+)/g,"$1\u2013$2"],[/(?<=\S)-(?=\S)/g,"\u2010"]],a=[[/\[(.+?)(\|.+?)?\]/g,(e,t,a="")=>`[${btoa(t)}${a}]`],[/(?<=\/\/)(\S+)/g,(e,t)=>btoa(t)],[/'''/g,"<b>"],[/''/g,"<i>"],...t,[/<b>/g,"'''"],[/<i>/g,"''"],[/(?<=\/\/)([A-Za-z0-9+/=]+)/g,(e,t)=>atob(t)],[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g,(e,t,a="")=>`[${atob(t)}${a}]`]];e("input#name,input#comment,input.track-name,input[id^=medium-title],input[name$=name],input[name$=comment]",t),e("#annotation,#edit-note-text,textarea[name$=text],.edit-note",a)})();
@@ -39,17 +39,19 @@ Imports German broadcast releases from the ARD radio drama database.
 ### Parse Copyright Notice
 
 Parses copyright notices and automates the process of creating release and recording relationships for these.
+- Extracts all copyright and legal information from the given text.
+- Automates the process of creating label-release (or artist-release) relationships for these credits.
+- Also creates phonographic copyright relationships for all selected recordings.
+- Detects artists who own the copyright of their own release and defaults to adding artist-release relationships for these credits.
+- See the [wiki page](https://github.com/kellnerd/musicbrainz-scripts/wiki/Parse-Copyright-Notices) for more details.
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/parseCopyrightNotice.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/parseCopyrightNotice.user.js)
 
 Also available as a bookmarklet with less features:
 
-- Extracts all copyright and legal information from the given text.
-- Automates the process of creating release-label relationships for these.
-- Also creates phonographic copyright relationships for all selected recordings (userscript only).
-- Detects artists who own the copyright of their own release and adds artist relationships for these (userscript only).
-- See the [wiki page](https://github.com/kellnerd/musicbrainz-scripts/wiki/Parse-Copyright-Notices) for more details.
+Light version of the parser without customization and caching of name to MBID mappings.
+Only label-release relationships are supported.
 
 ```js
 javascript:(()=>{function e(e,s){return s.forEach(([s,r])=>{e=e.replace(s,r)}),e}const s=/([\xa9\u2117](?:\s*[&+]?\s*[\xa9\u2117])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/,r=/((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|manufactured|marketed)(?:\sby)?)(?:\sand)?\s)+)/,t={nameRE:/.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))?/,nameSeparatorRE:/[/|](?=\s|\w{2})|\s[\u2013-]\s/,terminatorRE:/$|(?=,|(?<!Bros)\.(?:\W|$)|\sunder\s)|(?<=(?<!Bros)\.)\W/};function a(s){return e(s.toLowerCase().trim(),[[/licen[sc]ed?/g,"licensed"],[/(distributed|manufactured|marketed)(\sby)?/,"$1 by"]])}const o={release:{artist:{"\xa9":709,"\u2117":710},label:{"\xa9":708,"\u2117":711,"licensed from":712,"licensed to":833,"distributed by":361,"manufactured by":360,"marketed by":848}},recording:{artist:{"\u2117":869},label:{"\u2117":867}}};function n(e,s=!1){const r=MB.sourceRelationshipEditor??MB.releaseRelationshipEditor;return new MB.relationshipEditor.UI.AddDialog({viewModel:r,source:r.source,target:e,backward:s})}function i(e){return new Promise(s=>{e?e.$dialog.on("dialogclose",()=>{s()}):s()})}function c(e,s){e.open(s),e.autocomplete.$input.focus(),e.autocomplete.search()}const d=prompt("Copyright notice:");d&&(async e=>{for(const s of e){const e="label",r=o.release[e],t=MB.entity({name:s.name,entityType:e});for(const e of s.types){const a=n(t),o=a.relationship();o.linkTypeID(r[e]),o.entity0_credit(s.name),s.year&&!Array.isArray(s.year)&&(o.begin_date.year(s.year),o.end_date.year(s.year)),c(a),await i(a)}}})(((o,n={})=>{const i={...t,...n},c=[],d=i.nameRE.source,l=i.terminatorRE.source,m=(o=e(o,[[/\(C\)/gi,"\xa9"],[/\(P\)/gi,"\u2117"],[/\xab(.+?)\xbb/g,"$1"],[/for (.+?) and (.+?) for the world outside (?:of )?\1/g,"/ $2"],[/as licen[sc]ee for/gi,"under license from"],[/\u2117\s*(under\s)/gi,"$1"],[/(?<=\u2117\s*)digital remaster/gi,""],[/([\xa9\u2117]\s*\d{4})\s*[&+]?\s*([\xa9\u2117]\s*\d{4})(.+)$/g,"$1$3\n$2$3"]])).matchAll(RegExp(String.raw`${s.source}(?:\s*[–-]\s+)?(${d}(?:\s*/\s*${d})*)(?:${l})`,"gimu"));for(const e of m){const s=e[3].split(i.nameSeparatorRE).map(e=>e.trim()),r=e[1].split(/[&+]|(?<=[\xa9\u2117])\s*(?=[\xa9\u2117])/).map(a),t=e[2]?.split(/[,&/+]/).map(e=>e.trim());s.forEach(e=>{var s;/an?\s(.+?)\srelease/i.test(e)||c.push({name:e,types:r,year:(s=t,Array.isArray(s)&&1===s.length?s[0]:s)})})}const u=o.matchAll(RegExp(String.raw`${r.source}(?:\s*[–-]\s+)?(${d})(?:${l})`,"gimu"));for(const e of u){const s=e[1].split(/\sand\s/).map(a);c.push({name:e[2],types:s})}return Array.from(new Map(c.map(e=>[JSON.stringify(e),e])).values())})(d))})();
@@ -58,16 +60,17 @@ javascript:(()=>{function e(e,s){return s.forEach(([s,r])=>{e=e.replace(s,r)}),e
 ### Voice Actor Credits
 
 Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
+- Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.
+- Parses a list of voice actor credits from text and remembers name to MBID mappings.
+- Imports voice actor credits from linked Discogs release pages.
+- Automatically matches artists whose Discogs pages are linked to MB (unlinked artists can be selected from the already opened inline search).
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/voiceActorCredits.user.js)
 
 Also available as a bookmarklet with less features:
 
-- Simplifies the addition of “spoken vocals” relationships (at release level) by providing a pre-filled dialogue in the relationship editor.
-- Parses voice actor credits from text and remembers name to MBID mappings (userscript only).
-- Imports voice actor credits from linked Discogs pages (userscript only).
-- Automatically matches artists whose Discogs pages are linked to MB (unlinked artists can be selected from the already opened inline search).
+Opens a pre-filled dialogue for a “spoken vocals” artist-release relationship in the release relationship editor.
 
 ```js
 javascript:void((e={},t="",i="")=>{const r=MB.releaseRelationshipEditor,a=MB.entity(e,"artist"),d=new MB.relationshipEditor.UI.AddDialog({source:r.source,target:a,viewModel:r}),o=d.relationship();return o.linkTypeID(60),o.entity0_credit(i),o.setAttributes([{type:{gid:"d3a36e62-a7c4-4eb9-839f-adfebe87ac12"},credited_as:t}]),d})().open();
