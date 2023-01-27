@@ -61,13 +61,13 @@ const standardTestCases = [
 ];
 
 const languageSpecificTestCases = {
-	German: [
+	de: [
 		/** hyphens for abbreviated compound words */
 		['Rock- und Pop-Balladen', 'Rock‐ und Pop‐Balladen'],
 		['Sonnenaufgang und -untergang', 'Sonnenaufgang und ‐untergang'],
 		['Sonnenauf- und -untergang', 'Sonnenauf‐ und ‐untergang'],
 	],
-	Japanese: [
+	ja: [
 		/** dashes used as brackets */
 		['Royal Days -another version-', 'Royal Days –another version–'],
 	],
@@ -78,7 +78,7 @@ export default function testPunctuationRules() {
 	const standardFailures = assertFunction(guessUnicodePunctuation, standardTestCases);
 
 	return Object.entries(languageSpecificTestCases).map(([language, testCases]) => {
-		console.log(`Testing ${language} punctuation substitution rules for titles...`);
+		console.log(`Testing '${language}' punctuation substitution rules for titles...`);
 		return assertFunction(guessUnicodePunctuation, testCases, language);
 	}).reduce((totalFailures, failures) => totalFailures + failures, standardFailures);
 }

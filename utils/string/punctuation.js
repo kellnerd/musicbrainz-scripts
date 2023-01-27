@@ -47,9 +47,9 @@ export const punctuationRules = [
  * @type {Record<string, string[]>}
  */
 const languageSpecificQuotes = {
-	English: ['“$1”', '‘$1’'],
-	French: ['« $1 »', '‹ $1 ›'],
-	German: ['„$1“', '‚$1‘'],
+	en: ['“$1”', '‘$1’'], // English
+	fr: ['« $1 »', '‹ $1 ›'], // French
+	de: ['„$1“', '‚$1‘'], // German
 };
 
 /**
@@ -62,17 +62,17 @@ const quotationRuleIndices = [0, 2];
  * @type {Record<string, SubstitutionRule[]>}
  */
 const languageSpecificRules = {
-	German: [
+	de: [ // German
 		[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
 	],
-	Japanese: [
+	ja: [ // Japanese
 		[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
 	],
 };
 
 /**
  * Creates language-specific punctuation guessing substitution rules.
- * @param {string} [language] Name of the language (in English).
+ * @param {string} [language] ISO 639-1 two letter code of the language.
  */
 export function punctuationRulesForLanguage(language) {
 	// create a deep copy to prevent modifications of the default rules
@@ -97,7 +97,7 @@ export function punctuationRulesForLanguage(language) {
  * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string} text
- * @param {string} [language] Language of the text (English name, optional).
+ * @param {string} [language] Language of the text (ISO 639-1 two letter code, optional).
  */
 export function guessUnicodePunctuation(text, language) {
 	return transform(text, punctuationRulesForLanguage(language));

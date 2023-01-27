@@ -535,13 +535,13 @@ export const languageCodes = {
 
 /**
  * Detects the selected language in the release editor.
- * @returns {string} Name of the language (in English).
+ * @returns {string} ISO 639-1 code of the language.
  */
 export function detectReleaseLanguage() {
 	// get the ID of the selected language, the name (text value) is localization-dependent
 	const languageID = dom('language')?.selectedOptions[0].value;
 	if (languageID) {
 		// check only frequent languages (for most of the others we have no special features anyway; also reduces bundle size)
-		return frequentLanguageIDs[languageID];
+		return languageCodes[frequentLanguageIDs[languageID]];
 	}
 }
