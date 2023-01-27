@@ -116,11 +116,11 @@ function buildUI() {
 			// exclude annotations from the global action as the changes are hard to verify
 		});
 		qs('#release-editor > .buttons').append(globalButton);
-	} else if (['add-alias', 'alias'].includes(pageType)) { // alias creation or edit page
+	} else if (pageType == 'add-alias' || path.includes('alias')) { // alias creation or edit page
 		// global button after the "Enter edit" button
 		const button = createElement(buttonTemplate.global);
 		button.addEventListener('click', () => {
-			guessUnicodePunctuation(['input[name$=name]']); // TODO: use locale
+			guessUnicodePunctuation(['input[name$=name]'], { isReactInput: true }); // TODO: use locale
 			transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 		});
 		qs('.buttons').append(button);
