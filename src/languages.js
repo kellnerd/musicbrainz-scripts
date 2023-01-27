@@ -545,3 +545,16 @@ export function detectReleaseLanguage() {
 		return languageCodes[frequentLanguageIDs[languageID]];
 	}
 }
+
+/**
+ * Detects the language of the selected locale in the alias editor.
+ * @returns {string} ISO 639-1 or ISO 639-3 code of the language.
+ */
+export function detectAliasLanguage() {
+	// get the code of the selected locale, the name (text value) is localization-dependent
+	const locale = dom('id-edit-alias.locale')?.selectedOptions[0].value;
+	if (locale) {
+		// return only the language code part of the locale (e.g. 'en' for 'en_US')
+		return locale.split('_')[0];
+	}
+}

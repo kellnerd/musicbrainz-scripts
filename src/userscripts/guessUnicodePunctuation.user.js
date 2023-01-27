@@ -2,7 +2,7 @@ import {
 	guessUnicodePunctuation,
 	transformationRulesToPreserveMarkup,
 } from '../guessUnicodePunctuation.js';
-import { detectReleaseLanguage } from '../languages.js';
+import { detectAliasLanguage, detectReleaseLanguage } from '../languages.js';
 import { onReactHydrated } from '../reactHydration.js';
 import { createElement, injectStylesheet } from '../../utils/dom/create.js';
 import { qs, qsa } from '../../utils/dom/select.js';
@@ -120,7 +120,7 @@ function buildUI() {
 		// global button after the "Enter edit" button
 		const button = createElement(buttonTemplate.global);
 		button.addEventListener('click', () => {
-			guessUnicodePunctuation(['input[name$=name]'], { isReactInput: true }); // TODO: use locale
+			guessUnicodePunctuation(['input[name$=name]'], { isReactInput: true, language: detectAliasLanguage() });
 			transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 		});
 		qs('.buttons').append(button);
