@@ -75,8 +75,8 @@ const languageSpecificRules = {
  * @param {string} [language] ISO 639-1 two letter code of the language.
  */
 export function punctuationRulesForLanguage(language) {
-	// create a deep copy to prevent modifications of the default rules
-	let rules = [...punctuationRules]; 
+	// create a deep copy of the quotation rules to prevent modifications of the default rules
+	let rules = punctuationRules.map((rule, index) => quotationRuleIndices.includes(index) ? [...rule] : rule);
 
 	// overwrite replace values for quotation rules with language-specific values (if they are existing)
 	const replaceValueIndex = 1;
@@ -87,7 +87,7 @@ export function punctuationRulesForLanguage(language) {
 
 	// append language-specific rules (if they are existing)
 	languageSpecificRules[language]?.forEach((rule) => {
-			rules.push(rule);
+		rules.push(rule);
 	});
 
 	return rules;
