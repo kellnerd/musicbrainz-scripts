@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Guess Unicode punctuation
-// @version       2023.1.26
+// @version       2023.1.27
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -158,9 +158,9 @@
 	 * @type {Record<string, string[]>}
 	 */
 	const languageSpecificQuotes = {
-		English: ['“$1”', '‘$1’'],
-		French: ['« $1 »', '‹ $1 ›'],
-		German: ['„$1“', '‚$1‘'],
+		en: ['“$1”', '‘$1’'], // English
+		fr: ['« $1 »', '‹ $1 ›'], // French
+		de: ['„$1“', '‚$1‘'], // German
 	};
 
 	/**
@@ -173,21 +173,21 @@
 	 * @type {Record<string, SubstitutionRule[]>}
 	 */
 	const languageSpecificRules = {
-		German: [
+		de: [ // German
 			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
 		],
-		Japanese: [
+		ja: [ // Japanese
 			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
 		],
 	};
 
 	/**
 	 * Creates language-specific punctuation guessing substitution rules.
-	 * @param {string} [language] Name of the language (in English).
+	 * @param {string} [language] ISO 639-1 two letter code of the language.
 	 */
 	function punctuationRulesForLanguage(language) {
-		// create a deep copy to prevent modifications of the default rules
-		let rules = [...punctuationRules]; 
+		// create a deep copy of the quotation rules to prevent modifications of the default rules
+		let rules = punctuationRules.map((rule, index) => quotationRuleIndices.includes(index) ? [...rule] : rule);
 
 		// overwrite replace values for quotation rules with language-specific values (if they are existing)
 		const replaceValueIndex = 1;
@@ -198,7 +198,7 @@
 
 		// append language-specific rules (if they are existing)
 		languageSpecificRules[language]?.forEach((rule) => {
-				rules.push(rule);
+			rules.push(rule);
 		});
 
 		return rules;
@@ -265,16 +265,97 @@
 		433: 'Turkish',
 	};
 
+	// taken from https://github.com/loujine/musicbrainz-scripts/blob/master/mbz-loujine-common.js
+	const languageCodes = {
+		'Afrikaans': 'af',
+		'Azerbaijani': 'az',
+		'Albanian': 'sq',
+		'Arabic': 'ar',
+		'Armenian': 'hy',
+		'Bengali/Bangla': 'bn',
+		'Basque': 'eu',
+		'Belorussian': 'be',
+		'Bosnian': 'bs',
+		'Bulgarian': 'bg',
+		'Cantonese': 'zh_yue',
+		'Catalan': 'ca',
+		'Chinese': 'zh',
+		'Croatian': 'hr',
+		'Czech': 'cs',
+		'Danish': 'da',
+		'Dutch': 'nl',
+		'English': 'en',
+		'Esperanto': 'eo',
+		'Estonian': 'et',
+		'Finnish': 'fi',
+		'French': 'fr',
+		'German': 'de',
+		'Greek': 'el',
+		'Hebrew': 'he',
+		'Hindi': 'hi',
+		'Hungarian': 'hu',
+		'Icelandic': 'is',
+		'Indonesian': 'id',
+		'Irish': 'ga',
+		'Italian': 'it',
+		'Japanese': 'ja',
+		'Javanese': 'jv',
+		'Kazakh': 'kk',
+		'Khmer (Central)': 'km',
+		'Korean': 'ko',
+		'Latvian': 'lv',
+		'Lithuanian': 'lt',
+		'Macedonian': 'mk',
+		'Malay': 'ms',
+		'Malayam': 'ml',
+		'Nepali': 'ne',
+		'Norwegian Bokmål': 'nb',
+		'Norwegian Nynorsk': 'nn',
+		'Persian (Farsi)': 'fa',
+		'Polish': 'pl',
+		'Portuguese': 'pt',
+		'Punjabi': 'pa',
+		'Romanian': 'ro',
+		'Russian': 'ru',
+		'Serbian': 'sr',
+		'Serbo-Croatian': 'sh',
+		'Slovakian': 'sk',
+		'Slovenian': 'sl',
+		'Spanish': 'es',
+		'Swahili': 'sw',
+		'Swedish': 'sv',
+		'Thai': 'th',
+		'Turkish': 'tr',
+		'Urdu': 'ur',
+		'Ukrainian': 'uk',
+		'Uzbek': 'uz',
+		'Vietnamese': 'vi',
+		'Welsh (Cymric)': 'cy',
+	};
+
 	/**
 	 * Detects the selected language in the release editor.
-	 * @returns {string} Name of the language (in English).
+	 * @returns {string} ISO 639-1 code of the language.
 	 */
 	function detectReleaseLanguage() {
 		// get the ID of the selected language, the name (text value) is localization-dependent
 		const languageID = dom('language')?.selectedOptions[0].value;
 		if (languageID) {
 			// check only frequent languages (for most of the others we have no special features anyway; also reduces bundle size)
-			return frequentLanguageIDs[languageID];
+			return languageCodes[frequentLanguageIDs[languageID]];
+		}
+	}
+
+	/**
+	 * Detects the language of the selected locale in the alias editor.
+	 * @returns {string} ISO 639-1 or ISO 639-3 code of the language.
+	 */
+	function detectAliasLanguage() {
+		// get the code of the selected locale, the name (text value) is localization-dependent
+		const locale = dom('id-edit-alias.locale')?.selectedOptions[0].value;
+		if (locale) {
+			// return only the language code part of the locale (e.g. 'en' for 'en_US')
+			return locale.split('_')[0];
 		}
 	}
 
@@ -428,11 +509,11 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 				// exclude annotations from the global action as the changes are hard to verify
 			});
 			qs('#release-editor > .buttons').append(globalButton);
-		} else if (['add-alias', 'alias'].includes(pageType)) { // alias creation or edit page
+		} else if (pageType == 'add-alias' || path.includes('alias')) { // alias creation or edit page
 			// global button after the "Enter edit" button
 			const button = createElement(buttonTemplate.global);
 			button.addEventListener('click', () => {
-				guessUnicodePunctuation(['input[name$=name]']); // TODO: use locale
+				guessUnicodePunctuation(['input[name$=name]'], { isReactInput: true, language: detectAliasLanguage() });
 				transformInputValues('.edit-note', transformationRulesToPreserveMarkup); // edit note
 			});
 			qs('.buttons').append(button);
