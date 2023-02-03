@@ -2,6 +2,7 @@ import path from 'path';
 import { rollup } from 'rollup';
 import rollupIgnore from 'rollup-plugin-ignore';
 import rollupImage from '@rollup/plugin-image';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import rollupStrip from '@rollup/plugin-strip';
 
 import { getScriptFiles } from './getFiles.js';
@@ -42,6 +43,7 @@ async function buildUserscript(modulePath, debug = false) {
 			banner: generateMetadataBlock(modulePath),
 		},
 		plugins: [
+			nodeResolve(),
 			rollupIgnore(['cross-fetch/dist/node-polyfill.js']),
 			rollupImage(),
 			rollupStrip({

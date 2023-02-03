@@ -32,10 +32,11 @@
   "main": "index.js",
   "devDependencies": {
     "@rollup/plugin-image": "^2.1.0",
+    "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-strip": "^2.1.0",
     "cross-fetch": "^3.1.4",
     "extract-comments": "^1.1.0",
-    "rollup": "^2.56.0",
+    "rollup": "^2.78.0",
     "rollup-plugin-ignore": "^1.0.10",
     "terser": "^5.14.2",
     "weight-balanced-tree": "^0.6.1"
