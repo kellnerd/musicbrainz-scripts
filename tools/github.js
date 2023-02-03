@@ -27,10 +27,9 @@ class GitRepo {
 		return `${this.repoUrl}/issues`;
 	}
 
-	static fromPackageMetadata(packageJsonPath = '../package.json') {
-		const packageUrl = new URL(packageJsonPath, import.meta.url);
+	static fromPackageMetadata(packageJsonPath = 'package.json') {
 		/** @type {typeof import('../package.json')} */
-		const metadata = JSON.parse(readFileSync(packageUrl));
+		const metadata = JSON.parse(readFileSync(packageJsonPath));
 		const repoUrl = new URL(metadata.repository.url);
 		return new GitRepo(repoUrl);
 	}
