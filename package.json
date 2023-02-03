@@ -1,5 +1,5 @@
 {
-  "name": "musicbrainz-scripts",
+  "name": "@kellnerd/musicbrainz-scripts",
   "version": "0.5.0",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",

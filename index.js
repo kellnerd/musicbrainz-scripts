@@ -2,12 +2,12 @@
  * This package can be used by external projects to create their own MusicBrainz scripts.
  * It re-exports potentially useful pieces of code from `src/` which are considered to be mostly stable (as a shortcut).
  * 
- * - Shortcut usage: `import { buildEditNote } from 'musicbrainz-scripts';`
- * - Full specifier: `import { buildEditNote } from 'musicbrainz-scripts/src/editNote.js';`
+ * - Shortcut usage: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts';`
+ * - Full specifier: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts/src/editNote.js';`
  * 
  * You can also import utility functions from `utils/` and build tools from `build/` if you want to:
- * - Utility function: `import { guessUnicodePunctuation } from 'musicbrainz-scripts/utils/string/punctuation.js';`
- * - Build tool: `import { buildBookmarklet } from 'musicbrainz-scripts/tools/buildBookmarklets.js'`
+ * - Utility function: `import { guessUnicodePunctuation } from '@kellnerd/musicbrainz-scripts/utils/string/punctuation.js';`
+ * - Build tool: `import { buildBookmarklet } from '@kellnerd/musicbrainz-scripts/tools/buildBookmarklets.js'`
  */
 
 export {
