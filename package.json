@@ -1,6 +1,6 @@
 {
   "name": "musicbrainz-scripts",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",
   "keywords": [
@@ -19,6 +19,17 @@
     "build": "node tools/build.js",
     "test": "node test"
   },
+  "files": [
+    "src/*.js",
+    "src/data/",
+    "src/discogs/",
+    "src/relationship-editor/",
+    "src/types/",
+    "tools/",
+    "utils/",
+    "jsconfig.json"
+  ],
+  "main": "index.js",
   "devDependencies": {
     "@rollup/plugin-image": "^2.1.0",
     "@rollup/plugin-strip": "^2.1.0",
