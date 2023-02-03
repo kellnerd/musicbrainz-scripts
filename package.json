@@ -1,6 +1,6 @@
 {
   "name": "@kellnerd/musicbrainz-scripts",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",
   "keywords": [
@@ -31,12 +31,12 @@
   ],
   "main": "index.js",
   "devDependencies": {
-    "@rollup/plugin-image": "^2.1.0",
+    "@rollup/plugin-image": "^3.0.2",
     "@rollup/plugin-node-resolve": "^15.0.1",
-    "@rollup/plugin-strip": "^2.1.0",
+    "@rollup/plugin-strip": "^3.0.2",
     "cross-fetch": "^3.1.4",
     "extract-comments": "^1.1.0",
-    "rollup": "^2.78.0",
+    "rollup": "^3.13.0",
     "rollup-plugin-ignore": "^1.0.10",
     "terser": "^5.14.2",
     "weight-balanced-tree": "^0.6.1"
