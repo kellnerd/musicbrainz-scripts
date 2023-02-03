@@ -33,7 +33,7 @@ export const transformationRulesToPreserveMarkup = [
  * These can only be guessed based on context as the ASCII symbols are ambiguous.
  * @param {string[]} inputSelectors CSS selectors of the input fields.
  * @param {object} options
- * @param {string} [options.language] Language of the input fields' text (English name, optional).
+ * @param {string} [options.language] Language of the input fields' text (ISO 639-1 two letter code, optional).
  * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
  * @param {Event} [options.event] Event which should be triggered for changed input fields (optional).
  */
