@@ -3,10 +3,11 @@ import { createRecordMapper } from '../utils/object/createRecordMapper.js';
 /**
  * Fetches the entity with the given MBID from the internal API ws/js.
  * @param {MB.MBID} gid MBID of the entity.
+ * @returns {Promise<CoreEntityT>}
  */
 export async function fetchEntity(gid) {
 	const result = await fetch(`/ws/js/entity/${gid}`);
-	return MB.entity(await result.json()); // automatically caches entities
+	return result.json();
 }
 
 /**
