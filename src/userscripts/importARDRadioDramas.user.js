@@ -1,11 +1,13 @@
 import { urlTypeIds } from '../data/release.js';
 import { buildEditNote } from '../editNote.js';
-import { createMBIDInput } from '../inputMBID.js';
-import { loadCachedEntitiesForRelease, nameToMBIDCache } from '../nameToMBIDCache.js';
-import { createReleaseSeederForm } from '../seeding.js';
-import { createElement, injectStylesheet } from '../../utils/dom/create.js';
+import { injectStylesheet } from '../../utils/dom/create.js';
 import { qs, qsa } from '../../utils/dom/select.js';
 import { zipObject } from '../../utils/object/zipObject.js';
+import {
+	buildCopyCreditsButton,
+	injectImporterStyle,
+	injectImporterUI,
+} from '../importerUI.js';
 
 // clean up the release URL
 const releaseURL = new URL(window.location);
@@ -141,83 +143,19 @@ function getCountryOfStation(station) {
 	else return 'DE';
 }
 
-/** @param {MB.ReleaseSeed} release */
-async function injectUI(release) {
-	// load the MBIDs for all cached entity names
-	nameToMBIDCache.load();
-	const relatedEntities = await loadCachedEntitiesForRelease(release);
-
-	// create a table where the user can enter entity name to MBID mappings
-	const entityMappings = createElement(`<table id="mbid-mapping"><caption>MUSICBRAINZ MAPPING</caption></table>`);
-	relatedEntities.forEach((entity, index) => {
-		const id = `mbid-mapping-${index}`;
-		const tr = createElement(`<tr><td>${entity.name}</td></tr>`);
-		const td = document.createElement('td');
-
-		let initialMappingValue;
-		if (entity.mbid) {
-			initialMappingValue = [entity.type, entity.mbid].join('/');
-		}
-
-		const mbidInput = createMBIDInput(id, [entity.type], initialMappingValue);
-		td.appendChild(mbidInput);
-		tr.appendChild(td);
-		entityMappings.appendChild(tr);
-
-		// update cache and importer form if the user pasted an MBID mapping
-		mbidInput.addEventListener('mbid-input', async (event) => {
-			const mbid = event.detail.id;
-			nameToMBIDCache.set([entity.type, entity.name], mbid);
-			nameToMBIDCache.store();
-			await loadCachedEntitiesForRelease(release);
-			injectImporterForm();
-		});
-	});
-
-	// inject into an empty sidebar section
-	const importerContainer = qs('.sectionC .noPrint > p');
-	importerContainer.prepend(entityMappings);
-	injectImporterForm();
-
-	// inject a button to copy credits
-	/** @type {HTMLButtonElement} */
-	const copyButton = createElement('<button type="button" title="Copy voice actor credits to clipboard">Copy credits</button>');
-	copyButton.addEventListener('click', () => {
-		navigator.clipboard?.writeText(voiceActorCredits.map((credit) => `${credit[1] ?? ''} - ${credit[0]}`).join('\n'));
-	});
-	copyButton.style.marginTop = '5px';
-	importerContainer.appendChild(copyButton);
-
-	function injectImporterForm() {
-		const form = createReleaseSeederForm(release);
-		const existingForm = qs(`form[name="${form.getAttribute('name')}"]`);
-
-		if (existingForm) {
-			existingForm.replaceWith(form);
-		} else {
-			importerContainer.appendChild(form);
-		}
-	}
-}
-
-const styles = `
-input.error {
-	background: #EBB1BA !important;
-}
-input.success {
-	background: #B1EBB0;
-}
-form[name="musicbrainz-release-seeder"] button img {
-	display: inline;
-	vertical-align: middle;
-	margin-right: 5px;
-}
+const additionalStyles = `
 #mbid-mapping {
 	border-spacing: revert;
+	margin-bottom: 1em;
 }
 #mbid-mapping caption {
-	font-weight: bold;
+	text-transform: uppercase;
 }`;
 
-injectUI(release);
-injectStylesheet(styles, 'musicbrainz-importer');
+// inject into an empty sidebar section
+const importerContainer = qs('.sectionC .noPrint > p');
+injectImporterUI(release, importerContainer).then(() => {
+	importerContainer.appendChild(buildCopyCreditsButton(voiceActorCredits));
+});
+injectImporterStyle();
+injectStylesheet(additionalStyles, 'dra-importer');
