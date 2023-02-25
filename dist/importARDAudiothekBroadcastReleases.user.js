@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Import ARD Audiothek broadcast releases
-// @version       2023.2.14
+// @version       2023.2.25
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Imports German broadcast releases from the ARD Audiothek.
@@ -443,18 +443,6 @@
 	}
 
 	/**
-	 * @param {Date} date 
-	 * @returns {PartialDateT}
-	 */
-	function toPartialDate(date) {
-		return {
-			day: date.getUTCDate(),
-			month: date.getUTCMonth() + 1,
-			year: date.getUTCFullYear(),
-		};
-	}
-
-	/**
 	 * Creates a hidden input element.
 	 * @param {string} name Name of the input element.
 	 * @param {string} value Value of the input element.
@@ -554,6 +542,93 @@
 		document.head.append(style);
 	}
 
+	/**
+	 * Injects a MusicBrainz importer form for the given release seed into the given container.
+	 * Also allows the user to enter entity name to MBID mappings (which are persisted per domain).
+	 * @param {MB.ReleaseSeed} release 
+	 * @param {Element} importerContainer
+	 */
+	async function injectImporterUI(release, importerContainer) {
+		// load the MBIDs for all cached entity names
+		nameToMBIDCache.load();
+		const relatedEntities = await loadCachedEntitiesForRelease(release);
+
+		// create a table where the user can enter entity name to MBID mappings
+		const entityMappings = createElement(`<table id="mbid-mapping"><caption>MusicBrainz Mapping</caption></table>`);
+		relatedEntities.forEach((entity, index) => {
+			const id = `mbid-mapping-${index}`;
+			const tr = createElement(`<tr><td>${entity.name}</td></tr>`);
+			const td = document.createElement('td');
+
+			let initialMappingValue;
+			if (entity.mbid) {
+				initialMappingValue = [entity.type, entity.mbid].join('/');
+			}
+
+			const mbidInput = createMBIDInput(id, [entity.type], initialMappingValue);
+			td.appendChild(mbidInput);
+			tr.appendChild(td);
+			entityMappings.appendChild(tr);
+
+			// update cache and importer form if the user pasted an MBID mapping
+			mbidInput.addEventListener('mbid-input', async (event) => {
+				const mbid = event.detail.id;
+				nameToMBIDCache.set([entity.type, entity.name], mbid);
+				nameToMBIDCache.store();
+				await loadCachedEntitiesForRelease(release);
+				injectImporterForm();
+			});
+		});
+
+		// inject into the given container
+		importerContainer.append(entityMappings);
+		injectImporterForm();
+
+		function injectImporterForm() {
+			const form = createReleaseSeederForm(release);
+			const existingForm = qs(`form[name="${form.getAttribute('name')}"]`);
+
+			if (existingForm) {
+				existingForm.replaceWith(form);
+			} else {
+				importerContainer.appendChild(form);
+			}
+		}
+	}
+
+	const importerStyles = `
+form[name="musicbrainz-release-seeder"] button img {
+	display: inline;
+	vertical-align: middle;
+	margin-right: 5px;
+}
+#mbid-mapping caption {
+	font-weight: bold;
+}
+#mbid-mapping input.error {
+	background: #EBB1BA;
+}
+#mbid-mapping input.success {
+	background: #B1EBB0;
+}`;
+
+	/** Injects the recommended default styling for the importer form. */
+	function injectImporterStyle() {
+		injectStylesheet(importerStyles, 'musicbrainz-importer');
+	}
+
+	/**
+	 * @param {Date} date 
+	 * @returns {PartialDateT}
+	 */
+	function toPartialDate(date) {
+		return {
+			day: date.getUTCDate(),
+			month: date.getUTCMonth() + 1,
+			year: date.getUTCFullYear(),
+		};
+	}
+
 	async function fetchEpisode(id) {
 		const response = await fetch('https://api.ardaudiothek.de/items/' + id);
 		const json = await response.json();
@@ -618,73 +693,6 @@
 		return release;
 	}
 
-
-	/** @param {MB.ReleaseSeed} release */
-	async function injectUI(release) {
-		// load the MBIDs for all cached entity names
-		nameToMBIDCache.load();
-		const relatedEntities = await loadCachedEntitiesForRelease(release);
-
-		// create a table where the user can enter entity name to MBID mappings
-		const entityMappings = createElement(`<table id="mbid-mapping"><caption>MusicBrainz Mapping</caption></table>`);
-		relatedEntities.forEach((entity, index) => {
-			const id = `mbid-mapping-${index}`;
-			const tr = createElement(`<tr><td>${entity.name}</td></tr>`);
-			const td = document.createElement('td');
-
-			let initialMappingValue;
-			if (entity.mbid) {
-				initialMappingValue = [entity.type, entity.mbid].join('/');
-			}
-
-			const mbidInput = createMBIDInput(id, [entity.type], initialMappingValue);
-			td.appendChild(mbidInput);
-			tr.appendChild(td);
-			entityMappings.appendChild(tr);
-
-			// update cache and importer form if the user pasted an MBID mapping
-			mbidInput.addEventListener('mbid-input', async (event) => {
-				const mbid = event.detail.id;
-				nameToMBIDCache.set([entity.type, entity.name], mbid);
-				nameToMBIDCache.store();
-				await loadCachedEntitiesForRelease(release);
-				injectImporterForm();
-			});
-		});
-
-		// inject into the details column
-		const importerContainer = qs('section div[class*=DetailsColumn]');
-		importerContainer.append(entityMappings);
-		injectImporterForm();
-
-		function injectImporterForm() {
-			const form = createReleaseSeederForm(release);
-			const existingForm = qs(`form[name="${form.getAttribute('name')}"]`);
-
-			if (existingForm) {
-				existingForm.replaceWith(form);
-			} else {
-				importerContainer.appendChild(form);
-			}
-		}
-	}
-
-	const styles = `
-input.error {
-	background: #EBB1BA !important;
-}
-input.success {
-	background: #B1EBB0;
-}
-form[name="musicbrainz-release-seeder"] button img {
-	display: inline;
-	vertical-align: middle;
-	margin-right: 5px;
-}
-#mbid-mapping caption {
-	font-weight: bold;
-}`;
-
 	const currentPath = window.location.pathname;
 	const episodeId = currentPath.match(/^\/episode\/.+\/(\d+)\/?$/)?.[1];
 
@@ -693,8 +701,11 @@ form[name="musicbrainz-release-seeder"] button img {
 			.then(parseEpisode)
 			.then((release) => {
 				console.log('Parsed release:', release);
-				injectUI(release);
-				injectStylesheet(styles, 'musicbrainz-importer');
+
+				// inject into the details column on the left
+				const importerContainer = qs('section div[class*=DetailsColumn]');
+				injectImporterUI(release, importerContainer);
+				injectImporterStyle();
 			});
 	}
 
