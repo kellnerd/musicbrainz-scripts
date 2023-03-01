@@ -21,8 +21,12 @@ export function isRelBackward(sourceType, targetType) {
 	return sourceType > targetType;
 }
 
-// Taken from root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+/**
+ * Taken from https://github.com/metabrainz/musicbrainz-server/blob/bf0d5ec41c7ddb6c5a8396bf3a64f74acaef9337/root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+ * @type {Partial<import('../types/MBS/scripts/relationship-editor/state').RelationshipStateT>}
+ */
 export const RELATIONSHIP_DEFAULTS = {
+	_lineage: [],
 	_original: null,
 	_status: 1, // add relationship
 	attributes: null,
