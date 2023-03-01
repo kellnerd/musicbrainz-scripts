@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2023.1.26.2
+// @version       2023.3.1
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -20,10 +20,11 @@
 	/**
 	 * Fetches the entity with the given MBID from the internal API ws/js.
 	 * @param {MB.MBID} gid MBID of the entity.
+	 * @returns {Promise<CoreEntityT>}
 	 */
 	async function fetchEntity(gid) {
 		const result = await fetch(`/ws/js/entity/${gid}`);
-		return MB.entity(await result.json()); // automatically caches entities
+		return result.json();
 	}
 
 	/**
@@ -122,11 +123,10 @@
 	}
 
 	/**
-	 * Temporary cache for fetched entities from the ws/js API, shared with MBS.
+	 * Temporary cache for fetched entities from the ws/js API.
 	 */
 	const entityCache = new FunctionCache(fetchEntity, {
 		keyMapper: (gid) => [gid],
-		data: MB.entityCache,
 	});
 
 	/**
@@ -178,8 +178,12 @@
 		return sourceType > targetType;
 	}
 
-	// Taken from root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+	/**
+	 * Taken from https://github.com/metabrainz/musicbrainz-server/blob/bf0d5ec41c7ddb6c5a8396bf3a64f74acaef9337/root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+	 * @type {Partial<import('../types/MBS/scripts/relationship-editor/state').RelationshipStateT>}
+	 */
 	const RELATIONSHIP_DEFAULTS = {
+		_lineage: [],
 		_original: null,
 		_status: 1, // add relationship
 		attributes: null,
