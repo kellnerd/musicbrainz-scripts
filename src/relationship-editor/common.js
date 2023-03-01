@@ -8,11 +8,6 @@ export function createDatePeriodForYear(year) {
 	};
 }
 
-// TODO: drop once the new React relationship editor has been deployed, together with the other fallbacks for the old one
-export function hasReactRelEditor() {
-	return !!MB.getSourceEntityInstance;
-}
-
 /**
  * @param {CoreEntityTypeT} sourceType 
  * @param {CoreEntityTypeT} targetType 

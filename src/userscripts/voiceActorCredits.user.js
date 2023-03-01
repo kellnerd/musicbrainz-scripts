@@ -12,11 +12,6 @@ import {
 } from '../publicAPI.js';
 import { seedURLForEntity } from '../seeding.js';
 import {
-	addVoiceActorRelationship,
-	importVoiceActorsFromDiscogs as _importVoiceActorsFromDiscogs,
-} from '../voiceActorCredits.js';
-import { hasReactRelEditor } from '../relationship-editor/common.js';
-import {
 	addVoiceActor,
 	importVoiceActorsFromDiscogs,
 } from '../relationship-editor/voiceActorCredits.js';
@@ -35,9 +30,6 @@ function buildVoiceActorCreditParserUI() {
 
 	nameToMBIDCache.load();
 
-	// TODO: drop once the new React relationship editor has been deployed
-	const addVoiceActorRel = hasReactRelEditor() ? addVoiceActor : addVoiceActorRelationship;
-
 	addParserButton('Parse voice actor credits', async (creditLine, event) => {
 		const creditTokens = creditLine.split(getPattern(creditSeparatorInput.value) || /$/);
 
@@ -50,7 +42,7 @@ function buildVoiceActorCreditParserUI() {
 			}
 
 			const bypassCache = event.ctrlKey;
-			const result = await addVoiceActorRel(artistName, roleName, bypassCache);
+			const result = await addVoiceActor(artistName, roleName, bypassCache);
 			nameToMBIDCache.store();
 			return result;
 		} else {
@@ -65,9 +57,6 @@ function buildVoiceActorCreditParserUI() {
 function buildVoiceActorCreditImporterUI() {
 	discogsToMBIDCache.load();
 
-	// TODO: drop once the new React relationship editor has been deployed
-	const importVoiceActors = hasReactRelEditor() ? importVoiceActorsFromDiscogs : _importVoiceActorsFromDiscogs;
-
 	dom('credit-parser').insertAdjacentHTML('beforeend', UI);
 
 	addButton('Import voice actors', async () => {
@@ -80,7 +69,7 @@ function buildVoiceActorCreditImporterUI() {
 		}
 
 		if (discogsURL) {
-			const result = await importVoiceActors(discogsURL);
+			const result = await importVoiceActorsFromDiscogs(discogsURL);
 			addMessageToEditNote(`Imported voice actor credits from ${discogsURL}`);
 
 			// mapping suggestions

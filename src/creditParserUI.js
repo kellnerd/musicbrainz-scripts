@@ -1,7 +1,6 @@
 import { addMessageToEditNote } from './editNote.js';
 import { parserDefaults } from './parseCopyrightNotice.js';
 import { readyRelationshipEditor } from './reactHydration.js';
-import { releaseLoadingFinished } from './relationshipEditor.js';
 import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
 import { createElement, injectStylesheet } from '../utils/dom/create.js';
 import { dom, qs, qsa } from '../utils/dom/select.js';
@@ -72,8 +71,7 @@ export async function buildCreditParserUI(...buildTasks) {
 	if (!existingUI) {
 		// inject credit parser between the sections for track and release relationships,
 		// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
-		qs('#content > h2:nth-of-type(2), .release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
-		// TODO: drop first selector once the new React relationship editor has been deployed
+		qs('.release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 		injectStylesheet(css, 'credit-parser');
 	}
 
@@ -129,8 +127,7 @@ function initializeUI() {
 
 	addButton('Load annotation', (creditInput) => {
 		/** @type {ReleaseT} */
-		const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
-		// TODO: drop fallback once the new React relationship editor has been deployed
+		const release = MB.getSourceEntityInstance();
 		const annotation = release.latest_annotation;
 		if (annotation) {
 			setTextarea(creditInput, annotation.text);
@@ -158,13 +155,11 @@ function initializeUI() {
 	// trigger all additional UI build tasks
 	document.dispatchEvent(new CustomEvent(uiReadyEventType));
 
-	// focus the credit parser input once all relationships have been loaded (and displayed)
-	releaseLoadingFinished().then(() => {
-		if (dom('parser-autofocus').checked) {
-			creditInput.scrollIntoView();
-			creditInput.focus();
-		}
-	});
+	// focus the credit parser input (if this setting is enabled)
+	if (dom('parser-autofocus').checked) {
+		creditInput.scrollIntoView();
+		creditInput.focus();
+	}
 }
 
 /**

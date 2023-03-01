@@ -21,7 +21,7 @@ export function onReactHydrated(element, callback) {
 /** Resolves as soon as the React relationship editor is ready. */
 export function readyRelationshipEditor() {
 	const reactRelEditor = qs('.release-relationship-editor');
-	if (!reactRelEditor) return Promise.resolve(); // TODO: drop once the new React relationship editor has been deployed
+	if (!reactRelEditor) return Promise.reject(new Error('Release relationship editor has not been found'));
 	// wait for the loading message to disappear (takes ~1s)
 	return waitFor(() => !qs('.release-relationship-editor > .loading-message'), 100);
 }
