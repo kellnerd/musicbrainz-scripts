@@ -1,4 +1,4 @@
-// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/01d046625c7751b05358e6d5225b55b57f327b6e/root/static/scripts/common/components/Autocomplete2/types.js
+// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/f8166bf9e1dbe9d9d1663a06f90351331d9d6138/root/static/scripts/common/components/Autocomplete2/types.js
 
 export type SearchableTypeT = EntityItemT['entityType'];
 
@@ -19,6 +19,7 @@ export type StateT<T extends EntityItemT> = {
   readonly inputClass?: string;
   readonly inputValue: string;
   readonly isAddEntityDialogOpen?: boolean;
+  readonly isInputFocused: boolean;
   readonly isLookupPerformed?: boolean;
   readonly isOpen: boolean;
   readonly items: ReadonlyArray<ItemT<T>>;
@@ -29,8 +30,10 @@ export type StateT<T extends EntityItemT> = {
   readonly placeholder?: string;
   readonly recentItems: ReadonlyArray<OptionItemT<T>> | null;
   readonly recentItemsKey: string;
+  readonly required: boolean;
   readonly results: ReadonlyArray<ItemT<T>> | null;
   readonly selectedItem: OptionItemT<T> | null;
+  readonly showDescriptions?: boolean;
   readonly staticItems?: ReadonlyArray<OptionItemT<T>>;
   readonly statusMessage: string;
   readonly totalPages: number | null | undefined;
@@ -56,16 +59,20 @@ export type ActionT<T extends EntityItemT> = SearchActionT | {
 } | {
   readonly type: 'clear-recent-items';
 } | {
+  readonly type: 'highlight-index';
+  readonly index: number;
+} | {
   readonly type: 'highlight-next-item';
 } | {
   readonly type: 'highlight-previous-item';
-} | {
-  readonly type: 'noop';
 } | {
   readonly type: 'reset-menu';
 } | {
   readonly type: 'select-item';
   readonly item: ItemT<T>;
+} | {
+  readonly type: 'set-input-focus';
+  readonly isFocused: boolean;
 } | {
   readonly type: 'set-menu-visibility';
   readonly value: boolean;
@@ -92,6 +99,9 @@ export type ActionT<T extends EntityItemT> = SearchActionT | {
   readonly isOpen: boolean;
 } | {
   readonly type: 'toggle-indexed-search';
+} | {
+  readonly type: 'toggle-descriptions';
+  readonly showDescriptions: boolean;
 } | {
   readonly type: 'type-value';
   readonly value: string;

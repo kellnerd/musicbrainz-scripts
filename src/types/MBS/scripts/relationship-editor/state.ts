@@ -1,4 +1,4 @@
-// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/01d046625c7751b05358e6d5225b55b57f327b6e/root/static/scripts/relationship-editor/types.js
+// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/bf0d5ec41c7ddb6c5a8396bf3a64f74acaef9337/root/static/scripts/relationship-editor/types.js
 
 import * as tree from 'weight-balanced-tree';
 
@@ -18,6 +18,12 @@ export type RelationshipStateForTypesT<
   T0 extends CoreEntityT,
   T1 extends CoreEntityT
 > = {
+  /*
+   * _lineage is purely to help debug how a piece of relationship
+   * state was created.  It should be appended to whenever
+   * `cloneRelationshipState` is used.
+   */
+  readonly _lineage: ReadonlyArray<string>,
   readonly _original: RelationshipStateT | null;
   readonly _status: RelationshipEditStatusT;
   readonly attributes: tree.ImmutableTree<LinkAttrT> | null;
@@ -131,6 +137,7 @@ export type RelationshipDialogStateT = {
   readonly attributes: DialogAttributesStateT;
   readonly backward: boolean;
   readonly datePeriodField: DatePeriodFieldT;
+  readonly isHelpVisible: boolean;
   readonly linkOrder: number;
   readonly linkType: DialogLinkTypeStateT;
   readonly resultingDatePeriod: DatePeriodRoleT;
@@ -236,6 +243,7 @@ export type DialogTargetEntityStateT = Readonly<
 export type DialogEntityCreditStateT = {
   readonly creditedAs: string;
   readonly creditsToChange: CreditChangeOptionT;
+  readonly releaseHasUnloadedTracks: boolean;
 };
 
 export type LinkAttributeShapeT = {

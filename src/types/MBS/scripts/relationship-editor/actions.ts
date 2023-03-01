@@ -1,4 +1,4 @@
-// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/4331e163adfb79e9c7f1ad49b6e1f551c68567dd/root/static/scripts/relationship-editor/types/actions.js
+// Adapted from https://github.com/metabrainz/musicbrainz-server/blob/b38f905d7c349bfb2c7e4661546500438694bea4/root/static/scripts/relationship-editor/types/actions.js
 
 import * as tree from 'weight-balanced-tree';
 
@@ -37,6 +37,8 @@ export type DialogActionT = {
   readonly attributes: ReadonlyArray<ExternalLinkAttrT>;
   readonly type: 'set-attributes';
 } | {
+  readonly type: 'toggle-attributes-help';
+} | {
   readonly action: DialogEntityCreditActionT;
   readonly type: 'update-source-entity';
 } | {
@@ -52,14 +54,14 @@ export type DialogActionT = {
   readonly source: CoreEntityT;
   readonly type: 'update-link-type';
 } | {
-  readonly action: DialogUpdateAttributeActionT;
+  readonly action: DialogAttributeActionT;
   readonly type: 'update-attribute';
 } | {
   readonly action: DateRangeFieldsetActionT;
   readonly type: 'update-date-period';
 } | DialogLinkOrderActionT;
 
-export type DialogUpdateAttributeActionT = {
+export type DialogAttributeActionT = {
   readonly action: DialogBooleanAttributeActionT;
   readonly rootKey: number;
   readonly type: 'update-boolean-attribute';
@@ -151,7 +153,7 @@ export type DialogTargetEntityActionT =
 
 /* Release relationship-editor actions */
 export type BatchCreateWorksDialogActionT = {
-  action: DialogUpdateAttributeActionT;
+  action: DialogAttributeActionT;
   type: 'update-attribute';
 } | {
   action: MultiselectActionT<LanguageT>;
