@@ -61,14 +61,6 @@ Parses voice actor credits from text and automates the process of creating relea
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/voiceActorCredits.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/voiceActorCredits.user.js)
 
-Also available as a bookmarklet with less features:
-
-Opens a pre-filled dialogue for a “spoken vocals” artist-release relationship in the release relationship editor.
-
-```js
-javascript:(()=>{function t(t){return new Promise(e=>setTimeout(e,t))}(async({artist:e,roleName:i,artistCredit:a}={})=>{var o;await(async({source:e=MB.relationshipEditor.state.entity,target:i,targetType:a,linkTypeId:o,attributes:r,batchSelection:p=!1}={})=>{const s="string"==typeof i;var n,c;if(i&&!s&&(a=i.entityType),MB.relationshipEditor.dispatch({type:"update-dialog-location",location:{source:e,batchSelection:p}}),await(n=()=>!!MB.relationshipEditor.relationshipDialogDispatch,new Promise(async e=>{for(;!1===n();)await t(1);e()})),a&&MB.relationshipEditor.relationshipDialogDispatch({type:"update-target-type",source:e,targetType:a}),o){const i=await(async(e,{retries:i=10,wait:a=0}={})=>{do{const i=await e();if(void 0!==i)return i;a&&await t(a)}while(i--)})(()=>MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items.find(t=>t.id==o),{wait:10});i&&MB.relationshipEditor.relationshipDialogDispatch({type:"update-link-type",source:e,action:{type:"update-autocomplete",source:e,action:{type:"select-item",item:i}}})}r&&(t=>{MB.relationshipEditor.relationshipDialogDispatch({type:"set-attributes",attributes:t})})(r),i&&((s?[{type:"type-value",value:i},{type:"search-after-timeout",searchTerm:i}]:[{type:"select-item",item:(c=i,{type:"option",id:c.id,name:c.name,entity:c})}]).forEach(t=>{MB.relationshipEditor.relationshipDialogDispatch({type:"update-target-entity",source:e,action:{type:"update-autocomplete",source:e,action:t}})}),s&&((t,e=document)=>e.querySelector(t))("input.relationship-target").focus())})({target:e,targetType:"artist",linkTypeId:60,attributes:[{type:{gid:"d3a36e62-a7c4-4eb9-839f-adfebe87ac12"},credited_as:i}]}),a&&(o=a,MB.relationshipEditor.relationshipDialogDispatch({type:"update-target-entity",source:MB.relationshipEditor.state.dialogLocation.source,action:{type:"update-credit",action:{type:"set-credit",creditedAs:o}}}))})()})();
-```
-
 ## Bookmarklets
 
 ### [Annotation Converter](src/annotationConverter.js)
