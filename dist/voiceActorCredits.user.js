@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2023.1.26.2
+// @version       2023.3.1
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
@@ -171,8 +171,12 @@
 		return sourceType > targetType;
 	}
 
-	// Taken from root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+	/**
+	 * Taken from https://github.com/metabrainz/musicbrainz-server/blob/bf0d5ec41c7ddb6c5a8396bf3a64f74acaef9337/root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+	 * @type {Partial<import('../types/MBS/scripts/relationship-editor/state').RelationshipStateT>}
+	 */
 	const RELATIONSHIP_DEFAULTS = {
+		_lineage: [],
 		_original: null,
 		_status: 1, // add relationship
 		attributes: null,
@@ -211,10 +215,11 @@
 	/**
 	 * Fetches the entity with the given MBID from the internal API ws/js.
 	 * @param {MB.MBID} gid MBID of the entity.
+	 * @returns {Promise<CoreEntityT>}
 	 */
 	async function fetchEntity$1(gid) {
 		const result = await fetch(`/ws/js/entity/${gid}`);
-		return MB.entity(await result.json()); // automatically caches entities
+		return result.json();
 	}
 
 	/**
@@ -1025,11 +1030,10 @@ textarea#credit-input {
 	}
 
 	/**
-	 * Temporary cache for fetched entities from the ws/js API, shared with MBS.
+	 * Temporary cache for fetched entities from the ws/js API.
 	 */
 	const entityCache = new FunctionCache(fetchEntity$1, {
 		keyMapper: (gid) => [gid],
-		data: MB.entityCache,
 	});
 
 	/**
@@ -1079,9 +1083,9 @@ textarea#credit-input {
 	 * @type {Record<string, string[]>}
 	 */
 	const languageSpecificQuotes = {
-		English: ['“$1”', '‘$1’'],
-		French: ['« $1 »', '‹ $1 ›'],
-		German: ['„$1“', '‚$1‘'],
+		en: ['“$1”', '‘$1’'], // English
+		fr: ['« $1 »', '‹ $1 ›'], // French
+		de: ['„$1“', '‚$1‘'], // German
 	};
 
 	/**
@@ -1094,21 +1098,21 @@ textarea#credit-input {
 	 * @type {Record<string, SubstitutionRule[]>}
 	 */
 	const languageSpecificRules = {
-		German: [
+		de: [ // German
 			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
 		],
-		Japanese: [
+		ja: [ // Japanese
 			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
 		],
 	};
 
 	/**
 	 * Creates language-specific punctuation guessing substitution rules.
-	 * @param {string} [language] Name of the language (in English).
+	 * @param {string} [language] ISO 639-1 two letter code of the language.
 	 */
 	function punctuationRulesForLanguage(language) {
-		// create a deep copy to prevent modifications of the default rules
-		let rules = [...punctuationRules]; 
+		// create a deep copy of the quotation rules to prevent modifications of the default rules
+		let rules = punctuationRules.map((rule, index) => quotationRuleIndices.includes(index) ? [...rule] : rule);
 
 		// overwrite replace values for quotation rules with language-specific values (if they are existing)
 		const replaceValueIndex = 1;
@@ -1119,7 +1123,7 @@ textarea#credit-input {
 
 		// append language-specific rules (if they are existing)
 		languageSpecificRules[language]?.forEach((rule) => {
-				rules.push(rule);
+			rules.push(rule);
 		});
 
 		return rules;
@@ -1129,7 +1133,7 @@ textarea#credit-input {
 	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string} text
-	 * @param {string} [language] Language of the text (English name, optional).
+	 * @param {string} [language] Language of the text (ISO 639-1 two letter code, optional).
 	 */
 	function guessUnicodePunctuation(text, language) {
 		return transform(text, punctuationRulesForLanguage(language));
