@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2023.3.1
+// @version       2023.3.2
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
@@ -153,145 +153,9 @@
 	/** Resolves as soon as the React relationship editor is ready. */
 	function readyRelationshipEditor() {
 		const reactRelEditor = qs('.release-relationship-editor');
-		if (!reactRelEditor) return Promise.resolve(); // TODO: drop once the new React relationship editor has been deployed
+		if (!reactRelEditor) return Promise.reject(new Error('Release relationship editor has not been found'));
 		// wait for the loading message to disappear (takes ~1s)
 		return waitFor(() => !qs('.release-relationship-editor > .loading-message'), 100);
-	}
-
-	// TODO: drop once the new React relationship editor has been deployed, together with the other fallbacks for the old one
-	function hasReactRelEditor() {
-		return !!MB.getSourceEntityInstance;
-	}
-
-	/**
-	 * @param {CoreEntityTypeT} sourceType 
-	 * @param {CoreEntityTypeT} targetType 
-	 */
-	function isRelBackward(sourceType, targetType) {
-		return sourceType > targetType;
-	}
-
-	/**
-	 * Taken from https://github.com/metabrainz/musicbrainz-server/blob/bf0d5ec41c7ddb6c5a8396bf3a64f74acaef9337/root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
-	 * @type {Partial<import('../types/MBS/scripts/relationship-editor/state').RelationshipStateT>}
-	 */
-	const RELATIONSHIP_DEFAULTS = {
-		_lineage: [],
-		_original: null,
-		_status: 1, // add relationship
-		attributes: null,
-		begin_date: null,
-		editsPending: false,
-		end_date: null,
-		ended: false,
-		entity0_credit: '',
-		entity1_credit: '',
-		id: null,
-		linkOrder: 0,
-		linkTypeID: null,
-	};
-
-	/**
-	 * Extracts the entity type and ID from a MusicBrainz URL (can be incomplete and/or with additional path components and query parameters).
-	 * @param {string} url URL of a MusicBrainz entity page.
-	 * @returns {{ type: CoreEntityTypeT | 'mbid', mbid: MB.MBID } | undefined} Type and ID.
-	 */
-	function extractEntityFromURL$1(url) {
-		const entity = url.match(/(area|artist|event|genre|instrument|label|mbid|place|recording|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
-		return entity ? {
-			type: entity[1],
-			mbid: entity[2]
-		} : undefined;
-	}
-
-	/**
-	 * @param {CoreEntityTypeT} entityType 
-	 * @param {MB.MBID | 'add' | 'create'} mbid MBID of an existing entity or `create` for the entity creation page (`add` for releases).
-	 */
-	function buildEntityURL$1(entityType, mbid) {
-		return `https://musicbrainz.org/${entityType}/${mbid}`;
-	}
-
-	/**
-	 * Fetches the entity with the given MBID from the internal API ws/js.
-	 * @param {MB.MBID} gid MBID of the entity.
-	 * @returns {Promise<CoreEntityT>}
-	 */
-	async function fetchEntity$1(gid) {
-		const result = await fetch(`/ws/js/entity/${gid}`);
-		return result.json();
-	}
-
-	/**
-	 * Creates an "Add relationship" dialogue where the type "vocals" and the attribute "spoken vocals" are pre-selected.
-	 * Optionally the performing artist (voice actor) and the name of the role can be pre-filled.
-	 * @param {Partial<MB.InternalArtist>} [artistData] Data of the performing artist (optional).
-	 * @param {string} [roleName] Credited name of the voice actor's role (optional).
-	 * @param {string} [artistCredit] Credited name of the performing artist (optional).
-	 */
-	function createVoiceActorDialog$1(artistData = {}, roleName = '', artistCredit = '') {
-		const viewModel = MB.releaseRelationshipEditor;
-		const target = MB.entity(artistData, 'artist'); // automatically caches entities with a GID (unlike `MB.entity.Artist`)
-		/** @type {MB.RE.Dialog} */
-		const dialog = new MB.relationshipEditor.UI.AddDialog({
-			source: viewModel.source,
-			target,
-			viewModel,
-		});
-
-		const rel = dialog.relationship();
-		rel.linkTypeID(60); // set type: performance -> performer -> vocals
-		rel.entity0_credit(artistCredit);
-		rel.setAttributes([{
-			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
-			credited_as: roleName,
-		}]);
-
-		return dialog;
-	}
-
-	/**
-	 * Resolves after the given dialog has been closed.
-	 * @param {MB.RE.Dialog} dialog
-	 */
-	function closingDialog$1(dialog) {
-		return new Promise((resolve) => {
-			if (dialog) {
-				// wait until the jQuery UI dialog has been closed
-				dialog.$dialog.on('dialogclose', () => {
-					resolve();
-				});
-			} else {
-				resolve();
-			}
-		});
-	}
-
-	/**
-	 * Opens the given dialog, focuses the autocomplete input and triggers the search.
-	 * @param {MB.RE.Dialog} dialog 
-	 * @param {Event} [event] Affects the position of the opened dialog (optional).
-	 */
-	function openDialogAndTriggerAutocomplete(dialog, event) {
-		dialog.open(event);
-		dialog.autocomplete.$input.focus();
-		dialog.autocomplete.search();
-	}
-
-	/**
-	 * Returns the target entity of the given relationship dialog.
-	 * @param {MB.RE.Dialog} dialog 
-	 */
-	function getTargetEntity(dialog) {
-		return dialog.relationship().entities() // source and target entity
-			.find((entity) => entity.entityType === dialog.targetType());
-	}
-
-	// TODO: drop once the new React relationship editor has been deployed
-	/** Resolves after the release relationship editor has finished loading. */
-	function releaseLoadingFinished() {
-		if (hasReactRelEditor()) return Promise.resolve();
-		return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
 	}
 
 	// adapted from https://stackoverflow.com/a/25621277
@@ -510,8 +374,7 @@ textarea#credit-input {
 		if (!existingUI) {
 			// inject credit parser between the sections for track and release relationships,
 			// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
-			qs('#content > h2:nth-of-type(2), .release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
-			// TODO: drop first selector once the new React relationship editor has been deployed
+			qs('.release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 			injectStylesheet(css, 'credit-parser');
 		}
 
@@ -567,8 +430,7 @@ textarea#credit-input {
 
 		addButton('Load annotation', (creditInput) => {
 			/** @type {ReleaseT} */
-			const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
-			// TODO: drop fallback once the new React relationship editor has been deployed
+			const release = MB.getSourceEntityInstance();
 			const annotation = release.latest_annotation;
 			if (annotation) {
 				setTextarea(creditInput, annotation.text);
@@ -596,13 +458,11 @@ textarea#credit-input {
 		// trigger all additional UI build tasks
 		document.dispatchEvent(new CustomEvent(uiReadyEventType));
 
-		// focus the credit parser input once all relationships have been loaded (and displayed)
-		releaseLoadingFinished().then(() => {
-			if (dom('parser-autofocus').checked) {
-				creditInput.scrollIntoView();
-				creditInput.focus();
-			}
-		});
+		// focus the credit parser input (if this setting is enabled)
+		if (dom('parser-autofocus').checked) {
+			creditInput.scrollIntoView();
+			creditInput.focus();
+		}
 	}
 
 	/**
@@ -740,6 +600,27 @@ textarea#credit-input {
 	function setTextarea(textarea, value) {
 		textarea.value = value;
 		automaticHeight.call(textarea);
+	}
+
+	/**
+	 * Extracts the entity type and ID from a MusicBrainz URL (can be incomplete and/or with additional path components and query parameters).
+	 * @param {string} url URL of a MusicBrainz entity page.
+	 * @returns {{ type: CoreEntityTypeT | 'mbid', mbid: MB.MBID } | undefined} Type and ID.
+	 */
+	function extractEntityFromURL$1(url) {
+		const entity = url.match(/(area|artist|event|genre|instrument|label|mbid|place|recording|release|release-group|series|url|work)\/([0-9a-f-]{36})(?:$|\/|\?)/);
+		return entity ? {
+			type: entity[1],
+			mbid: entity[2]
+		} : undefined;
+	}
+
+	/**
+	 * @param {CoreEntityTypeT} entityType 
+	 * @param {MB.MBID | 'add' | 'create'} mbid MBID of an existing entity or `create` for the entity creation page (`add` for releases).
+	 */
+	function buildEntityURL$1(entityType, mbid) {
+		return `https://musicbrainz.org/${entityType}/${mbid}`;
 	}
 
 	/**
@@ -933,7 +814,7 @@ textarea#credit-input {
 	 * @param {string[]} inc Include parameters which should be added to the API request.
 	 * @returns {Promise<MB.Entity>}
 	 */
-	function fetchEntity(url, inc) {
+	function fetchEntity$1(url, inc) {
 		const entity = extractEntityFromURL$1(url);
 		if (!entity) throw new Error('Invalid entity URL');
 
@@ -1030,9 +911,274 @@ textarea#credit-input {
 	}
 
 	/**
+	 * Creates a dialog to add a relationship to the given source entity.
+	 * @param {Object} options 
+	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
+	 * @param {CoreEntityT | string} [options.target] Target entity object or name.
+	 * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
+	 * @param {number} [options.linkTypeId] Internal ID of the relationship type.
+	 * @param {ExternalLinkAttrT[]} [options.attributes] Attributes for the relationship type.
+	 * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
+	 * The source entity only acts as a placeholder in this case.
+	 */
+	async function createDialog({
+		source = MB.relationshipEditor.state.entity,
+		target,
+		targetType,
+		linkTypeId,
+		attributes,
+		batchSelection = false,
+	} = {}) {
+		const onlyTargetName = (typeof target === 'string');
+
+		// prefer an explicit target entity option over only a target type
+		if (target && !onlyTargetName) {
+			targetType = target.entityType;
+		}
+
+		// open dialog modal for the source entity
+		MB.relationshipEditor.dispatch({
+			type: 'update-dialog-location',
+			location: {
+				source,
+				batchSelection,
+			},
+		});
+
+		// TODO: currently it takes ~2ms until `relationshipDialogDispatch` is exposed
+		await waitFor(() => !!MB.relationshipEditor.relationshipDialogDispatch, 1);
+
+		if (targetType) {
+			MB.relationshipEditor.relationshipDialogDispatch({
+				type: 'update-target-type',
+				source,
+				targetType,
+			});
+		}
+
+		if (linkTypeId) {
+			const linkTypeItem = await retry(() => {
+				// the available items are only valid for the current target type,
+				// ensure that they have already been updated after a target type change
+				const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
+				return availableLinkTypes.find((item) => (item.id == linkTypeId));
+			}, { wait: 10 });
+
+			if (linkTypeItem) {
+				MB.relationshipEditor.relationshipDialogDispatch({
+					type: 'update-link-type',
+					source,
+					action: {
+						type: 'update-autocomplete',
+						source,
+						action: {
+							type: 'select-item',
+							item: linkTypeItem,
+						},
+					},
+				});
+			}
+		}
+
+		if (attributes) {
+			setAttributes(attributes);
+		}
+
+		if (!target) return;
+
+		/** @type {AutocompleteActionT[]} */
+		const autocompleteActions = onlyTargetName ? [{
+			type: 'type-value',
+			value: target,
+		}, { // search dropdown is unaffected by future actions which set credits or date periods
+			type: 'search-after-timeout',
+			searchTerm: target,
+		}] : [{
+			type: 'select-item',
+			item: entityToSelectItem(target),
+		}];
+
+		// autofill the target entity as good as possible
+		autocompleteActions.forEach((autocompleteAction) => {
+			MB.relationshipEditor.relationshipDialogDispatch({
+				type: 'update-target-entity',
+				source,
+				action: {
+					type: 'update-autocomplete',
+					source,
+					action: autocompleteAction,
+				},
+			});
+		});
+
+		// focus target entity input if it could not be auto-selected
+		if (onlyTargetName) {
+			qs('input.relationship-target').focus();
+		}
+	}
+
+	/**
+	 * Resolves after the current/next relationship dialog has been closed.
+	 * @returns {Promise<RelationshipDialogFinalStateT>} The final state of the dialog when it was closed by the user.
+	 */
+	async function closingDialog() {
+		return new Promise((resolve) => {
+			// wait for the user to accept or cancel the dialog
+			document.addEventListener('mb-close-relationship-dialog', (event) => {
+				const finalState = event.dialogState;
+				finalState.closeEventType = event.closeEventType;
+				resolve(finalState);
+			}, { once: true });
+		});
+	}
+
+	/** @param {string} creditedAs Credited name of the target entity. */
+	function creditTargetAs(creditedAs) {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'update-target-entity',
+			source: MB.relationshipEditor.state.dialogLocation.source,
+			action: {
+				type: 'update-credit',
+				action: {
+					type: 'set-credit',
+					creditedAs,
+				},
+			},
+		});
+	}
+
+	/**
+	 * Sets the relationship attributes of the current dialog.
+	 * @param {ExternalLinkAttrT[]} attributes 
+	 */
+	function setAttributes(attributes) {
+		MB.relationshipEditor.relationshipDialogDispatch({
+			type: 'set-attributes',
+			attributes,
+		});
+	}
+
+	/**
+	 * @param {EntityItemT} entity 
+	 * @returns {OptionItemT}
+	 */
+	function entityToSelectItem(entity) {
+		return {
+			type: 'option',
+			id: entity.id,
+			name: entity.name,
+			entity,
+		};
+	}
+
+	/**
+	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT} EntityItemT
+	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
+	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & { closeEventType: 'accept' | 'cancel' }} RelationshipDialogFinalStateT
+	 */
+
+	/**
+	 * @param {CoreEntityTypeT} sourceType 
+	 * @param {CoreEntityTypeT} targetType 
+	 */
+	function isRelBackward(sourceType, targetType) {
+		return sourceType > targetType;
+	}
+
+	/**
+	 * Taken from https://github.com/metabrainz/musicbrainz-server/blob/bf0d5ec41c7ddb6c5a8396bf3a64f74acaef9337/root/static/scripts/relationship-editor/hooks/useRelationshipDialogContent.js
+	 * @type {Partial<import('../types/MBS/scripts/relationship-editor/state').RelationshipStateT>}
+	 */
+	const RELATIONSHIP_DEFAULTS = {
+		_lineage: [],
+		_original: null,
+		_status: 1, // add relationship
+		attributes: null,
+		begin_date: null,
+		editsPending: false,
+		end_date: null,
+		ended: false,
+		entity0_credit: '',
+		entity1_credit: '',
+		id: null,
+		linkOrder: 0,
+		linkTypeID: null,
+	};
+
+	/**
+	 * Creates a relationship between the given source and target entity.
+	 * @param {RelationshipProps & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
+	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
+	 * @param {CoreEntityT} options.target Target entity.
+	 * @param {number} [options.batchSelectionCount] Batch-edit all selected entities which have the same type as the source.
+	 * The source entity only acts as a placeholder in this case.
+	 * @param {RelationshipProps} props Relationship properties.
+	 */
+	function createRelationship({
+		source = MB.relationshipEditor.state.entity,
+		target,
+		batchSelectionCount = null,
+		...props
+	}) {
+		const backward = isRelBackward(source.entityType, target.entityType);
+
+		MB.relationshipEditor.dispatch({
+			type: 'update-relationship-state',
+			sourceEntity: source,
+			batchSelectionCount,
+			creditsToChangeForSource: '',
+			creditsToChangeForTarget: '',
+			newRelationshipState: {
+				...RELATIONSHIP_DEFAULTS,
+				entity0: backward ? target : source,
+				entity1: backward ? source : target,
+				id: MB.relationshipEditor.getRelationshipStateId(),
+				...props,
+			},
+			oldRelationshipState: null,
+		});
+	}
+
+	/**
+	 * Converts the given relationship attribute(s) into a tree which contains their full attribute type properties.
+	 * @param {ExternalLinkAttrT[]} attributes Distinct attributes, ordered by type ID.
+	 * @returns {LinkAttrTree}
+	 */
+	function createAttributeTree(...attributes) {
+		return MB.tree.fromDistinctAscArray(attributes
+			.map((attribute) => {
+				const attributeType = MB.linkedEntities.link_attribute_type[attribute.type.gid];
+				return {
+					...attribute,
+					type: attributeType,
+					typeID: attributeType.id,
+				};
+			})
+		);
+	}
+
+	/**
+	 * @typedef {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
+	 * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
+	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
+	 */
+
+	/**
+	 * Fetches the entity with the given MBID from the internal API ws/js.
+	 * @param {MB.MBID} gid MBID of the entity.
+	 * @returns {Promise<CoreEntityT>}
+	 */
+	async function fetchEntity(gid) {
+		const result = await fetch(`/ws/js/entity/${gid}`);
+		return result.json();
+	}
+
+	/**
 	 * Temporary cache for fetched entities from the ws/js API.
 	 */
-	const entityCache = new FunctionCache(fetchEntity$1, {
+	const entityCache = new FunctionCache(fetchEntity, {
 		keyMapper: (gid) => [gid],
 	});
 
@@ -1219,331 +1365,6 @@ textarea#credit-input {
 	 * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
 	 * @returns {Promise<CreditParserLineStatus>}
 	 */
-	async function addVoiceActorRelationship(artistName, roleName, bypassCache = false) {
-		const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
-
-		if (artistMBID) {
-			// mapping already exists, automatically add the relationship
-			const mbArtist = await entityCache.get(artistMBID);
-			createVoiceActorDialog$1(mbArtist, roleName, artistName).accept();
-			return 'done';
-		} else {
-			// pre-fill dialog and collect mappings for freshly matched artists
-			const artistMatch = await letUserSelectVoiceActor$1(artistName, roleName, artistName);
-			if (artistMatch.gid) {
-				nameToMBIDCache.set(['artist', artistName], artistMatch.gid);
-				return 'done';
-			} else {
-				return 'skipped';
-			}
-		}
-	}
-
-	/**
-	 * Imports all existing voice actor credits from the given Discogs release.
-	 * Automatically maps Discogs entities to MBIDs where possible, asks the user to match the remaining ones.
-	 * @param {string} releaseURL URL of the Discogs source release.
-	 * @returns - Number of credits (total & automatically mapped).
-	 * - List of unmapped entities (manually matched or skipped) for which MB does not store the Discogs URLs.
-	 */
-	async function importVoiceActorsFromDiscogs$1(releaseURL) {
-		/**
-		 * Unmapped entities for which MB does not store the Discogs URLs.
-		 * @type {EntityMapping[]}
-		 */
-		const unmappedArtists = [];
-		let mappedCredits = 0;
-
-		const actors = await fetchVoiceActors(releaseURL);
-		for (const actor of actors) {
-			let roleName = actor.roleCredit;
-
-			// always give Discogs narrators a role name,
-			// otherwise both "Narrator" and "Voice Actors" roles are mapped to MB's "spoken vocals" rels without distinction
-			if (!roleName && actor.role === 'Narrator') {
-				roleName = 'Narrator'; // TODO: localize according to release language?
-			}
-
-			const artistCredit = actor.anv; // we are already using the name as a fallback
-			const artistMBID = await discogsToMBIDCache.get('artist', actor.id);
-
-			if (artistMBID) {
-				// mapping already exists, automatically add the relationship
-				const mbArtist = await entityCache.get(artistMBID);
-				createVoiceActorDialog$1(mbArtist, roleName, artistCredit).accept();
-				mappedCredits++;
-				// duplicates of already existing rels will be merged automatically
-			} else {
-				// pre-fill dialog and collect mappings for freshly matched artists
-				const artistMatch = await letUserSelectVoiceActor$1(actor.name, roleName, artistCredit);
-				if (artistMatch.gid) {
-					discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
-				}
-				unmappedArtists.push({
-					MBID: artistMatch.gid,
-					name: artistMatch.name,
-					comment: artistMatch.comment,
-					externalURL: buildEntityURL('artist', actor.id),
-					externalName: actor.name,
-				});
-			}
-		}
-
-		// persist cache entries after each import, TODO: only do this on page unload
-		discogsToMBIDCache.store();
-
-		return {
-			totalCredits: actors.length,
-			mappedCredits,
-			unmappedArtists,
-		};
-	}
-
-	async function letUserSelectVoiceActor$1(artistName, roleName, artistCredit) {
-		const dialog = createVoiceActorDialog$1({ name: artistName }, roleName, artistCredit);
-
-		// let the user select the matching entity
-		openDialogAndTriggerAutocomplete(dialog);
-		await closingDialog$1(dialog);
-
-		return getTargetEntity(dialog);
-	}
-
-	/**
-	 * Creates a dialog to add a relationship to the given source entity.
-	 * @param {Object} options 
-	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
-	 * @param {CoreEntityT | string} [options.target] Target entity object or name.
-	 * @param {CoreEntityTypeT} [options.targetType] Target entity type, fallback if there is no full entity given.
-	 * @param {number} [options.linkTypeId] Internal ID of the relationship type.
-	 * @param {ExternalLinkAttrT[]} [options.attributes] Attributes for the relationship type.
-	 * @param {boolean} [options.batchSelection] Batch-edit all selected entities which have the same type as the source.
-	 * The source entity only acts as a placeholder in this case.
-	 */
-	async function createDialog({
-		source = MB.relationshipEditor.state.entity,
-		target,
-		targetType,
-		linkTypeId,
-		attributes,
-		batchSelection = false,
-	} = {}) {
-		const onlyTargetName = (typeof target === 'string');
-
-		// prefer an explicit target entity option over only a target type
-		if (target && !onlyTargetName) {
-			targetType = target.entityType;
-		}
-
-		// open dialog modal for the source entity
-		MB.relationshipEditor.dispatch({
-			type: 'update-dialog-location',
-			location: {
-				source,
-				batchSelection,
-			},
-		});
-
-		// TODO: currently it takes ~2ms until `relationshipDialogDispatch` is exposed
-		await waitFor(() => !!MB.relationshipEditor.relationshipDialogDispatch, 1);
-
-		if (targetType) {
-			MB.relationshipEditor.relationshipDialogDispatch({
-				type: 'update-target-type',
-				source,
-				targetType,
-			});
-		}
-
-		if (linkTypeId) {
-			const linkTypeItem = await retry(() => {
-				// the available items are only valid for the current target type,
-				// ensure that they have already been updated after a target type change
-				const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
-				return availableLinkTypes.find((item) => (item.id == linkTypeId));
-			}, { wait: 10 });
-
-			if (linkTypeItem) {
-				MB.relationshipEditor.relationshipDialogDispatch({
-					type: 'update-link-type',
-					source,
-					action: {
-						type: 'update-autocomplete',
-						source,
-						action: {
-							type: 'select-item',
-							item: linkTypeItem,
-						},
-					},
-				});
-			}
-		}
-
-		if (attributes) {
-			setAttributes(attributes);
-		}
-
-		if (!target) return;
-
-		/** @type {AutocompleteActionT[]} */
-		const autocompleteActions = onlyTargetName ? [{
-			type: 'type-value',
-			value: target,
-		}, { // search dropdown is unaffected by future actions which set credits or date periods
-			type: 'search-after-timeout',
-			searchTerm: target,
-		}] : [{
-			type: 'select-item',
-			item: entityToSelectItem(target),
-		}];
-
-		// autofill the target entity as good as possible
-		autocompleteActions.forEach((autocompleteAction) => {
-			MB.relationshipEditor.relationshipDialogDispatch({
-				type: 'update-target-entity',
-				source,
-				action: {
-					type: 'update-autocomplete',
-					source,
-					action: autocompleteAction,
-				},
-			});
-		});
-
-		// focus target entity input if it could not be auto-selected
-		if (onlyTargetName) {
-			qs('input.relationship-target').focus();
-		}
-	}
-
-	/**
-	 * Resolves after the current/next relationship dialog has been closed.
-	 * @returns {Promise<RelationshipDialogFinalStateT>} The final state of the dialog when it was closed by the user.
-	 */
-	async function closingDialog() {
-		return new Promise((resolve) => {
-			// wait for the user to accept or cancel the dialog
-			document.addEventListener('mb-close-relationship-dialog', (event) => {
-				const finalState = event.dialogState;
-				finalState.closeEventType = event.closeEventType;
-				resolve(finalState);
-			}, { once: true });
-		});
-	}
-
-	/** @param {string} creditedAs Credited name of the target entity. */
-	function creditTargetAs(creditedAs) {
-		MB.relationshipEditor.relationshipDialogDispatch({
-			type: 'update-target-entity',
-			source: MB.relationshipEditor.state.dialogLocation.source,
-			action: {
-				type: 'update-credit',
-				action: {
-					type: 'set-credit',
-					creditedAs,
-				},
-			},
-		});
-	}
-
-	/**
-	 * Sets the relationship attributes of the current dialog.
-	 * @param {ExternalLinkAttrT[]} attributes 
-	 */
-	function setAttributes(attributes) {
-		MB.relationshipEditor.relationshipDialogDispatch({
-			type: 'set-attributes',
-			attributes,
-		});
-	}
-
-	/**
-	 * @param {EntityItemT} entity 
-	 * @returns {OptionItemT}
-	 */
-	function entityToSelectItem(entity) {
-		return {
-			type: 'option',
-			id: entity.id,
-			name: entity.name,
-			entity,
-		};
-	}
-
-	/**
-	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').EntityItemT} EntityItemT
-	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').OptionItemT<EntityItemT>} OptionItemT
-	 * @typedef {import('../types/MBS/scripts/autocomplete2.js').ActionT<EntityItemT>} AutocompleteActionT
-	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
-	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipDialogStateT & { closeEventType: 'accept' | 'cancel' }} RelationshipDialogFinalStateT
-	 */
-
-	/**
-	 * Creates a relationship between the given source and target entity.
-	 * @param {RelationshipProps & { source?: CoreEntityT, target: CoreEntityT, batchSelectionCount?: number }} options
-	 * @param {CoreEntityT} [options.source] Source entity, defaults to the currently edited entity.
-	 * @param {CoreEntityT} options.target Target entity.
-	 * @param {number} [options.batchSelectionCount] Batch-edit all selected entities which have the same type as the source.
-	 * The source entity only acts as a placeholder in this case.
-	 * @param {RelationshipProps} props Relationship properties.
-	 */
-	function createRelationship({
-		source = MB.relationshipEditor.state.entity,
-		target,
-		batchSelectionCount = null,
-		...props
-	}) {
-		const backward = isRelBackward(source.entityType, target.entityType);
-
-		MB.relationshipEditor.dispatch({
-			type: 'update-relationship-state',
-			sourceEntity: source,
-			batchSelectionCount,
-			creditsToChangeForSource: '',
-			creditsToChangeForTarget: '',
-			newRelationshipState: {
-				...RELATIONSHIP_DEFAULTS,
-				entity0: backward ? target : source,
-				entity1: backward ? source : target,
-				id: MB.relationshipEditor.getRelationshipStateId(),
-				...props,
-			},
-			oldRelationshipState: null,
-		});
-	}
-
-	/**
-	 * Converts the given relationship attribute(s) into a tree which contains their full attribute type properties.
-	 * @param {ExternalLinkAttrT[]} attributes Distinct attributes, ordered by type ID.
-	 * @returns {LinkAttrTree}
-	 */
-	function createAttributeTree(...attributes) {
-		return MB.tree.fromDistinctAscArray(attributes
-			.map((attribute) => {
-				const attributeType = MB.linkedEntities.link_attribute_type[attribute.type.gid];
-				return {
-					...attribute,
-					type: attributeType,
-					typeID: attributeType.id,
-				};
-			})
-		);
-	}
-
-	/**
-	 * @typedef {import('weight-balanced-tree').ImmutableTree<LinkAttrT>} LinkAttrTree
-	 * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
-	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
-	 */
-
-	/**
-	 * Adds a voice actor release relationship for the given artist and their role.
-	 * Automatically maps artist names to MBIDs where possible, asks the user to match the remaining ones.
-	 * @param {string} artistName Artist name (as credited).
-	 * @param {string} roleName Credited role of the artist.
-	 * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
-	 * @returns {Promise<CreditParserLineStatus>}
-	 */
 	async function addVoiceActor(artistName, roleName, bypassCache = false) {
 		const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
 
@@ -1692,9 +1513,6 @@ textarea#credit-input {
 
 		nameToMBIDCache.load();
 
-		// TODO: drop once the new React relationship editor has been deployed
-		const addVoiceActorRel = hasReactRelEditor() ? addVoiceActor : addVoiceActorRelationship;
-
 		addParserButton('Parse voice actor credits', async (creditLine, event) => {
 			const creditTokens = creditLine.split(getPattern(creditSeparatorInput.value) || /$/);
 
@@ -1707,7 +1525,7 @@ textarea#credit-input {
 				}
 
 				const bypassCache = event.ctrlKey;
-				const result = await addVoiceActorRel(artistName, roleName, bypassCache);
+				const result = await addVoiceActor(artistName, roleName, bypassCache);
 				nameToMBIDCache.store();
 				return result;
 			} else {
@@ -1722,13 +1540,10 @@ textarea#credit-input {
 	function buildVoiceActorCreditImporterUI() {
 		discogsToMBIDCache.load();
 
-		// TODO: drop once the new React relationship editor has been deployed
-		const importVoiceActors = hasReactRelEditor() ? importVoiceActorsFromDiscogs : importVoiceActorsFromDiscogs$1;
-
 		dom('credit-parser').insertAdjacentHTML('beforeend', UI);
 
 		addButton('Import voice actors', async () => {
-			const releaseData = await fetchEntity(window.location.href, ['release-groups', 'url-rels']);
+			const releaseData = await fetchEntity$1(window.location.href, ['release-groups', 'url-rels']);
 			const releaseURL = buildEntityURL$1('release', releaseData.id);
 			let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
 
@@ -1737,7 +1552,7 @@ textarea#credit-input {
 			}
 
 			if (discogsURL) {
-				const result = await importVoiceActors(discogsURL);
+				const result = await importVoiceActorsFromDiscogs(discogsURL);
 				addMessageToEditNote(`Imported voice actor credits from ${discogsURL}`);
 
 				// mapping suggestions

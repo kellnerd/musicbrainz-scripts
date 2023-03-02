@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2023.3.1
+// @version       2023.3.2
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -17,145 +17,6 @@
 (function () {
 	'use strict';
 
-	/**
-	 * Fetches the entity with the given MBID from the internal API ws/js.
-	 * @param {MB.MBID} gid MBID of the entity.
-	 * @returns {Promise<CoreEntityT>}
-	 */
-	async function fetchEntity(gid) {
-		const result = await fetch(`/ws/js/entity/${gid}`);
-		return result.json();
-	}
-
-	/**
-	 * @template Params
-	 * @template Result
-	 */
-	class FunctionCache {
-		/**
-		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
-		 * @param {Object} options
-		 * @param {(...params: Params) => Key[]} options.keyMapper Maps the function parameters to the components of the cache's key.
-		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
-		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-		 * @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
-		 */
-		constructor(expensiveFunction, options) {
-			this.expensiveFunction = expensiveFunction;
-			this.keyMapper = options.keyMapper;
-			this.name = options.name ?? `defaultCache`;
-			this.storage = options.storage;
-			this.data = options.data ?? {};
-		}
-
-		/**
-		 * Looks up the result for the given parameters and returns it.
-		 * If the result is not cached, it will be calculated and added to the cache.
-		 * @param {Params} params 
-		 */
-		async get(...params) {
-			const keys = this.keyMapper(...params);
-			const lastKey = keys.pop();
-			if (!lastKey) return;
-
-			const record = this._get(keys);
-			if (record[lastKey] === undefined) {
-				// create a new entry to cache the result of the expensive function
-				const newEntry = await this.expensiveFunction(...params);
-				if (newEntry !== undefined) {
-					record[lastKey] = newEntry;
-				}
-			}
-
-			return record[lastKey];
-		}
-
-		/**
-		 * Manually sets the cache value for the given key.
-		 * @param {Key[]} keys Components of the key.
-		 * @param {Result} value 
-		 */
-		set(keys, value) {
-			const lastKey = keys.pop();
-			this._get(keys)[lastKey] = value;
-		}
-
-		/**
-		 * Loads the persisted cache entries.
-		 */
-		load() {
-			const storedData = this.storage?.getItem(this.name);
-			if (storedData) {
-				this.data = JSON.parse(storedData);
-			}
-		}
-
-		/**
-		 * Persists all entries of the cache.
-		 */
-		store() {
-			this.storage?.setItem(this.name, JSON.stringify(this.data));
-		}
-
-		/**
-		 * Clears all entries of the cache and persists the changes.
-		 */
-		clear() {
-			this.data = {};
-			this.store();
-		}
-
-		/**
-		 * Returns the cache record which is indexed by the key.
-		 * @param {Key[]} keys Components of the key.
-		 */
-		_get(keys) {
-			let record = this.data;
-			keys.forEach((key) => {
-				if (record[key] === undefined) {
-					// create an empty record for all missing keys
-					record[key] = {};
-				}
-				record = record[key];
-			});
-			return record;
-		}
-	}
-
-	/**
-	 * Temporary cache for fetched entities from the ws/js API.
-	 */
-	const entityCache = new FunctionCache(fetchEntity, {
-		keyMapper: (gid) => [gid],
-	});
-
-	/**
-	 * @template Params
-	 * @template Result
-	 * @extends {FunctionCache<Params,Result>}
-	 */
-	class SimpleCache extends FunctionCache {
-		/**
-		* @param {Object} options
-		* @param {string} [options.name] Name of the cache, used as storage key (optional).
-		* @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
-		* @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
-		*/
-		constructor(options) {
-			// use a dummy function to make the function cache fail without actually running an expensive function
-			super((...params) => undefined, {
-				...options,
-				keyMapper: (...params) => params,
-			});
-		}
-	}
-
-	/** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
-	const nameToMBIDCache = new SimpleCache({
-		name: 'nameToMBIDCache',
-		storage: window.localStorage,
-	});
-
 	/** @returns {DatePeriodRoleT} */
 	function createDatePeriodForYear(year) {
 		return {
@@ -163,11 +24,6 @@
 			end_date: { year },
 			ended: true,
 		};
-	}
-
-	// TODO: drop once the new React relationship editor has been deployed, together with the other fallbacks for the old one
-	function hasReactRelEditor() {
-		return !!MB.getSourceEntityInstance;
 	}
 
 	/**
@@ -235,274 +91,6 @@
 			}
 			resolve();
 		});
-	}
-
-	/**
-	 * Creates a dialog to add a relationship to the currently edited source entity.
-	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
-	 * @param {boolean} [backward] Swap source and target entity of the relationship (if they have the same type).
-	 * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
-	 */
-	function createAddRelationshipDialog(targetEntity, backward = false) {
-		const viewModel = MB.sourceRelationshipEditor
-			// releases have multiple relationship editors, edit the release itself
-			?? MB.releaseRelationshipEditor;
-		return new MB.relationshipEditor.UI.AddDialog({
-			viewModel,
-			source: viewModel.source,
-			target: targetEntity,
-			backward,
-		});
-	}
-
-	/**
-	 * Creates a dialog to batch-add relationships to the given source entities of the currently edited release.
-	 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity Target entity of the relationship.
-	 * @param {MB.RE.TargetEntity[]} sourceEntities Entities to which the relationships should be added.
-	 * @returns {MB.RE.Dialog} Pre-filled relationship dialog.
-	 */
-	function createBatchAddRelationshipsDialog(targetEntity, sourceEntities) {
-		const viewModel = MB.releaseRelationshipEditor;
-		return new MB.relationshipEditor.UI.BatchRelationshipDialog({
-			viewModel,
-			sources: sourceEntities,
-			target: targetEntity,
-		});
-	}
-
-	/**
-	 * Resolves after the given dialog has been closed.
-	 * @param {MB.RE.Dialog} dialog
-	 */
-	function closingDialog$1(dialog) {
-		return new Promise((resolve) => {
-			if (dialog) {
-				// wait until the jQuery UI dialog has been closed
-				dialog.$dialog.on('dialogclose', () => {
-					resolve();
-				});
-			} else {
-				resolve();
-			}
-		});
-	}
-
-	/**
-	 * Opens the given dialog, focuses the autocomplete input and triggers the search.
-	 * @param {MB.RE.Dialog} dialog 
-	 * @param {Event} [event] Affects the position of the opened dialog (optional).
-	 */
-	function openDialogAndTriggerAutocomplete(dialog, event) {
-		dialog.open(event);
-		dialog.autocomplete.$input.focus();
-		dialog.autocomplete.search();
-	}
-
-	/**
-	 * Returns the target entity of the given relationship dialog.
-	 * @param {MB.RE.Dialog} dialog 
-	 */
-	function getTargetEntity(dialog) {
-		return dialog.relationship().entities() // source and target entity
-			.find((entity) => entity.entityType === dialog.targetType());
-	}
-
-	// TODO: drop once the new React relationship editor has been deployed
-	/** Resolves after the release relationship editor has finished loading. */
-	function releaseLoadingFinished() {
-		if (hasReactRelEditor()) return Promise.resolve();
-		return waitFor(() => !MB.releaseRelationshipEditor.loadingRelease(), 100);
-	}
-
-	/**
-	 * MBS relationship link type IDs (incomplete).
-	 * @type {Record<CoreEntityTypeT, Record<CoreEntityTypeT, Record<string, number>>>}
-	 */
-	const LINK_TYPES = {
-		release: {
-			artist: {
-				'©': 709,
-				'℗': 710,
-			},
-			label: {
-				'©': 708,
-				'℗': 711,
-				'licensed from': 712,
-				'licensed to': 833,
-				'distributed by': 361,
-				'manufactured by': 360,
-				'marketed by': 848,
-			},
-		},
-		recording: {
-			artist: {
-				'℗': 869,
-			},
-			label: {
-				'℗': 867,
-			},
-		},
-	};
-
-	/**
-	 * Returns the internal ID of the requested relationship link type.
-	 * @param {CoreEntityTypeT} sourceType Type of the source entity.
-	 * @param {CoreEntityTypeT} targetType Type of the target entity.
-	 * @param {string} relType 
-	 */
-	function getLinkTypeId(sourceType, targetType, relType) {
-		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
-
-		if (linkTypeId) {
-			return linkTypeId;
-		} else {
-			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
-		}
-	}
-
-	/**
-	 * Converts an array with a single element into a scalar.
-	 * @template T
-	 * @param {MaybeArray<T>} maybeArray 
-	 * @returns A scalar or the input array if the conversion is not possible.
-	 */
-	function preferScalar(maybeArray) {
-		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
-		return maybeArray;
-	}
-
-	/**
-	 * Converts a scalar into an array with a single element.
-	 * @template T
-	 * @param {MaybeArray<T>} maybeArray 
-	 */
-	function preferArray(maybeArray) {
-		if (!Array.isArray(maybeArray)) return [maybeArray];
-		return maybeArray;
-	}
-
-	/**
-	 * Simplifies the given name to ease matching of strings.
-	 * @param {string} name 
-	 */
-	function simplifyName(name) {
-		return name.normalize('NFKD') // Unicode NFKD compatibility decomposition
-			.replace(/[^\p{L}\d]/ug, '') // keep only letters and numbers, remove e.g. combining diacritical marks of decompositions
-			.toLowerCase();
-	}
-
-	/**
-	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
-	 * Lets the user choose the appropriate target label or artist and waits for the dialog to close before continuing with the next one.
-	 * @param {CopyrightItem[]} copyrightInfo List of copyright items.
-	 * @param {object} [customOptions]
-	 * @param {boolean} [customOptions.bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
-	 * @param {boolean} [customOptions.forceArtist] Force names to be treated as artist names, disabled by default.
-	 * @param {boolean} [customOptions.useAllYears] Adds one (release) relationship for each given year instead of a single undated relationship, disabled by default.
-	 * @returns {Promise<CreditParserLineStatus>} Status of the given copyright info (Have relationships been added for all copyright items?).
-	 */
-	async function addCopyrightRelationships$1(copyrightInfo, customOptions = {}) {
-		// provide default options
-		const options = {
-			bypassCache: false,
-			forceArtist: false,
-			useAllYears: false,
-			...customOptions,
-		};
-
-		const releaseArtistNames = MB.releaseRelationshipEditor.source.artistCredit.names // all release artists
-			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
-			.map(simplifyName);
-		const selectedRecordings = MB.relationshipEditor.UI.checkedRecordings();
-		let addedRelCount = 0;
-		let skippedDialogs = false;
-
-		for (const copyrightItem of copyrightInfo) {
-			// detect artists who own the copyright of their own release
-			const entityType = options.forceArtist || releaseArtistNames.includes(simplifyName(copyrightItem.name)) ? 'artist' : 'label';
-
-			/**
-			 * There are multiple ways to fill the relationship's target entity:
-			 * (1) Directly map the name to an MBID (if the name is already cached).
-			 * (2) Just fill in the name and let the user select an entity (in manual mode or when the cache is bypassed).
-			 */
-			const targetMBID = !options.bypassCache && await nameToMBIDCache.get(entityType, copyrightItem.name); // (1a)
-			let targetEntity = targetMBID
-				? await entityCache.get(targetMBID) // (1b)
-				: MB.entity({ name: copyrightItem.name, entityType }); // (2a)
-
-			for (const type of copyrightItem.types) {
-				// add all copyright rels to the release
-				try {
-					const relTypeId = getLinkTypeId(entityType, 'release', type);
-					let years = preferArray(copyrightItem.year);
-
-					// do not use all years if there are multiple unspecific ones (unless enabled)
-					if (years.length !== 1 && !options.useAllYears) {
-						years = [undefined]; // prefer a single undated relationship
-					}
-
-					for (const year of years) {
-						const dialog = createAddRelationshipDialog(targetEntity);
-						targetEntity = await fillAndProcessDialog(dialog, { ...copyrightItem, year }, relTypeId, targetEntity);
-					}
-				} catch (error) {
-					console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
-					skippedDialogs = true;
-				}
-
-				// also add phonographic copyright rels to all selected recordings
-				if (type === '℗' && selectedRecordings.length) {
-					try {
-						const relTypeId = getLinkTypeId(entityType, 'recording', type);
-						const recordingsDialog = createBatchAddRelationshipsDialog(targetEntity, selectedRecordings);
-						targetEntity = await fillAndProcessDialog(recordingsDialog, copyrightItem, relTypeId, targetEntity);
-					} catch (error) {
-						console.warn(`Skipping copyright item for '${copyrightItem.name}':`, error.message);
-						skippedDialogs = true;
-					}
-				}
-			}
-		}
-
-		return addedRelCount > 0 ? (skippedDialogs ? 'partial' : 'done') : 'skipped';
-
-		/**
-		 * @param {MB.RE.Dialog} dialog 
-		 * @param {CopyrightItem} copyrightItem 
-		 * @param {number} relTypeId 
-		 * @param {MB.RE.Target<MB.RE.MinimalEntity>} targetEntity 
-		 * @returns {Promise<MB.RE.TargetEntity>}
-		 */
-		async function fillAndProcessDialog(dialog, copyrightItem, relTypeId, targetEntity) {
-			const rel = dialog.relationship();
-			rel.linkTypeID(relTypeId);
-			rel.entity0_credit(copyrightItem.name);
-
-			// do not fill the date if there are multiple unspecific years
-			if (copyrightItem.year && !Array.isArray(copyrightItem.year)) {
-				rel.begin_date.year(copyrightItem.year);
-				rel.end_date.year(copyrightItem.year);
-			}
-
-			if (targetEntity.gid) { // (1c)
-				dialog.accept();
-				addedRelCount++;
-			} else { // (2b)
-				openDialogAndTriggerAutocomplete(dialog);
-				await closingDialog$1(dialog);
-
-				// remember the entity which the user has chosen for the given name
-				targetEntity = getTargetEntity(dialog);
-				if (targetEntity.gid) {
-					nameToMBIDCache.set([targetEntity.entityType, rel.entity0_credit() || targetEntity.name], targetEntity.gid);
-					addedRelCount++;
-				} else {
-					skippedDialogs = true;
-				}
-			}
-			return targetEntity;
-		}
 	}
 
 	/**
@@ -807,6 +395,222 @@
 	 * @typedef {Partial<Omit<RelationshipT, 'attributes'> & { attributes: LinkAttrTree }>} RelationshipProps
 	 * @typedef {import('../types/MBS/scripts/relationship-editor/state.js').ExternalLinkAttrT} ExternalLinkAttrT
 	 */
+
+	/**
+	 * MBS relationship link type IDs (incomplete).
+	 * @type {Record<CoreEntityTypeT, Record<CoreEntityTypeT, Record<string, number>>>}
+	 */
+	const LINK_TYPES = {
+		release: {
+			artist: {
+				'©': 709,
+				'℗': 710,
+			},
+			label: {
+				'©': 708,
+				'℗': 711,
+				'licensed from': 712,
+				'licensed to': 833,
+				'distributed by': 361,
+				'manufactured by': 360,
+				'marketed by': 848,
+			},
+		},
+		recording: {
+			artist: {
+				'℗': 869,
+			},
+			label: {
+				'℗': 867,
+			},
+		},
+	};
+
+	/**
+	 * Returns the internal ID of the requested relationship link type.
+	 * @param {CoreEntityTypeT} sourceType Type of the source entity.
+	 * @param {CoreEntityTypeT} targetType Type of the target entity.
+	 * @param {string} relType 
+	 */
+	function getLinkTypeId(sourceType, targetType, relType) {
+		const linkTypeId = LINK_TYPES[targetType]?.[sourceType]?.[relType];
+
+		if (linkTypeId) {
+			return linkTypeId;
+		} else {
+			throw new Error(`Unsupported ${sourceType}-${targetType} relationship type '${relType}'`);
+		}
+	}
+
+	/**
+	 * Fetches the entity with the given MBID from the internal API ws/js.
+	 * @param {MB.MBID} gid MBID of the entity.
+	 * @returns {Promise<CoreEntityT>}
+	 */
+	async function fetchEntity(gid) {
+		const result = await fetch(`/ws/js/entity/${gid}`);
+		return result.json();
+	}
+
+	/**
+	 * @template Params
+	 * @template Result
+	 */
+	class FunctionCache {
+		/**
+		 * @param {(...params: Params) => Result | Promise<Result>} expensiveFunction Expensive function whose results should be cached.
+		 * @param {Object} options
+		 * @param {(...params: Params) => Key[]} options.keyMapper Maps the function parameters to the components of the cache's key.
+		 * @param {string} [options.name] Name of the cache, used as storage key (optional).
+		 * @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
+		 * @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		 */
+		constructor(expensiveFunction, options) {
+			this.expensiveFunction = expensiveFunction;
+			this.keyMapper = options.keyMapper;
+			this.name = options.name ?? `defaultCache`;
+			this.storage = options.storage;
+			this.data = options.data ?? {};
+		}
+
+		/**
+		 * Looks up the result for the given parameters and returns it.
+		 * If the result is not cached, it will be calculated and added to the cache.
+		 * @param {Params} params 
+		 */
+		async get(...params) {
+			const keys = this.keyMapper(...params);
+			const lastKey = keys.pop();
+			if (!lastKey) return;
+
+			const record = this._get(keys);
+			if (record[lastKey] === undefined) {
+				// create a new entry to cache the result of the expensive function
+				const newEntry = await this.expensiveFunction(...params);
+				if (newEntry !== undefined) {
+					record[lastKey] = newEntry;
+				}
+			}
+
+			return record[lastKey];
+		}
+
+		/**
+		 * Manually sets the cache value for the given key.
+		 * @param {Key[]} keys Components of the key.
+		 * @param {Result} value 
+		 */
+		set(keys, value) {
+			const lastKey = keys.pop();
+			this._get(keys)[lastKey] = value;
+		}
+
+		/**
+		 * Loads the persisted cache entries.
+		 */
+		load() {
+			const storedData = this.storage?.getItem(this.name);
+			if (storedData) {
+				this.data = JSON.parse(storedData);
+			}
+		}
+
+		/**
+		 * Persists all entries of the cache.
+		 */
+		store() {
+			this.storage?.setItem(this.name, JSON.stringify(this.data));
+		}
+
+		/**
+		 * Clears all entries of the cache and persists the changes.
+		 */
+		clear() {
+			this.data = {};
+			this.store();
+		}
+
+		/**
+		 * Returns the cache record which is indexed by the key.
+		 * @param {Key[]} keys Components of the key.
+		 */
+		_get(keys) {
+			let record = this.data;
+			keys.forEach((key) => {
+				if (record[key] === undefined) {
+					// create an empty record for all missing keys
+					record[key] = {};
+				}
+				record = record[key];
+			});
+			return record;
+		}
+	}
+
+	/**
+	 * Temporary cache for fetched entities from the ws/js API.
+	 */
+	const entityCache = new FunctionCache(fetchEntity, {
+		keyMapper: (gid) => [gid],
+	});
+
+	/**
+	 * @template Params
+	 * @template Result
+	 * @extends {FunctionCache<Params,Result>}
+	 */
+	class SimpleCache extends FunctionCache {
+		/**
+		* @param {Object} options
+		* @param {string} [options.name] Name of the cache, used as storage key (optional).
+		* @param {Storage} [options.storage] Storage which should be used to persist the cache (optional).
+		* @param {Record<Key, Result>} [options.data] Record which should be used as cache (defaults to an empty record).
+		*/
+		constructor(options) {
+			// use a dummy function to make the function cache fail without actually running an expensive function
+			super((...params) => undefined, {
+				...options,
+				keyMapper: (...params) => params,
+			});
+		}
+	}
+
+	/** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
+	const nameToMBIDCache = new SimpleCache({
+		name: 'nameToMBIDCache',
+		storage: window.localStorage,
+	});
+
+	/**
+	 * Converts an array with a single element into a scalar.
+	 * @template T
+	 * @param {MaybeArray<T>} maybeArray 
+	 * @returns A scalar or the input array if the conversion is not possible.
+	 */
+	function preferScalar(maybeArray) {
+		if (Array.isArray(maybeArray) && maybeArray.length === 1) return maybeArray[0];
+		return maybeArray;
+	}
+
+	/**
+	 * Converts a scalar into an array with a single element.
+	 * @template T
+	 * @param {MaybeArray<T>} maybeArray 
+	 */
+	function preferArray(maybeArray) {
+		if (!Array.isArray(maybeArray)) return [maybeArray];
+		return maybeArray;
+	}
+
+	/**
+	 * Simplifies the given name to ease matching of strings.
+	 * @param {string} name 
+	 */
+	function simplifyName(name) {
+		return name.normalize('NFKD') // Unicode NFKD compatibility decomposition
+			.replace(/[^\p{L}\d]/ug, '') // keep only letters and numbers, remove e.g. combining diacritical marks of decompositions
+			.toLowerCase();
+	}
 
 	/**
 	 * Creates and fills an "Add relationship" dialog for each piece of copyright information.
@@ -1121,7 +925,7 @@
 	/** Resolves as soon as the React relationship editor is ready. */
 	function readyRelationshipEditor() {
 		const reactRelEditor = qs('.release-relationship-editor');
-		if (!reactRelEditor) return Promise.resolve(); // TODO: drop once the new React relationship editor has been deployed
+		if (!reactRelEditor) return Promise.reject(new Error('Release relationship editor has not been found'));
 		// wait for the loading message to disappear (takes ~1s)
 		return waitFor(() => !qs('.release-relationship-editor > .loading-message'), 100);
 	}
@@ -1342,8 +1146,7 @@ textarea#credit-input {
 		if (!existingUI) {
 			// inject credit parser between the sections for track and release relationships,
 			// use the "Release Relationships" heading as orientation since #tracklist is missing for releases without mediums
-			qs('#content > h2:nth-of-type(2), .release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
-			// TODO: drop first selector once the new React relationship editor has been deployed
+			qs('.release-relationship-editor > h2:nth-of-type(2)').insertAdjacentHTML('beforebegin', creditParserUI);
 			injectStylesheet(css, 'credit-parser');
 		}
 
@@ -1399,8 +1202,7 @@ textarea#credit-input {
 
 		addButton('Load annotation', (creditInput) => {
 			/** @type {ReleaseT} */
-			const release = MB.getSourceEntityInstance?.() ?? MB.releaseRelationshipEditor.source;
-			// TODO: drop fallback once the new React relationship editor has been deployed
+			const release = MB.getSourceEntityInstance();
 			const annotation = release.latest_annotation;
 			if (annotation) {
 				setTextarea(creditInput, annotation.text);
@@ -1428,13 +1230,11 @@ textarea#credit-input {
 		// trigger all additional UI build tasks
 		document.dispatchEvent(new CustomEvent(uiReadyEventType));
 
-		// focus the credit parser input once all relationships have been loaded (and displayed)
-		releaseLoadingFinished().then(() => {
-			if (dom('parser-autofocus').checked) {
-				creditInput.scrollIntoView();
-				creditInput.focus();
-			}
-		});
+		// focus the credit parser input (if this setting is enabled)
+		if (dom('parser-autofocus').checked) {
+			creditInput.scrollIntoView();
+			creditInput.focus();
+		}
 	}
 
 	/**
@@ -1580,9 +1380,6 @@ textarea#credit-input {
 
 		nameToMBIDCache.load();
 
-		// TODO: drop once the new React relationship editor has been deployed
-		const addCopyrightRels = hasReactRelEditor() ? addCopyrightRelationships : addCopyrightRelationships$1;
-
 		addParserButton('Parse copyright notice', async (creditLine, event) => {
 			const copyrightInfo = parseCopyrightNotice(creditLine, {
 				terminatorRE: getPatternAsRegExp(terminatorInput.value || '/$/'),
@@ -1590,7 +1387,7 @@ textarea#credit-input {
 			});
 
 			if (copyrightInfo.length) {
-				const result = await addCopyrightRels(copyrightInfo, {
+				const result = await addCopyrightRelationships(copyrightInfo, {
 					forceArtist: event.shiftKey,
 					bypassCache: event.ctrlKey,
 					useAllYears: event.altKey,
