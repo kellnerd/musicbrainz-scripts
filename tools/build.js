@@ -1,15 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import extractComments from 'extract-comments';
 
 import { buildBookmarklets } from './buildBookmarklets.js';
 import { buildUserscripts } from './buildUserscripts.js';
+import { extractDocumentation } from './extractDocumentation.js';
 import { getMarkdownFiles } from './getFiles.js'
 import { sourceAndInstallButton } from './github.js';
 import { loadMetadata } from './userscriptMetadata.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
 
-async function build({
+export async function build({
 	bookmarkletBasePath = 'src/bookmarklets',
 	userscriptBasePath = 'src/userscripts',
 	readmePath = 'README.md',
@@ -78,18 +78,6 @@ async function build({
 
 
 /**
- * Extract the first documentation block comment from the given JavaScript module.
- * @param {string} scriptPath Path to the script file.
- * @returns {string}
- */
-function extractDocumentation(scriptPath) {
-	const fileContents = fs.readFileSync(scriptPath, { encoding: 'utf-8' });
-	const comments = extractComments(fileContents, { first: true, line: false });
-	return comments.length ? comments[0].value : '';
-}
-
-
-/**
  * Returns the path to the relevant source code file for the given script.
  * This is the module of the same name inside the source directory if it exists, otherwise it is the file itself.
  * @param {string} fileName File name of the script.
@@ -99,6 +87,3 @@ function relevantSourceFile(fileName, basePath) {
 	const srcPath = path.posix.join('src', fileName);
 	return fs.existsSync(srcPath) ? srcPath : path.posix.join(basePath, fileName);
 }
-
-
-build({ debug: process.argv.includes('-d') });

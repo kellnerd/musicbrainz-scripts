@@ -1,6 +1,6 @@
 {
   "name": "@kellnerd/musicbrainz-scripts",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",
   "keywords": [
@@ -16,7 +16,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "node tools/build.js",
+    "build": "node build.js",
     "test": "node test"
   },
   "files": [
