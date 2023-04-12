@@ -10,7 +10,7 @@ import { loadMetadata } from './userscriptMetadata.js';
 import { camelToTitleCase } from '../utils/string/casingStyle.js';
 
 export async function build({
-	bookmarkletBasePath = 'src/bookmarklets',
+	bookmarkletBasePath = false,
 	userscriptBasePath = 'src/userscripts',
 	readmePath = 'README.md',
 	docBasePath = 'doc',
@@ -19,8 +19,8 @@ export async function build({
 	// build userscripts
 	const userscriptNames = await buildUserscripts(userscriptBasePath, debug);
 
-	// prepare bookmarklets
-	const bookmarklets = await buildBookmarklets(bookmarkletBasePath, debug);
+	// prepare bookmarklets (optional)
+	const bookmarklets = bookmarkletBasePath ? await buildBookmarklets(bookmarkletBasePath, debug) : {};
 
 	// prepare README file and write header
 	const readme = fs.createWriteStream(readmePath);
@@ -53,16 +53,18 @@ export async function build({
 	}
 
 	// write remaining bookmarklets and their extracted documentation to the README
-	readme.write('\n## Bookmarklets\n');
+	if (Object.keys(bookmarklets).length) {
+		readme.write('\n## Bookmarklets\n');
 
-	for (let fileName in bookmarklets) {
-		const baseName = path.basename(fileName, '.js');
-		const bookmarkletPath = path.join(bookmarkletBasePath, fileName);
+		for (let fileName in bookmarklets) {
+			const baseName = path.basename(fileName, '.js');
+			const bookmarkletPath = path.join(bookmarkletBasePath, fileName);
 
-		readme.write(`\n### [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
+			readme.write(`\n### [${camelToTitleCase(baseName)}](${relevantSourceFile(fileName, bookmarkletBasePath)})\n`);
 
-		readme.write(extractDocumentation(bookmarkletPath) + '\n');
-		readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
+			readme.write(extractDocumentation(bookmarkletPath) + '\n');
+			readme.write('\n```js\n' + bookmarklets[fileName] + '\n```\n');
+		}
 	}
 
 	// append all additional documentation files to the README
