@@ -189,3 +189,27 @@ javascript:(()=>{const s=window.location.href.match(/(artist|label|master|releas
 Running `npm run build` compiles [all userscripts](src/userscripts/) and [all bookmarklets](src/bookmarklets/) before it generates an updated version of `README.md`. Before you can run this command you have to ensure that you have setup [Node.js](https://nodejs.org/) and have installed the dependencies of the build script via `npm install`.
 
 If you want to compile a single minified bookmarklet from a module or a standalone JavaScript file you can run `node tools/bookmarkletify.js file.js`. The result will be output directly on screen and no files will be modified.
+
+## Node.js Package
+
+Do you want to create your own userscript or bookmarklet project for MusicBrainz without having to rewrite everything from scratch?
+
+You can reuse code from this repository by installing it as a dependency of your own Node.js project:
+`npm install kellnerd/musicbrainz-scripts`
+
+The package gives you access to all the MusicBrainz specific modules under [src](src/) except for the main modules of the bookmarklets and userscripts themselves.
+Additionally, the package also contains the [build tools](tools/) which are used to bundle the final userscripts and bookmarklets in this repository.
+
+The primary entry point of the `@kellnerd/musicbrainz-scripts` package is [index.js](index.js) which provides import shortcuts for stable, potentially useful pieces of code from `src/`.
+
+- Shortcut usage: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts';`
+
+- Full specifier: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts/src/editNote.js';`
+
+You can also import utility functions from `utils/` and build tools from `build/` if you want to:
+
+- Utility function: `import { guessUnicodePunctuation } from '@kellnerd/musicbrainz-scripts/utils/string/punctuation.js';`
+
+- Build tool: `import { buildBookmarklet } from '@kellnerd/musicbrainz-scripts/tools/buildBookmarklets.js'`
+
+P.S. General utilities under `utils/` will get their own package in the near future, so you should only use them if you are willing to update all of your import statements once that happens.
