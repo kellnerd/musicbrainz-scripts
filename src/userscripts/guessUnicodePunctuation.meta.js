@@ -1,4 +1,4 @@
-import { createMusicBrainzURLRule } from '../../tools/userscriptMetadata.js';
+import { createMusicBrainzURLRule } from '@kellnerd/userscript-bundler';
 
 /** Userscript has been tested for the following entities, these are all except for `genre` and `url`. */
 const supportedEntities = [
@@ -15,7 +15,7 @@ const supportedEntities = [
 	'work',
 ];
 
-/** @type {EnhancedUserscriptMetadata} */
+/** @type {import('@kellnerd/userscript-bundler').EnhancedUserscriptMetadata} */
 const metadata = {
 	name: 'MusicBrainz: Guess Unicode punctuation',
 	author: 'kellnerd',

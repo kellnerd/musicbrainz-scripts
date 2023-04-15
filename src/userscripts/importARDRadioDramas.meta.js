@@ -1,4 +1,4 @@
-/** @type {UserscriptMetadata} */
+/** @type {import('@kellnerd/userscript-bundler').EnhancedUserscriptMetadata} */
 const metadata = {
 	name: 'MusicBrainz: Import ARD radio dramas',
 	author: 'kellnerd',

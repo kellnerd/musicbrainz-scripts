@@ -1,4 +1,4 @@
-import { build } from './tools/build.js';
+import { build } from '@kellnerd/userscript-bundler';
 
 build({
 	bookmarkletBasePath: 'src/bookmarklets',

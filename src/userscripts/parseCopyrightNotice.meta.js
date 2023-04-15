@@ -1,4 +1,4 @@
-/** @type {EnhancedUserscriptMetadata} */
+/** @type {import('@kellnerd/userscript-bundler').EnhancedUserscriptMetadata} */
 const metadata = {
 	name: 'MusicBrainz: Parse copyright notice',
 	author: 'kellnerd',

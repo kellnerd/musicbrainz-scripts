@@ -4,10 +4,6 @@
  * 
  * - Shortcut usage: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts';`
  * - Full specifier: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts/src/editNote.js';`
- * 
- * You can also import utility functions from `utils/` and build tools from `build/` if you want to:
- * - Utility function: `import { guessUnicodePunctuation } from '@kellnerd/musicbrainz-scripts/utils/string/punctuation.js';`
- * - Build tool: `import { buildBookmarklet } from '@kellnerd/musicbrainz-scripts/tools/buildBookmarklets.js'`
  */
 
 export {

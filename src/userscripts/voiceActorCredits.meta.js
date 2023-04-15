@@ -1,4 +1,4 @@
-/** @type {EnhancedUserscriptMetadata} */
+/** @type {import('@kellnerd/userscript-bundler').EnhancedUserscriptMetadata} */
 const metadata = {
 	name: 'MusicBrainz: Voice actor credits',
 	author: 'kellnerd',
@@ -19,4 +19,3 @@ const metadata = {
 };
 
 export default metadata;
-
