@@ -188,13 +188,13 @@ javascript:(()=>{const s=window.location.href.match(/(artist|label|master|releas
 
 Running `npm run build` compiles [all userscripts](src/userscripts/) and [all bookmarklets](src/bookmarklets/) before it generates an updated version of `README.md`. Before you can run this command you have to ensure that you have setup [Node.js](https://nodejs.org/) and have installed the dependencies of the build script via `npm install`.
 
-If you want to compile a single minified bookmarklet from a module or a standalone JavaScript file you can run `node tools/bookmarkletify.js file.js`. The result will be output directly on screen and no files will be modified.
-
 ## Node.js Package
 
 Do you want to create your own userscript or bookmarklet project for MusicBrainz without having to rewrite everything from scratch?
 
-You can reuse code from this repository by installing it as a dependency of your own Node.js project:
+Have a look at my [userscript bundler](https://github.com/kellnerd/userscript-bundler) tools which are used to build the userscripts, bookmarklets and the README in this repository.
+
+You can also reuse code from this repository by installing it as a dependency of your own Node.js project:
 `npm install kellnerd/musicbrainz-scripts`
 
 The package gives you access to all the MusicBrainz specific modules under [src](src/) except for the main modules of the bookmarklets and userscripts themselves.
