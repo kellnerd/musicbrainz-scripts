@@ -1,6 +1,6 @@
 {
   "name": "@kellnerd/musicbrainz-scripts",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "author": "David Kellner",
   "description": "Bookmarklets and Userscripts for MusicBrainz.org",
   "keywords": [
@@ -33,5 +33,8 @@
     "@kellnerd/userscript-bundler": "github:kellnerd/userscript-bundler",
     "cross-fetch": "^3.1.4",
     "weight-balanced-tree": "^0.6.1"
+  },
+  "dependencies": {
+    "@kellnerd/es-utils": "github:kellnerd/es-utils"
   }
 }
