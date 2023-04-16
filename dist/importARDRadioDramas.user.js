@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Import ARD radio dramas
-// @version       2022.10.22
+// @version       2023.4.16
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Imports German broadcast releases from the ARD radio drama database.
@@ -120,7 +120,8 @@
 		let queue = Promise.resolve(); // empty queue is ready
 		return (...args) => {
 			const result = queue.then(() => operation(...args)); // queue the next operation
-			queue = queue.then(() => delay(interval)); // start the next delay
+			// start the next delay, regardless of the last operation's success
+			queue = queue.then(() => delay(interval), () => delay(interval));
 			return result;
 		};
 	}
