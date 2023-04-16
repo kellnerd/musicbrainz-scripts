@@ -1,5 +1,5 @@
-import { retry, waitFor } from '../../utils/async/polling.js';
-import { qs } from '../../utils/dom/select.js';
+import { retry, waitFor } from '@kellnerd/es-utils/async/polling.js';
+import { qs } from '@kellnerd/es-utils/dom/select.js';
 
 /**
  * Creates a dialog to add a relationship to the given source entity.

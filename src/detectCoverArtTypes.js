@@ -1,4 +1,4 @@
-import { qs, qsa } from '../utils/dom/select.js';
+import { qs, qsa } from '@kellnerd/es-utils/dom/select.js';
 
 const typeCheckboxQuery = 'ul.cover-art-type-checkboxes input[type="checkbox"]';
 

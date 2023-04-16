@@ -1,7 +1,7 @@
 import { buildEditNote } from './editNote.js';
 import { buildEntityURL } from './entity.js';
-import { createHiddenForm } from '../utils/dom/form.js';
-import { flatten } from '../utils/object/flatten.js';
+import { createHiddenForm } from '@kellnerd/es-utils/dom/form.js';
+import { flatten } from '@kellnerd/es-utils/object/flatten.js';
 
 /**
  * Creates a form with hidden inputs and a submit button to seed a new release on MusicBrainz.

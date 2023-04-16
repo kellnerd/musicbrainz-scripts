@@ -1,16 +1,16 @@
 import { addMessageToEditNote } from './editNote.js';
 import { parserDefaults } from './parseCopyrightNotice.js';
 import { readyRelationshipEditor } from './reactHydration.js';
-import { automaticHeight, automaticWidth } from '../utils/dom/autoResize.js';
-import { createElement, injectStylesheet } from '../utils/dom/create.js';
-import { dom, qs, qsa } from '../utils/dom/select.js';
-import { getPattern, getPatternAsRegExp } from '../utils/regex/parse.js';
-import { slugify } from '../utils/string/casingStyle.js';
+import { automaticHeight, automaticWidth } from '@kellnerd/es-utils/dom/autoResize.js';
+import { createElement, injectStylesheet } from '@kellnerd/es-utils/dom/create.js';
+import { dom, qs, qsa } from '@kellnerd/es-utils/dom/select.js';
+import { getPattern, getPatternAsRegExp } from '@kellnerd/es-utils/regex/parse.js';
+import { slugify } from '@kellnerd/es-utils/string/casingStyle.js';
 import {
 	persistCheckbox,
 	persistDetails,
 	persistInput,
-} from '../utils/userscript/persistElement.js';
+} from '@kellnerd/es-utils/userscript/persistElement.js';
 
 const creditParserUI = `
 <details id="credit-parser">
@@ -186,7 +186,7 @@ export function addButton(label, clickHandler, description) {
 /**
  * Adds a new parser button with the given label and handler to the credit parser UI.
  * @param {string} label 
- * @param {(creditLine: string, event: MouseEvent) => MaybePromise<CreditParserLineStatus>} parser
+ * @param {(creditLine: string, event: MouseEvent) => import('@kellnerd/es-utils').MaybePromise<CreditParserLineStatus>} parser
  * Handler which parses the given credit line and returns whether it was successful.
  * @param {string} [description] Description of the button, shown as tooltip.
  */

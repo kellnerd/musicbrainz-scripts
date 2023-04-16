@@ -1,4 +1,4 @@
-import { createRecordMapper } from '../utils/object/createRecordMapper.js';
+import { createRecordMapper } from '@kellnerd/es-utils/object/createRecordMapper.js';
 
 /**
  * Fetches the entity with the given MBID from the internal API ws/js.
@@ -23,7 +23,7 @@ export async function searchEntity(entityType, query) {
 
 /**
  * Maps ws/js internal fields for an artist to ws/2 fields (from an API response).
- * @type {KeyMapping<ArtistT, MB.Artist>}
+ * @type {import('@kellnerd/es-utils').KeyMapping<ArtistT, MB.Artist>}
  */
 const ARTIST_INTERNAL_FIELDS = {
 	gid: 'id', // MBID

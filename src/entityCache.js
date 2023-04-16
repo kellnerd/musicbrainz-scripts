@@ -1,5 +1,5 @@
 import { fetchEntity } from './internalAPI.js';
-import { FunctionCache } from '../utils/cache/FunctionCache.js';
+import { FunctionCache } from '@kellnerd/es-utils/cache/FunctionCache.js';
 
 /**
  * Temporary cache for fetched entities from the ws/js API.

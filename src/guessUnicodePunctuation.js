@@ -1,14 +1,14 @@
-import { transformInputValues } from '../utils/dom/transformInputValues.js';
+import { transformInputValues } from '@kellnerd/es-utils/dom/transformInputValues.js';
 import {
 	punctuationRules,
 	punctuationRulesForLanguage,
-} from '../utils/string/punctuation.js';
+} from '@kellnerd/es-utils/string/punctuation.js';
 
 /**
  * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
  * by temporarily changing them to characters that will not be touched by the transformation rules.
  * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
- * @type {SubstitutionRule[]}
+ * @type {import('@kellnerd/es-utils').SubstitutionRule[]}
  */
 export const transformationRulesToPreserveMarkup = [
 	/* Base64 encode URLs */

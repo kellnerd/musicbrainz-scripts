@@ -1,6 +1,6 @@
 import { buildApiURL, extractEntityFromURL } from './entity.js';
-import { rateLimit } from '../../utils/async/rateLimit.js';
-import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
+import { rateLimit } from '@kellnerd/es-utils/async/rateLimit.js';
+import { guessUnicodePunctuation } from '@kellnerd/es-utils/string/punctuation.js';
 import 'cross-fetch/dist/node-polyfill.js';
 
 /**

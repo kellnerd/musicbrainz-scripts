@@ -3,8 +3,8 @@
  */
 
 import { transformationRulesToPreserveMarkup } from '../guessUnicodePunctuation.js';
-import { $transformInputValues } from '../../utils/dom/transformInputValues.js';
-import { punctuationRules } from '../../utils/string/punctuation.js';
+import { $transformInputValues } from '@kellnerd/es-utils/dom/transformInputValues.js';
+import { punctuationRules } from '@kellnerd/es-utils/string/punctuation.js';
 
 const titleInputSelectors = [
 	'input#name', // release title (release editor)

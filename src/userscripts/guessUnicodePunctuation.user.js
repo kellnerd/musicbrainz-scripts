@@ -4,9 +4,9 @@ import {
 } from '../guessUnicodePunctuation.js';
 import { detectAliasLanguage, detectReleaseLanguage } from '../languages.js';
 import { onReactHydrated } from '../reactHydration.js';
-import { createElement, injectStylesheet } from '../../utils/dom/create.js';
-import { qs, qsa } from '../../utils/dom/select.js';
-import { transformInputValues, defaultHighlightClass } from '../../utils/dom/transformInputValues.js';
+import { createElement, injectStylesheet } from '@kellnerd/es-utils/dom/create.js';
+import { qs, qsa } from '@kellnerd/es-utils/dom/select.js';
+import { transformInputValues, defaultHighlightClass } from '@kellnerd/es-utils/dom/transformInputValues.js';
 
 import guessPunctuationIcon from './icons/guessPunctuation.png';
 

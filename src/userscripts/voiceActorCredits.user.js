@@ -15,9 +15,9 @@ import {
 	addVoiceActor,
 	importVoiceActorsFromDiscogs,
 } from '../relationship-editor/voiceActorCredits.js';
-import { dom } from '../../utils/dom/select.js';
-import { getPattern } from '../../utils/regex/parse.js';
-import { guessUnicodePunctuation } from '../../utils/string/punctuation.js';
+import { dom } from '@kellnerd/es-utils/dom/select.js';
+import { getPattern } from '@kellnerd/es-utils/regex/parse.js';
+import { guessUnicodePunctuation } from '@kellnerd/es-utils/string/punctuation.js';
 
 const UI = `
 <div id="credit-import-tools">

@@ -1,5 +1,5 @@
-import { guessUnicodePunctuation } from '../utils/string/punctuation.js';
-import { assertFunction } from '../utils/test/assertFunction.js';
+import { guessUnicodePunctuation } from '@kellnerd/es-utils/string/punctuation.js';
+import { assertFunction } from '@kellnerd/es-utils/test/assertFunction.js';
 
 const standardTestCases = [
 	/* single and double quotes */

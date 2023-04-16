@@ -1,5 +1,5 @@
-import { waitFor } from '../utils/async/polling.js';
-import { qs } from '../utils/dom/select.js';
+import { waitFor } from '@kellnerd/es-utils/async/polling.js';
+import { qs } from '@kellnerd/es-utils/dom/select.js';
 
 /**
  * Runs a callback when React has finished rendering for the given element.

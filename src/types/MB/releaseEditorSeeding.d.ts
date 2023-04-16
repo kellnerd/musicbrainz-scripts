@@ -1,5 +1,7 @@
 /// <reference path="editData.d.ts" />
 
+import type { MaybeArray } from '@kellnerd/es-utils';
+
 namespace MB {
 	// adapted from https://musicbrainz.org/doc/Development/Release_Editor_Seeding
 	type ReleaseSeed = {

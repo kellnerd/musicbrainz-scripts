@@ -1,5 +1,5 @@
-import { setReactTextareaValue } from '../utils/dom/react.js';
-import { qs } from '../utils/dom/select.js';
+import { setReactTextareaValue } from '@kellnerd/es-utils/dom/react.js';
+import { qs } from '@kellnerd/es-utils/dom/select.js';
 
 /**
  * Adds the given message and a footer for the active userscript to the edit note.

@@ -3,9 +3,9 @@ import { buildEditNote } from '../editNote.js';
 import { createMBIDInput } from '../inputMBID.js';
 import { loadCachedEntitiesForRelease, nameToMBIDCache } from '../nameToMBIDCache.js';
 import { createReleaseSeederForm } from '../seeding.js';
-import { createElement, injectStylesheet } from '../../utils/dom/create.js';
-import { qs, qsa } from '../../utils/dom/select.js';
-import { zipObject } from '../../utils/object/zipObject.js';
+import { createElement, injectStylesheet } from '@kellnerd/es-utils/dom/create.js';
+import { qs, qsa } from '@kellnerd/es-utils/dom/select.js';
+import { zipObject } from '@kellnerd/es-utils/object/zipObject.js';
 
 // clean up the release URL
 const releaseURL = new URL(window.location);

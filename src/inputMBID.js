@@ -1,7 +1,7 @@
 import { extractEntityFromURL, getEntityTooltip } from './entity.js';
 import { fetchEntity } from './publicAPI.js';
-import { toScalar } from '../utils/array/scalar.js';
-import { kebabToTitleCase } from '../utils/string/casingStyle.js';
+import { toScalar } from '@kellnerd/es-utils/array/scalar.js';
+import { kebabToTitleCase } from '@kellnerd/es-utils/string/casingStyle.js';
 
 /**
  * Creates an input element where you can paste an MBID or an MB entity URL.

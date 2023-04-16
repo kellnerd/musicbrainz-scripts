@@ -1,4 +1,4 @@
-import { dom } from '../utils/dom/select.js';
+import { dom } from '@kellnerd/es-utils/dom/select.js';
 
 // MB languages as of 2021-10-04, extracted from the HTML source code of the release editor's language select menu
 export const frequentLanguageIDs = {

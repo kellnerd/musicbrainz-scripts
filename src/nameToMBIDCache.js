@@ -1,4 +1,4 @@
-import { SimpleCache } from '../utils/cache/SimpleCache.js';
+import { SimpleCache } from '@kellnerd/es-utils/cache/SimpleCache.js';
 
 /** @type {SimpleCache<[entityType: CoreEntityTypeT, name: string], MB.MBID>} */
 export const nameToMBIDCache = new SimpleCache({

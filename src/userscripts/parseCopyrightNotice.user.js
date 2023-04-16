@@ -2,8 +2,8 @@ import { addCopyrightRelationships } from '../relationship-editor/addCopyrightRe
 import { addParserButton, buildCreditParserUI } from '../creditParserUI.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { parseCopyrightNotice } from '../parseCopyrightNotice.js';
-import { dom } from '../../utils/dom/select.js';
-import { getPatternAsRegExp } from '../../utils/regex/parse.js';
+import { dom } from '@kellnerd/es-utils/dom/select.js';
+import { getPatternAsRegExp } from '@kellnerd/es-utils/regex/parse.js';
 
 function buildCopyrightParserUI() {
 	const terminatorInput = dom('credit-terminator');

@@ -10,8 +10,8 @@ import { batchCreateRelationships, createRelationship } from './createRelationsh
 import { getLinkTypeId } from './linkTypes.js';
 import { entityCache } from '../entityCache.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
-import { preferArray } from '../../utils/array/scalar.js';
-import { simplifyName } from '../../utils/string/simplify.js';
+import { preferArray } from '@kellnerd/es-utils/array/scalar.js';
+import { simplifyName } from '@kellnerd/es-utils/string/simplify.js';
 
 /**
  * Creates and fills an "Add relationship" dialog for each piece of copyright information.

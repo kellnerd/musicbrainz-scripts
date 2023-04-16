@@ -3,8 +3,8 @@
  * - Adds a link to the relevant guideline to the edit note.
  */
 
-import { dom, qsa } from '../../utils/dom/select.js';
-import { setInputValue } from '../../utils/dom/setInputValue.js';
+import { dom, qsa } from '@kellnerd/es-utils/dom/select.js';
+import { setInputValue } from '@kellnerd/es-utils/dom/setInputValue.js';
 
 qsa('input[id^=medium-title]').forEach((titleInput) =>
 	setInputValue(titleInput, titleInput.value.replace(/^(Cassette|CD|Dis[ck]|DVD|SACD|Vinyl)\s*\d+/i, '').trim())

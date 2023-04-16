@@ -1,6 +1,6 @@
-import { preferScalar } from '../utils/array/scalar.js';
-import { getUniqueElementsByJSON } from '../utils/array/unique.js';
-import { transform } from '../utils/string/transform.js';
+import { preferScalar } from '@kellnerd/es-utils/array/scalar.js';
+import { getUniqueElementsByJSON } from '@kellnerd/es-utils/array/unique.js';
+import { transform } from '@kellnerd/es-utils/string/transform.js';
 
 const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
 
