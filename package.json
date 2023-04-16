@@ -25,7 +25,7 @@
     "src/discogs/",
     "src/relationship-editor/",
     "src/types/",
-    "utils/",
+    "index.js",
     "jsconfig.json"
   ],
   "main": "index.js",

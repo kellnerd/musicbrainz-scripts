@@ -14,9 +14,3 @@ The primary entry point of the `@kellnerd/musicbrainz-scripts` package is [index
 - Shortcut usage: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts';`
 
 - Full specifier: `import { buildEditNote } from '@kellnerd/musicbrainz-scripts/src/editNote.js';`
-
-You can also import utility functions from `utils/` if you want to:
-
-- Example: `import { guessUnicodePunctuation } from '@kellnerd/musicbrainz-scripts/utils/string/punctuation.js';`
-
-P.S. General utilities under `utils/` will get their own package in the near future, so you should only use them if you are willing to update all of your import statements once that happens.
