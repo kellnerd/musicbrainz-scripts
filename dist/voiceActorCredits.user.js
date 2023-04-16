@@ -94,7 +94,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -122,7 +122,7 @@
 	/**
 	 * Retries the given operation until the result is no longer undefined.
 	 * @template T
-	 * @param {() => MaybePromise<T>} operation 
+	 * @param {() => T | Promise<T>} operation 
 	 * @param {Object} [options]
 	 * @param {number} [options.retries] Maximum number of retries.
 	 * @param {number} [options.wait] Number of ms to wait before the next try, disabled by default.
@@ -218,7 +218,7 @@
 	 * Returns the value of the given pattern as a regular expression if it is enclosed between slashes.
 	 * Otherwise it returns the input string or throws for invalid regular expressions.
 	 * @param {string} pattern 
-	 * @returns {RegExp|string}
+	 * @returns {RegExp | string}
 	 */
 	function getPattern(pattern) {
 		const match = pattern.match(regexPattern);
@@ -262,7 +262,7 @@
 	 * @param {HTMLElement} element 
 	 * @param {keyof HTMLElement} attribute 
 	 * @param {keyof HTMLElementEventMap} eventType
-	 * @param {string|number|boolean} [defaultValue] Default value of the attribute.
+	 * @param {string | number | boolean} [defaultValue] Default value of the attribute.
 	 */
 	async function persistElement(element, attribute, eventType, defaultValue) {
 		if (!element.id) {
@@ -307,7 +307,7 @@
 
 	/**
 	 * Persists the value of the given input field across page loads and origins.
-	 * @param {HTMLInputElement} element 
+	 * @param {HTMLInputElement | HTMLTextAreaElement} element 
 	 * @param {string} [defaultValue]
 	 * @returns {Promise<HTMLInputElement>}
 	 */
@@ -489,7 +489,7 @@ textarea#credit-input {
 	/**
 	 * Adds a new parser button with the given label and handler to the credit parser UI.
 	 * @param {string} label 
-	 * @param {(creditLine: string, event: MouseEvent) => MaybePromise<CreditParserLineStatus>} parser
+	 * @param {(creditLine: string, event: MouseEvent) => import('@kellnerd/es-utils').MaybePromise<CreditParserLineStatus>} parser
 	 * Handler which parses the given credit line and returns whether it was successful.
 	 * @param {string} [description] Description of the button, shown as tooltip.
 	 */
@@ -626,6 +626,7 @@ textarea#credit-input {
 	/**
 	 * @template Params
 	 * @template Result
+	 * @template {string | number} Key
 	 */
 	class FunctionCache {
 		/**
@@ -721,7 +722,8 @@ textarea#credit-input {
 	/**
 	 * @template Params
 	 * @template Result
-	 * @extends {FunctionCache<Params,Result>}
+	 * @template {string | number} Key
+	 * @extends {FunctionCache<Params, Result, Key>}
 	 */
 	class SimpleCache extends FunctionCache {
 		/**
@@ -772,7 +774,7 @@ textarea#credit-input {
 
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
-	function rateLimit1(operation, interval) {
+	function rateLimitedQueue(operation, interval) {
 		let queue = Promise.resolve(); // empty queue is ready
 		return (...args) => {
 			const result = queue.then(() => operation(...args)); // queue the next operation
@@ -785,20 +787,20 @@ textarea#credit-input {
 	 * Limits the number of requests for the given operation within a time interval.
 	 * @template Params
 	 * @template Result
-	 * @param {(...args:Params)=>Result} operation Operation that should be rate-limited.
+	 * @param {(...args: Params) => Result} operation Operation that should be rate-limited.
 	 * @param {number} interval Time interval (in ms).
 	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
-	 * @returns {(...args:Params)=>Promise<Result>} Rate-limited version of the given operation.
+	 * @returns {(...args: Params) => Promise<Result>} Rate-limited version of the given operation.
 	 */
 	function rateLimit(operation, interval, requestsPerInterval = 1) {
 		if (requestsPerInterval == 1) {
-			return rateLimit1(operation, interval);
+			return rateLimitedQueue(operation, interval);
 		}
-		const queues = Array(requestsPerInterval).fill().map(() => rateLimit1(operation, interval));
+		const queues = Array(requestsPerInterval).fill().map(() => rateLimitedQueue(operation, interval));
 		let queueIndex = 0;
 		return (...args) => {
 			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
-			return queues[queueIndex](...args); // return the rate-limited operation
+			return queues[queueIndex](...args); // return the result of the operation
 		};
 	}
 
@@ -1184,7 +1186,7 @@ textarea#credit-input {
 
 	/**
 	 * Default punctuation rules.
-	 * @type {SubstitutionRule[]}
+	 * @type {import('../types.js').SubstitutionRule[]}
 	 */
 	const punctuationRules = [
 		/* quoted text */

@@ -19,6 +19,22 @@
 (function () {
 	'use strict';
 
+	// Adapted from https://stackoverflow.com/a/46012210
+
+	const nativeInputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+
+	/**
+	 * Sets the value of an input element which has been manipulated by React.
+	 * @param {HTMLInputElement} input 
+	 * @param {string} value 
+	 */
+	function setReactInputValue(input, value) {
+		nativeInputValueSetter.call(input, value);
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
+	Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+
 	/**
 	 * Returns a reference to the first DOM element with the specified value of the ID attribute.
 	 * @param {string} elementId String that specifies the ID value.
@@ -48,7 +64,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -58,27 +74,13 @@
 		return value;
 	}
 
-	// Adapted from https://stackoverflow.com/a/46012210
-
-	const nativeInputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-
-	/**
-	 * Sets the value of an input element which has been manipulated by React.
-	 * @param {HTMLInputElement} input 
-	 * @param {string} value 
-	 */
-	function setReactInputValue(input, value) {
-		nativeInputValueSetter.call(input, value);
-		input.dispatchEvent(new Event('input', { bubbles: true }));
-	}
-
 	const defaultHighlightClass = 'content-changed';
 
 	/**
 	 * Transforms the values of the selected input fields using the given substitution rules.
 	 * Highlights all updated input fields in order to allow the user to review the changes.
 	 * @param {string} inputSelector CSS selector of the input fields.
-	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types.js').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @param {object} [options]
 	 * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
 	 * @param {Event} [options.event] Event which should be triggered for changed input fields (optional, defaults to 'change').
@@ -113,7 +115,7 @@
 
 	/**
 	 * Default punctuation rules.
-	 * @type {SubstitutionRule[]}
+	 * @type {import('../types.js').SubstitutionRule[]}
 	 */
 	const punctuationRules = [
 		/* quoted text */
@@ -208,7 +210,7 @@
 	 * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
 	 * by temporarily changing them to characters that will not be touched by the transformation rules.
 	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
-	 * @type {SubstitutionRule[]}
+	 * @type {import('@kellnerd/es-utils').SubstitutionRule[]}
 	 */
 	const transformationRulesToPreserveMarkup = [
 		/* Base64 encode URLs */
@@ -233,7 +235,7 @@
 	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
 	 * @param {string[]} inputSelectors CSS selectors of the input fields.
 	 * @param {object} options
-	 * @param {string} [options.language] Language of the input fields' text (English name, optional).
+	 * @param {string} [options.language] Language of the input fields' text (ISO 639-1 two letter code, optional).
 	 * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
 	 * @param {Event} [options.event] Event which should be triggered for changed input fields (optional).
 	 */

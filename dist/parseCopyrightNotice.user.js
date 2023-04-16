@@ -65,7 +65,7 @@
 	/**
 	 * Retries the given operation until the result is no longer undefined.
 	 * @template T
-	 * @param {() => MaybePromise<T>} operation 
+	 * @param {() => T | Promise<T>} operation 
 	 * @param {Object} [options]
 	 * @param {number} [options.retries] Maximum number of retries.
 	 * @param {number} [options.wait] Number of ms to wait before the next try, disabled by default.
@@ -455,6 +455,7 @@
 	/**
 	 * @template Params
 	 * @template Result
+	 * @template {string | number} Key
 	 */
 	class FunctionCache {
 		/**
@@ -557,7 +558,8 @@
 	/**
 	 * @template Params
 	 * @template Result
-	 * @extends {FunctionCache<Params,Result>}
+	 * @template {string | number} Key
+	 * @extends {FunctionCache<Params, Result, Key>}
 	 */
 	class SimpleCache extends FunctionCache {
 		/**
@@ -584,7 +586,7 @@
 	/**
 	 * Converts an array with a single element into a scalar.
 	 * @template T
-	 * @param {MaybeArray<T>} maybeArray 
+	 * @param {T | T[]} maybeArray 
 	 * @returns A scalar or the input array if the conversion is not possible.
 	 */
 	function preferScalar(maybeArray) {
@@ -595,7 +597,7 @@
 	/**
 	 * Converts a scalar into an array with a single element.
 	 * @template T
-	 * @param {MaybeArray<T>} maybeArray 
+	 * @param {T | T[]} maybeArray 
 	 */
 	function preferArray(maybeArray) {
 		if (!Array.isArray(maybeArray)) return [maybeArray];
@@ -815,7 +817,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -990,7 +992,7 @@
 	 * Returns the value of the given pattern as a regular expression if it is enclosed between slashes.
 	 * Otherwise it returns the input string or throws for invalid regular expressions.
 	 * @param {string} pattern 
-	 * @returns {RegExp|string}
+	 * @returns {RegExp | string}
 	 */
 	function getPattern(pattern) {
 		const match = pattern.match(regexPattern);
@@ -1034,7 +1036,7 @@
 	 * @param {HTMLElement} element 
 	 * @param {keyof HTMLElement} attribute 
 	 * @param {keyof HTMLElementEventMap} eventType
-	 * @param {string|number|boolean} [defaultValue] Default value of the attribute.
+	 * @param {string | number | boolean} [defaultValue] Default value of the attribute.
 	 */
 	async function persistElement(element, attribute, eventType, defaultValue) {
 		if (!element.id) {
@@ -1079,7 +1081,7 @@
 
 	/**
 	 * Persists the value of the given input field across page loads and origins.
-	 * @param {HTMLInputElement} element 
+	 * @param {HTMLInputElement | HTMLTextAreaElement} element 
 	 * @param {string} [defaultValue]
 	 * @returns {Promise<HTMLInputElement>}
 	 */
@@ -1261,7 +1263,7 @@ textarea#credit-input {
 	/**
 	 * Adds a new parser button with the given label and handler to the credit parser UI.
 	 * @param {string} label 
-	 * @param {(creditLine: string, event: MouseEvent) => MaybePromise<CreditParserLineStatus>} parser
+	 * @param {(creditLine: string, event: MouseEvent) => import('@kellnerd/es-utils').MaybePromise<CreditParserLineStatus>} parser
 	 * Handler which parses the given credit line and returns whether it was successful.
 	 * @param {string} [description] Description of the button, shown as tooltip.
 	 */
