@@ -32,6 +32,9 @@ javascript:(()=>{function e(e,t){const a="background-color";$(e).css(a,"").each(
 ### Import ARD radio dramas
 
 Imports German broadcast releases from the ARD radio drama database.
+- Adds an import button to the sidebar of detail pages (“Vollinformation”) on https://hoerspiele.dra.de
+- Lets the user enter persistent name to MBID mappings for artists and labels
+- Provides a button to copy voice actor credits to clipboard (can be pasted into the [credit parser](#voice-actor-credits))
 
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/importARDRadioDramas.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/importARDRadioDramas.user.js)
