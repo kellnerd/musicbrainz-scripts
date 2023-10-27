@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2023.4.16
+// @version       2023.10.27
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release relationships for these. Also imports credits from Discogs.
@@ -399,12 +399,12 @@ textarea#credit-input {
 		});
 	}
 
-	function initializeUI() {
+	async function initializeUI() {
 		const creditInput = dom('credit-input');
 
 		// persist the state of the UI
 		persistCheckbox('remove-parsed-lines');
-		persistCheckbox('parser-autofocus');
+		await persistCheckbox('parser-autofocus');
 		persistDetails('credit-parser-config').then((config) => {
 			// hidden pattern inputs have a zero width, so they have to be resized if the config has not been open initially
 			if (!config.open) {

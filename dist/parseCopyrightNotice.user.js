@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2023.3.2
+// @version       2023.10.27
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -1173,12 +1173,12 @@ textarea#credit-input {
 		});
 	}
 
-	function initializeUI() {
+	async function initializeUI() {
 		const creditInput = dom('credit-input');
 
 		// persist the state of the UI
 		persistCheckbox('remove-parsed-lines');
-		persistCheckbox('parser-autofocus');
+		await persistCheckbox('parser-autofocus');
 		persistDetails('credit-parser-config').then((config) => {
 			// hidden pattern inputs have a zero width, so they have to be resized if the config has not been open initially
 			if (!config.open) {
