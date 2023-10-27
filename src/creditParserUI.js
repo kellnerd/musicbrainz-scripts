@@ -96,12 +96,12 @@ export async function buildCreditParserUI(...buildTasks) {
 	});
 }
 
-function initializeUI() {
+async function initializeUI() {
 	const creditInput = dom('credit-input');
 
 	// persist the state of the UI
 	persistCheckbox('remove-parsed-lines');
-	persistCheckbox('parser-autofocus');
+	await persistCheckbox('parser-autofocus');
 	persistDetails('credit-parser-config').then((config) => {
 		// hidden pattern inputs have a zero width, so they have to be resized if the config has not been open initially
 		if (!config.open) {
