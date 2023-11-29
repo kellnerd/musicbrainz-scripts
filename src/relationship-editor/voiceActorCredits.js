@@ -1,9 +1,14 @@
 import {
 	closingDialog,
+	createBatchDialog,
 	createDialog,
 	creditTargetAs,
 } from './createDialog.js';
-import { createAttributeTree, createRelationship } from './createRelationship.js';
+import {
+	batchCreateRelationships,
+	createAttributeTree,
+	createRelationship,
+} from './createRelationship.js';
 import { entityCache } from '../entityCache.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { fetchVoiceActors as fetchVoiceActorsFromDiscogs } from '../discogs/api.js';
@@ -11,8 +16,9 @@ import { buildEntityURL as buildDiscogsURL } from '../discogs/entity.js';
 import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 
 /**
- * Adds a voice actor release relationship for the given artist and their role.
+ * Adds a voice actor relationship for the given artist and their role.
  * Automatically maps artist names to MBIDs where possible, asks the user to match the remaining ones.
+ * If recordings are selected, the voice actor relationships will be added to these, otherwise they target the release.
  * @param {string} artistName Artist name (as credited).
  * @param {string} roleName Credited role of the artist.
  * @param {boolean} [bypassCache] Bypass the name to MBID cache to overwrite wrong entries, disabled by default.
@@ -21,15 +27,18 @@ import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 export async function addVoiceActor(artistName, roleName, bypassCache = false) {
 	const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
 
+	/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+	const recordings = MB.relationshipEditor.state.selectedRecordings;
+
 	if (artistMBID) {
 		// mapping already exists, automatically add the relationship
 		const artist = await entityCache.get(artistMBID);
-		createVoiceActorRelationship({ artist, roleName, artistCredit: artistName });
+		createVoiceActorRelationship({ artist, roleName, artistCredit: artistName, recordings });
 
 		return 'done';
 	} else {
 		// pre-fill dialog and collect mappings for freshly matched artists
-		const artistMatch = await letUserSelectVoiceActor(artistName, roleName, artistName);
+		const artistMatch = await letUserSelectVoiceActor({ artistName, roleName, artistCredit: artistName, recordings });
 
 		if (artistMatch?.gid) {
 			nameToMBIDCache.set(['artist', artistName], artistMatch.gid);
@@ -77,7 +86,7 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 			// duplicates of already existing rels will be merged automatically
 		} else {
 			// pre-fill dialog and collect mappings for freshly matched artists
-			const artistMatch = await letUserSelectVoiceActor(actor.name, roleName, artistCredit);
+			const artistMatch = await letUserSelectVoiceActor({ artistName: actor.name, roleName, artistCredit });
 
 			if (artistMatch?.gid) {
 				discogsToMBIDCache.set(['artist', actor.id], artistMatch.gid);
@@ -102,8 +111,8 @@ export async function importVoiceActorsFromDiscogs(releaseURL) {
 	};
 }
 
-async function letUserSelectVoiceActor(artistName, roleName, artistCredit) {
-	await createVoiceActorDialog({ artist: artistName, roleName, artistCredit });
+async function letUserSelectVoiceActor({ artistName, roleName, artistCredit, recordings }) {
+	await createVoiceActorDialog({ artist: artistName, roleName, artistCredit, recordings });
 
 	// let the user select the matching entity
 	const finalState = await closingDialog();
@@ -121,17 +130,30 @@ async function letUserSelectVoiceActor(artistName, roleName, artistCredit) {
  * @param {string | ArtistT} [options.artist] Performing artist object or name (optional).
  * @param {string} [options.roleName] Credited name of the voice actor's role (optional).
  * @param {string} [options.artistCredit] Credited name of the performing artist (optional).
+ * @param {import('weight-balanced-tree').ImmutableTree<RecordingT>} [options.recordings]
+ * Recordings to create the dialog for (fallback to release).
  */
-export async function createVoiceActorDialog({ artist, roleName, artistCredit } = {}) {
-	await createDialog({
-		target: artist,
-		targetType: 'artist',
-		linkTypeId: 60, // performance -> performer -> vocals
-		attributes: [{
-			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
-			credited_as: roleName,
-		}],
-	});
+export async function createVoiceActorDialog({ artist, roleName, artistCredit, recordings } = {}) {
+	const vocalAttributes = [{
+		type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
+		credited_as: roleName,
+	}];
+
+	if (recordings) {
+		await createBatchDialog(recordings, {
+			target: artist,
+			targetType: 'artist',
+			linkTypeId: 149, // performance -> performer -> vocals
+			attributes: vocalAttributes,
+		});
+	} else {
+		await createDialog({
+			target: artist,
+			targetType: 'artist',
+			linkTypeId: 60, // performance -> performer -> vocals
+			attributes: vocalAttributes,
+		});
+	}
 
 	if (artistCredit) {
 		creditTargetAs(artistCredit);
@@ -143,15 +165,27 @@ export async function createVoiceActorDialog({ artist, roleName, artistCredit } 
  * @param {ArtistT} options.artist The performing artist.
  * @param {string} [options.roleName] Credited name of the voice actor's role (optional).
  * @param {string} [options.artistCredit] Credited name of the performing artist (optional).
+ * @param {import('weight-balanced-tree').ImmutableTree<RecordingT>} [options.recordings]
+ * Recordings to create the relationships for (fallback to release).
  */
-export function createVoiceActorRelationship({ artist, roleName, artistCredit }) {
-	createRelationship({
-		target: artist,
-		linkTypeID: 60, // performance -> performer -> vocals
-		entity0_credit: artistCredit,
-		attributes: createAttributeTree({
-			type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
-			credited_as: roleName,
-		}),
+export function createVoiceActorRelationship({ artist, roleName, artistCredit, recordings }) {
+	const vocalAttributes = createAttributeTree({
+		type: { gid: 'd3a36e62-a7c4-4eb9-839f-adfebe87ac12' }, // spoken vocals
+		credited_as: roleName,
 	});
+
+	if (recordings) {
+		batchCreateRelationships(recordings, artist, {
+			linkTypeID: 149, // performance -> performer -> vocals
+			entity0_credit: artistCredit,
+			attributes: vocalAttributes,
+		});
+	} else {
+		createRelationship({
+			target: artist,
+			linkTypeID: 60, // performance -> performer -> vocals
+			entity0_credit: artistCredit,
+			attributes: vocalAttributes,
+		});
+	}
 }
