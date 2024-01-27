@@ -172,6 +172,15 @@ javascript:$(".remove-release-event:not(:first)").trigger("click"),void $("#coun
 javascript:(()=>{async function t(t){return(await fetch("/ws/js/entity/"+t)).json()}const e={_lineage:[],_original:null,_status:1,attributes:null,begin_date:null,editsPending:!1,end_date:null,ended:!1,entity0_credit:"",entity1_credit:"",id:null,linkOrder:0,linkTypeID:null};function i({source:t=MB.relationshipEditor.state.entity,target:i,batchSelectionCount:n=null,...a}){const o=t.entityType>i.entityType;MB.relationshipEditor.dispatch({type:"update-relationship-state",sourceEntity:t,batchSelectionCount:n,creditsToChangeForSource:"",creditsToChangeForTarget:"",newRelationshipState:{...e,entity0:o?i:t,entity1:o?t:i,id:MB.relationshipEditor.getRelationshipStateId(),...a},oldRelationshipState:null})}const n=prompt("MBIDs of entities which should be related to this entity:");if(n){const e=Array.from(n.matchAll(/[0-9a-f-]{36}/gm),t=>t[0]),a=MB.relationshipEditor.relationshipDialogState;a&&(async(e,n,a=!1)=>{for(let o of e)i({target:await t(o),linkTypeID:n,backward:a})})(e,a.linkType.autocomplete.selectedItem.entity.id,a.backward)}})();
 ```
 
+### [Set Recording Dates](src/bookmarklets/setRecordingDates.js)
+
+- Asks the user for a recording date in the release relationship editor.
+- Sets the date for all “recording of” relationships of all selected recordings.
+
+```js
+javascript:(()=>{const e=MB.relationshipEditor.state.selectedRecordings;if(e.size){const i=prompt("Date for all performance relationships (YYYY-MM-DD):");if(null!==i){const[,n,r,a]=/(\d{4})(?:-0?(\d{1,2})(?:-0?(\d{1,2}))?)?/.exec(i)||[];for(const i of MB.tree.iterate(e))t(i,{day:a,month:r,year:n})}}function t(e,t){e.relationships.filter(e=>278===e.linkTypeID).forEach(i=>{((e,t,i)=>{const n=((e,t)=>({id:t.id,entity0:t.backward?t.target:e,entity1:t.backward?e:t.target,attributes:MB.tree.fromDistinctAscArray(t.attributes),begin_date:t.begin_date,end_date:t.end_date,ended:t.ended,entity0_credit:t.entity0_credit,entity1_credit:t.entity1_credit,linkOrder:t.linkOrder,linkTypeID:t.linkTypeID,editsPending:t.editsPending,_lineage:[],_original:null,_status:0}))(e,t);MB.relationshipEditor.dispatch({type:"update-relationship-state",sourceEntity:e,creditsToChangeForSource:"",creditsToChangeForTarget:"",newRelationshipState:{...n,_status:2,_original:n,...i},oldRelationshipState:n})})(e,i,{begin_date:t,end_date:t,ended:!0})})}})();
+```
+
 ### [Show Qobuz Release Availability](src/bookmarklets/showQobuzReleaseAvailability.js)
 
 - Shows all countries in which the currently visited Qobuz release is available.
