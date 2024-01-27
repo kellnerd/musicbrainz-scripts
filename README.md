@@ -174,11 +174,11 @@ javascript:(()=>{async function t(t){return(await fetch("/ws/js/entity/"+t)).jso
 
 ### [Set Recording Dates](src/bookmarklets/setRecordingDates.js)
 
-- Asks the user for a recording date in the release relationship editor.
-- Sets the date for all “recording of” relationships of all selected recordings.
+- Asks the user for a recording date (or date range) in the release relationship editor.
+- Sets the begin and end date for all “recording of” relationships of all selected recordings.
 
 ```js
-javascript:(()=>{const e=MB.relationshipEditor.state.selectedRecordings;if(e.size){const i=prompt("Date for all performance relationships (YYYY-MM-DD):");if(null!==i){const[,n,r,a]=/(\d{4})(?:-0?(\d{1,2})(?:-0?(\d{1,2}))?)?/.exec(i)||[];for(const i of MB.tree.iterate(e))t(i,{day:a,month:r,year:n})}}function t(e,t){e.relationships.filter(e=>278===e.linkTypeID).forEach(i=>{((e,t,i)=>{const n=((e,t)=>({id:t.id,entity0:t.backward?t.target:e,entity1:t.backward?e:t.target,attributes:MB.tree.fromDistinctAscArray(t.attributes),begin_date:t.begin_date,end_date:t.end_date,ended:t.ended,entity0_credit:t.entity0_credit,entity1_credit:t.entity1_credit,linkOrder:t.linkOrder,linkTypeID:t.linkTypeID,editsPending:t.editsPending,_lineage:[],_original:null,_status:0}))(e,t);MB.relationshipEditor.dispatch({type:"update-relationship-state",sourceEntity:e,creditsToChangeForSource:"",creditsToChangeForTarget:"",newRelationshipState:{...n,_status:2,_original:n,...i},oldRelationshipState:n})})(e,i,{begin_date:t,end_date:t,ended:!0})})}})();
+javascript:(()=>{const t=MB.relationshipEditor.state.selectedRecordings;if(t.size){const i=prompt("Begin date and optional end date for all performance relationships (YYYY-MM-DD):");if(null!==i){const n=Array.from(i.matchAll(/\d{4}(?:-\d{1,2}(?:-\d{1,2})?)?/g)),[r,a]=n.map(t=>{return e=["year","month","day"],i=t[0].split("-"),Object.fromEntries(e.map((t,n)=>[e[n],i[n]]));var e,i});for(const i of MB.tree.iterate(t))e(i,r,a)}}function e(t,e,i){t.relationships.filter(t=>278===t.linkTypeID).forEach(n=>{((t,e,i)=>{const n=((t,e)=>({id:e.id,entity0:e.backward?e.target:t,entity1:e.backward?t:e.target,attributes:MB.tree.fromDistinctAscArray(e.attributes),begin_date:e.begin_date,end_date:e.end_date,ended:e.ended,entity0_credit:e.entity0_credit,entity1_credit:e.entity1_credit,linkOrder:e.linkOrder,linkTypeID:e.linkTypeID,editsPending:e.editsPending,_lineage:[],_original:null,_status:0}))(t,e);MB.relationshipEditor.dispatch({type:"update-relationship-state",sourceEntity:t,creditsToChangeForSource:"",creditsToChangeForTarget:"",newRelationshipState:{...n,_status:2,_original:n,...i},oldRelationshipState:n})})(t,n,{begin_date:e,end_date:i??e,ended:!0})})}})();
 ```
 
 ### [Show Qobuz Release Availability](src/bookmarklets/showQobuzReleaseAvailability.js)
