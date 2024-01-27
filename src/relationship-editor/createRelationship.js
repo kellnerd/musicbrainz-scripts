@@ -53,6 +53,29 @@ export function batchCreateRelationships(sourceSelection, target, props) {
 }
 
 /**
+ * Updates the given relationship with new properties.
+ * @param {CoreEntityT} sourceEntity The source entity from which the relationship originates.
+ * @param {RelationshipT} rel The existing relationship.
+ * @param {RelationshipProps} props Relationship properties which should be changed.
+ */
+export function updateRelationship(sourceEntity, rel, props) {
+	const relState = createRelationshipState(sourceEntity, rel);
+	MB.relationshipEditor.dispatch({
+		type: 'update-relationship-state',
+		sourceEntity,
+		creditsToChangeForSource: '',
+		creditsToChangeForTarget: '',
+		newRelationshipState: {
+			...relState,
+			_status: 2, // edit relationship
+			_original: relState,
+			...props,
+		},
+		oldRelationshipState: relState,
+	});
+}
+
+/**
  * Converts the given relationship attribute(s) into a tree which contains their full attribute type properties.
  * @param {ExternalLinkAttrT[]} attributes Distinct attributes, ordered by type ID.
  * @returns {LinkAttrTree}
@@ -68,6 +91,32 @@ export function createAttributeTree(...attributes) {
 			};
 		})
 	);
+}
+
+/**
+ * Converts relationship properties into a relationship state which can be used to update relationships.
+ * @param {CoreEntityT} sourceEntity The source entity from which the relationship originates.
+ * @param {RelationshipT} rel The relationship properties.
+ * @returns {import('../types/MBS/scripts/relationship-editor/state.js').RelationshipStateT}
+ */
+function createRelationshipState(sourceEntity, rel) {
+	return {
+		id: rel.id,
+		entity0: rel.backward ? rel.target : sourceEntity,
+		entity1: rel.backward ? sourceEntity : rel.target,
+		attributes: MB.tree.fromDistinctAscArray(rel.attributes),
+		begin_date: rel.begin_date,
+		end_date: rel.end_date,
+		ended: rel.ended,
+		entity0_credit: rel.entity0_credit,
+		entity1_credit: rel.entity1_credit,
+		linkOrder: rel.linkOrder,
+		linkTypeID: rel.linkTypeID,
+		editsPending: rel.editsPending,
+		_lineage: [],
+		_original: null,
+		_status: 0, // noop
+	}
 }
 
 /**
