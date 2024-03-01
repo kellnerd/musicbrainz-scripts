@@ -1,6 +1,5 @@
 import { extractEntityFromURL } from './entity.js';
 import { rateLimit } from '@kellnerd/es-utils/async/rateLimit.js';
-import 'cross-fetch/dist/node-polyfill.js';
 
 /**
  * Calls to the MusicBrainz API are limited to one request per second.

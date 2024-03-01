@@ -1,5 +1,3 @@
-import 'cross-fetch/dist/node-polyfill.js';
-
 /**
  * Rules to convert basic Markdown syntax into MusicBrainz annotation markup.
  */

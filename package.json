@@ -31,7 +31,6 @@
   "main": "index.js",
   "devDependencies": {
     "@kellnerd/userscript-bundler": "github:kellnerd/userscript-bundler#v0.8.1",
-    "cross-fetch": "^3.1.4",
     "weight-balanced-tree": "^0.6.1"
   },
   "dependencies": {
