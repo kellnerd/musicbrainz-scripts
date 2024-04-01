@@ -18,7 +18,7 @@ export function createRelationship({
 	batchSelectionCount = null,
 	...props
 }) {
-	const backward = isRelBackward(source.entityType, target.entityType);
+	const backward = isRelBackward(source.entityType, target.entityType, props.backward ?? false);
 
 	MB.relationshipEditor.dispatch({
 		type: 'update-relationship-state',

@@ -12,7 +12,8 @@ export function createDatePeriodForYear(year) {
  * @param {CoreEntityTypeT} sourceType 
  * @param {CoreEntityTypeT} targetType 
  */
-export function isRelBackward(sourceType, targetType) {
+export function isRelBackward(sourceType, targetType, changeDirection = false) {
+	if (sourceType === targetType) return changeDirection;
 	return sourceType > targetType;
 }
 
