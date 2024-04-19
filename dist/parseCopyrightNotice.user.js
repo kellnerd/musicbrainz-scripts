@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2023.10.27
+// @version       2024.4.19
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -30,7 +30,8 @@
 	 * @param {CoreEntityTypeT} sourceType 
 	 * @param {CoreEntityTypeT} targetType 
 	 */
-	function isRelBackward(sourceType, targetType) {
+	function isRelBackward(sourceType, targetType, changeDirection = false) {
+		if (sourceType === targetType) return changeDirection;
 		return sourceType > targetType;
 	}
 
@@ -356,7 +357,7 @@
 		batchSelectionCount = null,
 		...props
 	}) {
-		const backward = isRelBackward(source.entityType, target.entityType);
+		const backward = isRelBackward(source.entityType, target.entityType, props.backward ?? false);
 
 		MB.relationshipEditor.dispatch({
 			type: 'update-relationship-state',
@@ -833,7 +834,7 @@
 
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
-		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))?/,
+		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))*/,
 		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
 		terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\sunder\s)|(?<=(?<!Bros)\.)\W/,
 	};

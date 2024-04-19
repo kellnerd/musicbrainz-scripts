@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2023.11.29
+// @version       2024.4.19
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release or recording relationships for these. Also imports credits from Discogs.
@@ -106,7 +106,7 @@
 
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
-		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))?/,
+		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))*/,
 		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
 		terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\sunder\s)|(?<=(?<!Bros)\.)\W/,
 	};
@@ -1099,7 +1099,8 @@ textarea#credit-input {
 	 * @param {CoreEntityTypeT} sourceType 
 	 * @param {CoreEntityTypeT} targetType 
 	 */
-	function isRelBackward(sourceType, targetType) {
+	function isRelBackward(sourceType, targetType, changeDirection = false) {
+		if (sourceType === targetType) return changeDirection;
 		return sourceType > targetType;
 	}
 
@@ -1138,7 +1139,7 @@ textarea#credit-input {
 		batchSelectionCount = null,
 		...props
 	}) {
-		const backward = isRelBackward(source.entityType, target.entityType);
+		const backward = isRelBackward(source.entityType, target.entityType, props.backward ?? false);
 
 		MB.relationshipEditor.dispatch({
 			type: 'update-relationship-state',
