@@ -313,6 +313,11 @@ const copyrightTestCases = [
 		types: ['℗'],
 		year: '1998',
 	}]],
+	['℗ 2004 FREE-WILL Co., Ltd.', [{
+		name: 'FREE-WILL Co., Ltd.',
+		types: ['℗'],
+		year: '2004',
+	}]],
 
 	/* region-specific copyright */
 	['℗ & © «2020 Warner Music Nashville LLC for the U.S. and WEA International Inc. for the world outside the U.S.»', [{
