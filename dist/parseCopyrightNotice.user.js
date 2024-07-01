@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2024.4.19
+// @version       2024.7.1
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -1392,7 +1392,7 @@ textarea#credit-input {
 			if (copyrightInfo.length) {
 				const result = await addCopyrightRelationships(copyrightInfo, {
 					forceArtist: event.shiftKey,
-					bypassCache: event.ctrlKey,
+					bypassCache: event.ctrlKey || event.metaKey,
 					useAllYears: event.altKey,
 				});
 				nameToMBIDCache.store();
@@ -1402,7 +1402,7 @@ textarea#credit-input {
 			}
 		}, [
 			'SHIFT key to force names to be treated as artist names',
-			'CTRL key to bypass the cache and force a search',
+			'CTRL or ⌘ key to bypass the cache and force a search',
 			'ALT key to add multiple relationships for multiple years',
 		].join('\n'));
 	}

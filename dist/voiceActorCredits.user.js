@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2024.4.19
+// @version       2024.7.1
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release or recording relationships for these. Also imports credits from Discogs.
@@ -1585,7 +1585,7 @@ textarea#credit-input {
 					[artistName, roleName] = [roleName, artistName];
 				}
 
-				const bypassCache = event.ctrlKey;
+				const bypassCache = event.ctrlKey || event.metaKey;
 				const result = await addVoiceActor(artistName, roleName, bypassCache);
 				nameToMBIDCache.store();
 				return result;
@@ -1594,7 +1594,7 @@ textarea#credit-input {
 			}
 		}, [
 			'SHIFT key to swap the order of artist names and their role names',
-			'CTRL key to bypass the cache and force a search',
+			'CTRL or ⌘ key to bypass the cache and force a search',
 		].join('\n'));
 	}
 
