@@ -41,7 +41,7 @@ function buildVoiceActorCreditParserUI() {
 				[artistName, roleName] = [roleName, artistName];
 			}
 
-			const bypassCache = event.ctrlKey;
+			const bypassCache = event.ctrlKey || event.metaKey;
 			const result = await addVoiceActor(artistName, roleName, bypassCache);
 			nameToMBIDCache.store();
 			return result;
@@ -50,7 +50,7 @@ function buildVoiceActorCreditParserUI() {
 		}
 	}, [
 		'SHIFT key to swap the order of artist names and their role names',
-		'CTRL key to bypass the cache and force a search',
+		'CTRL or ⌘ key to bypass the cache and force a search',
 	].join('\n'));
 }
 

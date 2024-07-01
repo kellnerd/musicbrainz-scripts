@@ -20,7 +20,7 @@ function buildCopyrightParserUI() {
 		if (copyrightInfo.length) {
 			const result = await addCopyrightRelationships(copyrightInfo, {
 				forceArtist: event.shiftKey,
-				bypassCache: event.ctrlKey,
+				bypassCache: event.ctrlKey || event.metaKey,
 				useAllYears: event.altKey,
 			});
 			nameToMBIDCache.store();
@@ -30,7 +30,7 @@ function buildCopyrightParserUI() {
 		}
 	}, [
 		'SHIFT key to force names to be treated as artist names',
-		'CTRL key to bypass the cache and force a search',
+		'CTRL or ⌘ key to bypass the cache and force a search',
 		'ALT key to add multiple relationships for multiple years',
 	].join('\n'));
 }
