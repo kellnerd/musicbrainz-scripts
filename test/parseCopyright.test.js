@@ -152,11 +152,16 @@ const copyrightTestCases = [
 		types: ['℗', '©'],
 		year: '2014',
 	}]],
-	/* only one label, name contains a slash */
+	/* only one label, name contains a potential separator or terminator */
 	['© «1983 Universal Music A/S»', [{
 		name: 'Universal Music A/S',
 		types: ['©'],
 		year: '1983',
+	}]],
+	['℗ «2024 Living,Dining&kitchen Records»', [{
+		name: 'Living,Dining&kitchen Records',
+		types: ['℗'],
+		year: '2024',
 	}]],
 
 	/* copyright with multiple years */
