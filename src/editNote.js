@@ -22,7 +22,8 @@ export function buildEditNote(...sections) {
 	sections = sections.map((section) => section.trim());
 
 	if (typeof GM_info !== 'undefined') {
-		sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${GM_info.script.namespace})`);
+		let homepage = GM_info.scriptMetaStr.match(/@homepageURL\s+(.+)/)[1];
+		sections.push(`${GM_info.script.name} (v${GM_info.script.version}, ${homepage})`);
 	}
 
 	// drop empty sections and keep only the last occurrence of duplicate sections
