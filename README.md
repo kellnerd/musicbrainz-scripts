@@ -154,6 +154,14 @@ javascript:(()=>{function t(t){return new Promise(e=>setTimeout(e,t))}(async e=>
 javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];(a=>{a&&open("https://magicisrc.kepstin.ca?mbid="+a)})(a)})();
 ```
 
+### [Lookup With Harmony](src/bookmarklets/lookupWithHarmony.js)
+
+- Opens [Harmony](https://harmony.pulsewidth.org.uk) and performs a release lookup for the currently visited URL.
+
+```js
+javascript:void open(`https://harmony.pulsewidth.org.uk/release?url=${encodeURIComponent(location)}&category=preferred`);
+```
+
 ### [Mark Release As Worldwide](src/bookmarklets/markReleaseAsWorldwide.js)
 
 - Removes all release events except for the first one and changes its country to [Worldwide].
