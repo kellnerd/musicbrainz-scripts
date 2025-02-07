@@ -59,12 +59,12 @@ function buildVoiceActorCreditImporterUI() {
 
 	dom('credit-parser').insertAdjacentHTML('beforeend', UI);
 
-	addButton('Import voice actors', async () => {
+	addButton('Import voice actors', async (_creditInput, event) => {
 		const releaseData = await fetchEntity(window.location.href, ['release-groups', 'url-rels']);
 		const releaseURL = buildEntityURL('release', releaseData.id)
 		let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
 
-		if (!discogsURL) {
+		if (!discogsURL || event.shiftKey) {
 			discogsURL = prompt('Discogs release URL');
 		}
 
@@ -89,7 +89,10 @@ function buildVoiceActorCreditImporterUI() {
 
 			dom('credit-import-status').innerHTML = messages.map((message) => `<p>${message}</p>`).join('\n');
 		}
-	}, 'Import credits from Discogs');
+	}, [
+		'Import credits from Discogs',
+		'SHIFT key to ignore an existing URL relationship and prompt for an URL',
+	].join('\n'));
 }
 
 buildCreditParserUI(buildVoiceActorCreditParserUI, buildVoiceActorCreditImporterUI);
