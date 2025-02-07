@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2024.7.1
+// @version       2025.2.7
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release or recording relationships for these. Also imports credits from Discogs.
@@ -1603,12 +1603,12 @@ textarea#credit-input {
 
 		dom('credit-parser').insertAdjacentHTML('beforeend', UI);
 
-		addButton('Import voice actors', async () => {
+		addButton('Import voice actors', async (_creditInput, event) => {
 			const releaseData = await fetchEntity$1(window.location.href, ['release-groups', 'url-rels']);
 			const releaseURL = buildEntityURL$1('release', releaseData.id);
 			let discogsURL = releaseData.relations.find((rel) => rel.type === 'discogs')?.url.resource;
 
-			if (!discogsURL) {
+			if (!discogsURL || event.shiftKey) {
 				discogsURL = prompt('Discogs release URL');
 			}
 
@@ -1633,7 +1633,10 @@ textarea#credit-input {
 
 				dom('credit-import-status').innerHTML = messages.map((message) => `<p>${message}</p>`).join('\n');
 			}
-		}, 'Import credits from Discogs');
+		}, [
+			'Import credits from Discogs',
+			'SHIFT key to ignore an existing URL relationship and prompt for an URL',
+		].join('\n'));
 	}
 
 	buildCreditParserUI(buildVoiceActorCreditParserUI, buildVoiceActorCreditImporterUI);
