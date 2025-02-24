@@ -13,25 +13,25 @@ const releaseId = releaseURL.searchParams.get('dukey');
 releaseURL.search = new URLSearchParams({ dukey: releaseId });
 
 // extract data
-const authors = Array.from(qsa('.hspaut a')).map((a) => a.textContent.trim());
-const title = qs('.hsprhti').textContent.trim();
+const authors = Array.from(qsa('a[data-id="autor"]')).map((a) => a.textContent.trim());
+const title = qs('.ti').textContent.trim();
+/* Variables never used
 const subtitle = qs('.hspunti')?.textContent.trim();
-const seriesTitle = qs('.hsprti')?.textContent.trim();
+const seriesTitle = qs('strong').nextSibling.nextSibling.textContent.trim();
 
-const productionCredits = Array.from(qsa('.vollinfoblock p > span.prefix')).map((span) => {
-	const line = span.parentNode.textContent.trim();
+const productionCredits = Array.from(qsa('.columns > .column > p > span.prefix')).map((span) => {
+	const line = span.textContent.trim() + ' ' + span.nextSibling.textContent.trim();
 	return line.split(/:\s+/, 2); // split prefix (attribute name) and content (attribute values)
 });
-
-const voiceActorCredits = Array.from(qsa('.mitwirkende tr')).map((row) => {
+*/
+const voiceActorCredits = Array.from(qsa('.resultSubTable tr')).map((row) => {
 	// three cells which should contain: 1. actor/actress, 2. empty, 3. role(s) or empty
 	const cells = row.childNodes;
 	if (cells.length !== 3 || cells[0].nodeName !== 'TD') return; // skip headers and empty rows
 	return Array.from(cells).map((cell) => cell.textContent.trim()).filter((text) => text);
 }).filter((credit) => credit);
 
-const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
-	.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
+const sidebarText = Array.from(qsa('.frame-space-after-medium > ul > li'))
 	.map((p) => p.textContent.trim());
 
 let broadcasters = [], productionYear, radioEvents = [], duration = '';
@@ -121,7 +121,6 @@ const release = {
 
 if (disambiguationComment) release.comment = disambiguationComment;
 
-
 /**
  * @param {Object} radioEvent
  * @param {PartialDateT} radioEvent.date
@@ -175,7 +174,10 @@ async function injectUI(release) {
 	});
 
 	// inject into an empty sidebar section
-	const importerContainer = qs('.sectionC .noPrint > p');
+	const importerDiv = createElement('<div id="mb-importer"></div>');
+	const insertAfter = qs('.frame-space-after-medium figure');
+	insertAfter.after(importerDiv);
+	const importerContainer = qs('#mb-importer');
 	importerContainer.prepend(entityMappings);
 	injectImporterForm();
 

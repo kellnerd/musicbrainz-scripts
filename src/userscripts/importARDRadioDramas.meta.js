@@ -8,7 +8,7 @@ const metadata = {
 		'Lets the user enter persistent name to MBID mappings for artists and labels',
 		'Provides a button to copy voice actor credits to clipboard (can be pasted into the [credit parser](#voice-actor-credits))',
 	],
-	match: '*://hoerspiele.dra.de/vollinfo.php',
+	match: '*://hoerspiele.dra.de/detailansicht/*',
 };
 
 export default metadata;
