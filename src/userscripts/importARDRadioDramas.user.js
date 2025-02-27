@@ -7,15 +7,12 @@ import { createElement, injectStylesheet } from '@kellnerd/es-utils/dom/create.j
 import { qs, qsa } from '@kellnerd/es-utils/dom/select.js';
 import { zipObject } from '@kellnerd/es-utils/object/zipObject.js';
 
-// clean up the release URL
 const releaseURL = new URL(window.location);
-const releaseId = releaseURL.searchParams.get('dukey');
-releaseURL.search = new URLSearchParams({ dukey: releaseId });
 
 // extract data
 const authors = Array.from(qsa('a[data-id="autor"]')).map((a) => a.textContent.trim());
 const title = qs('.ti').textContent.trim();
-/* Variables never used
+/* Unused variables (from the previous website version)
 const subtitle = qs('.hspunti')?.textContent.trim();
 const seriesTitle = qs('strong').nextSibling.nextSibling.textContent.trim();
 
@@ -31,7 +28,8 @@ const voiceActorCredits = Array.from(qsa('.resultSubTable tr')).map((row) => {
 	return Array.from(cells).map((cell) => cell.textContent.trim()).filter((text) => text);
 }).filter((credit) => credit);
 
-const sidebarText = Array.from(qsa('.frame-space-after-medium > ul > li'))
+// only grab the list after "Produktions- und Sendedaten"
+const sidebarText = Array.from(qsa('.frame-space-after-medium > ul:first-of-type > li'))
 	.map((p) => p.textContent.trim());
 
 let broadcasters = [], productionYear, radioEvents = [], duration = '';
@@ -147,7 +145,7 @@ async function injectUI(release) {
 	const relatedEntities = await loadCachedEntitiesForRelease(release);
 
 	// create a table where the user can enter entity name to MBID mappings
-	const entityMappings = createElement(`<table id="mbid-mapping"><caption>MUSICBRAINZ MAPPING</caption></table>`);
+	const entityMappings = createElement(`<table id="mbid-mapping"><caption>MusicBrainz Mapping</caption></table>`);
 	relatedEntities.forEach((entity, index) => {
 		const id = `mbid-mapping-${index}`;
 		const tr = createElement(`<tr><td>${entity.name}</td></tr>`);
@@ -173,11 +171,10 @@ async function injectUI(release) {
 		});
 	});
 
-	// inject into an empty sidebar section
-	const importerDiv = createElement('<div id="mb-importer"></div>');
+	// inject into the sidebar after the image
+	const importerContainer = createElement('<p id="mb-importer"></p>');
 	const insertAfter = qs('.frame-space-after-medium figure');
-	insertAfter.after(importerDiv);
-	const importerContainer = qs('#mb-importer');
+	insertAfter.after(importerContainer);
 	importerContainer.prepend(entityMappings);
 	injectImporterForm();
 
@@ -209,13 +206,10 @@ input.error {
 input.success {
 	background: #B1EBB0;
 }
-form[name="musicbrainz-release-seeder"] button img {
+#mb-importer button > img {
 	display: inline;
 	vertical-align: middle;
 	margin-right: 5px;
-}
-#mbid-mapping {
-	border-spacing: revert;
 }
 #mbid-mapping caption {
 	font-weight: bold;
