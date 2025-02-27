@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name          MusicBrainz: Import ARD radio dramas
-// @version       2023.4.16
+// @version       2025.2.27
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
-// @description   Imports German broadcast releases from the ARD radio drama database.
+// @description   Imports German broadcast releases from the ARD Hörspieldatenbank radio drama database.
 // @homepageURL   https://github.com/kellnerd/musicbrainz-scripts#import-ard-radio-dramas
 // @downloadURL   https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
 // @updateURL     https://raw.github.com/kellnerd/musicbrainz-scripts/main/dist/importARDRadioDramas.user.js
 // @supportURL    https://github.com/kellnerd/musicbrainz-scripts/issues
 // @grant         none
-// @match         *://hoerspiele.dra.de/vollinfo.php
+// @match         *://hoerspiele.dra.de/detailansicht/*
 // ==/UserScript==
 
 (function () {
@@ -115,6 +115,7 @@
 	}
 
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
+
 
 	function rateLimitedQueue(operation, interval) {
 		let queue = Promise.resolve(); // empty queue is ready
@@ -563,31 +564,29 @@
 		return Object.fromEntries(keys.map((_, index) => [keys[index], values[index]]));
 	}
 
-	// clean up the release URL
 	const releaseURL = new URL(window.location);
-	const releaseId = releaseURL.searchParams.get('dukey');
-	releaseURL.search = new URLSearchParams({ dukey: releaseId });
 
 	// extract data
-	const authors = Array.from(qsa('.hspaut a')).map((a) => a.textContent.trim());
-	const title = qs('.hsprhti').textContent.trim();
-	qs('.hspunti')?.textContent.trim();
-	qs('.hsprti')?.textContent.trim();
+	const authors = Array.from(qsa('a[data-id="autor"]')).map((a) => a.textContent.trim());
+	const title = qs('.ti').textContent.trim();
+	/* Unused variables (from the previous website version)
+	const subtitle = qs('.hspunti')?.textContent.trim();
+	const seriesTitle = qs('strong').nextSibling.nextSibling.textContent.trim();
 
-	Array.from(qsa('.vollinfoblock p > span.prefix')).map((span) => {
-		const line = span.parentNode.textContent.trim();
+	const productionCredits = Array.from(qsa('.columns > .column > p > span.prefix')).map((span) => {
+		const line = span.textContent.trim() + ' ' + span.nextSibling.textContent.trim();
 		return line.split(/:\s+/, 2); // split prefix (attribute name) and content (attribute values)
 	});
-
-	const voiceActorCredits = Array.from(qsa('.mitwirkende tr')).map((row) => {
+	*/
+	const voiceActorCredits = Array.from(qsa('.resultSubTable tr')).map((row) => {
 		// three cells which should contain: 1. actor/actress, 2. empty, 3. role(s) or empty
 		const cells = row.childNodes;
 		if (cells.length !== 3 || cells[0].nodeName !== 'TD') return; // skip headers and empty rows
 		return Array.from(cells).map((cell) => cell.textContent.trim()).filter((text) => text);
 	}).filter((credit) => credit);
 
-	const sidebarText = Array.from(qsa('.sectionC div:not(.noPrint) > p'))
-		.filter((p) => p.childElementCount === 0) // skip headings, keep only text nodes
+	// only grab the list after "Produktions- und Sendedaten"
+	const sidebarText = Array.from(qsa('.frame-space-after-medium > ul:first-of-type > li'))
 		.map((p) => p.textContent.trim());
 
 	let broadcasters = [], radioEvents = [], duration = '';
@@ -677,7 +676,6 @@
 
 	if (disambiguationComment) release.comment = disambiguationComment;
 
-
 	/**
 	 * @param {Object} radioEvent
 	 * @param {PartialDateT} radioEvent.date
@@ -704,7 +702,7 @@
 		const relatedEntities = await loadCachedEntitiesForRelease(release);
 
 		// create a table where the user can enter entity name to MBID mappings
-		const entityMappings = createElement(`<table id="mbid-mapping"><caption>MUSICBRAINZ MAPPING</caption></table>`);
+		const entityMappings = createElement(`<table id="mbid-mapping"><caption>MusicBrainz Mapping</caption></table>`);
 		relatedEntities.forEach((entity, index) => {
 			const id = `mbid-mapping-${index}`;
 			const tr = createElement(`<tr><td>${entity.name}</td></tr>`);
@@ -730,8 +728,10 @@
 			});
 		});
 
-		// inject into an empty sidebar section
-		const importerContainer = qs('.sectionC .noPrint > p');
+		// inject into the sidebar after the image
+		const importerContainer = createElement('<p id="mb-importer"></p>');
+		const insertAfter = qs('.frame-space-after-medium figure');
+		insertAfter.after(importerContainer);
 		importerContainer.prepend(entityMappings);
 		injectImporterForm();
 
@@ -763,13 +763,10 @@ input.error {
 input.success {
 	background: #B1EBB0;
 }
-form[name="musicbrainz-release-seeder"] button img {
+#mb-importer button > img {
 	display: inline;
 	vertical-align: middle;
 	margin-right: 5px;
-}
-#mbid-mapping {
-	border-spacing: revert;
 }
 #mbid-mapping caption {
 	font-weight: bold;
