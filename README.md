@@ -171,6 +171,14 @@ javascript:void open(`https://harmony.pulsewidth.org.uk/release?url=${encodeURIC
 javascript:$(".remove-release-event:not(:first)").trigger("click"),void $("#country-0").val(240).trigger("change");
 ```
 
+### [Open Harmony Release Actions](src/bookmarklets/openHarmonyReleaseActions.js)
+
+- Opens [Harmony’s](https://harmony.pulsewidth.org.uk) Release Actions page for the currently visited MusicBrainz release.
+
+```js
+javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];(a=>{a&&open("https://harmony.pulsewidth.org.uk/release/actions?mbid="+a)})(a)})();
+```
+
 ### [Relate This Entity To Multiple MBID](src/bookmarklets/relateThisEntityToMultipleMBID.js)
 
 - Relates the currently edited entity to multiple entities given by their MBIDs.
