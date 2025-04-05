@@ -33,7 +33,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 	};
 
 	/** @type {ReleaseT} */
-	const release = MB.getSourceEntityInstance();
+	const release = MB.relationshipEditor.state.entity;
 	const releaseArtistNames = release.artistCredit.names // all release artists
 		.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 		.map(simplifyName);

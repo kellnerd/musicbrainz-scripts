@@ -127,7 +127,7 @@ async function initializeUI() {
 
 	addButton('Load annotation', (creditInput) => {
 		/** @type {ReleaseT} */
-		const release = MB.getSourceEntityInstance();
+		const release = MB.relationshipEditor.state.entity;
 		const annotation = release.latest_annotation;
 		if (annotation) {
 			setTextarea(creditInput, annotation.text);
