@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2025.2.7
+// @version       2025.4.5
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release or recording relationships for these. Also imports credits from Discogs.
@@ -430,7 +430,7 @@ textarea#credit-input {
 
 		addButton('Load annotation', (creditInput) => {
 			/** @type {ReleaseT} */
-			const release = MB.getSourceEntityInstance();
+			const release = MB.relationshipEditor.state.entity;
 			const annotation = release.latest_annotation;
 			if (annotation) {
 				setTextarea(creditInput, annotation.text);
@@ -773,6 +773,7 @@ textarea#credit-input {
 	}
 
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
+
 
 	function rateLimitedQueue(operation, interval) {
 		let queue = Promise.resolve(); // empty queue is ready

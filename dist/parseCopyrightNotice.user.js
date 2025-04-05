@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2024.7.1
+// @version       2025.4.5
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -635,7 +635,7 @@
 		};
 
 		/** @type {ReleaseT} */
-		const release = MB.getSourceEntityInstance();
+		const release = MB.relationshipEditor.state.entity;
 		const releaseArtistNames = release.artistCredit.names // all release artists
 			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 			.map(simplifyName);
@@ -1205,7 +1205,7 @@ textarea#credit-input {
 
 		addButton('Load annotation', (creditInput) => {
 			/** @type {ReleaseT} */
-			const release = MB.getSourceEntityInstance();
+			const release = MB.relationshipEditor.state.entity;
 			const annotation = release.latest_annotation;
 			if (annotation) {
 				setTextarea(creditInput, annotation.text);
