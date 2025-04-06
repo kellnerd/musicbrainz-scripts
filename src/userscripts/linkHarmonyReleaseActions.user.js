@@ -1,12 +1,12 @@
 import { extractEntityFromURL } from "../entity";
-import { onReactHydrated } from "../reactHydration";
 
 // --- Configuration ---
 const harmonyIconUrl = "https://harmony.pulsewidth.org.uk/favicon.svg";
 const harmonyBaseUrl =
   "https://harmony.pulsewidth.org.uk/release/actions?release_mbid=";
-const iconSize = "1em"; // Adjust size as needed (e.g., '16px', '1.1em')
-const iconMarginRight = "5px"; // Adjust spacing between icon and title
+const iconSize = "1.5em"; // Keep your desired size
+const iconMarginRight = "5px";
+const releaseTableSelector = "table.tbl.mergeable-table tbody";
 // --- End Configuration ---
 
 /**
@@ -15,7 +15,6 @@ const iconMarginRight = "5px"; // Adjust spacing between icon and title
  * @returns {HTMLAnchorElement|null} The created anchor element or null if mbid is invalid.
  */
 function createHarmonyLinkElement(mbid) {
-  // Basic validation remains useful here
   if (!mbid || typeof mbid !== "string" || !/^[a-f0-9\-]{36}$/.test(mbid)) {
     console.warn(
       "Harmony Link Script: Invalid MBID passed to createHarmonyLinkElement:",
@@ -45,20 +44,118 @@ function createHarmonyLinkElement(mbid) {
   return harmonyLink;
 }
 
-// NOTE: extractMbid function is removed, using extractEntityFromURL instead.
+/**
+ * Processes a table containing release links, adding Harmony icons.
+ * @param {string} tableBodySelector - CSS selector for the table body (tbody).
+ */
+function processReleaseTable(tableBodySelector) {
+  const releaseTableBody = document.querySelector(tableBodySelector);
+  if (!releaseTableBody) {
+    console.error(
+      `Harmony Link Script: Could not find release table body using selector: "${tableBodySelector}".`
+    );
+    return;
+  }
+
+  // Select BDI elements within release links in the second column
+  const releaseTitleBDIElements = releaseTableBody.querySelectorAll(
+    'tr:not(.subh) > td:nth-of-type(2) a[href*="/release/"] > bdi'
+  );
+  let addedCount = 0;
+
+  releaseTitleBDIElements.forEach((bdiElement) => {
+    const releaseLink = bdiElement.parentElement; // The <a> tag containing the BDI
+    if (!releaseLink || releaseLink.tagName !== "A") return;
+
+    const linkEntity = extractEntityFromURL(releaseLink.href);
+
+    if (linkEntity && linkEntity.type === "release" && linkEntity.mbid) {
+      const mbid = linkEntity.mbid;
+      const harmonyLink = createHarmonyLinkElement(mbid);
+      const parentTd = releaseLink.closest("td"); // The containing cell (TD)
+
+      if (harmonyLink && parentTd) {
+        let nodeToInsertBefore = releaseLink; // Start with the link itself
+
+        // Traverse up the DOM tree from the release link
+        // until we find the element that is a DIRECT child of the TD.
+        // This handles cases where the link is wrapped in other elements (like span.mp).
+        while (nodeToInsertBefore.parentElement !== parentTd) {
+          nodeToInsertBefore = nodeToInsertBefore.parentElement;
+          // Safety check: If we somehow traverse outside the TD, stop.
+          if (
+            !nodeToInsertBefore ||
+            nodeToInsertBefore === parentTd ||
+            nodeToInsertBefore === document.body
+          ) {
+            console.error(
+              "Harmony Link Script: Could not find the correct insertion point within the TD for link:",
+              releaseLink.href
+            );
+            nodeToInsertBefore = null; // Prevent insertion if logic fails
+            break;
+          }
+        }
+
+        // Only insert if we successfully found the correct reference node
+        if (nodeToInsertBefore) {
+          try {
+            parentTd.insertBefore(harmonyLink, nodeToInsertBefore);
+            addedCount++;
+            // console.log(`Harmony link added for release in table: ${mbid}`);
+          } catch (e) {
+            console.error(
+              "Harmony Link Script: Error during insertBefore:",
+              e,
+              {
+                parent: parentTd,
+                newChild: harmonyLink,
+                referenceChild: nodeToInsertBefore,
+              }
+            );
+          }
+        }
+      }
+    } else {
+      console.warn(
+        "Harmony Link Script: Could not extract valid release MBID from link in table row:",
+        releaseLink.href
+      );
+    }
+  });
+
+  if (releaseTitleBDIElements.length === 0) {
+    console.log(
+      `Harmony Link Script: No release title links (with BDI) found in the table: "${tableBodySelector}".`
+    );
+  } else {
+    // Only log if some links were actually processed
+    if (addedCount > 0) {
+      console.log(
+        `Harmony Link Script: Added ${addedCount} Harmony icons to table: "${tableBodySelector}".`
+      );
+    }
+  }
+}
 
 /**
  * Main function to execute the script logic.
  */
 function runHarmonyLinker() {
-  // Use the provided utility function to get entity info from the current URL
+  const currentPath = window.location.pathname;
   const currentEntity = extractEntityFromURL(window.location.href);
 
+  // Clearer console log for which page type is being processed
+  console.log(
+    `Harmony Link Script: Running on ${
+      currentEntity ? currentEntity.type : "unknown"
+    } page. Path: ${currentPath}`
+  );
+
   // 1. Handle Single Release Page
-  if (currentEntity && currentEntity.type === "release" && currentEntity.mbid) {
+  if (currentEntity && currentEntity.type === "release") {
     const mbid = currentEntity.mbid;
     const headingElement = document.querySelector("div.releaseheader h1");
-    // Ensure we get the *specific* link containing the BDI title
     const releaseTitleLink = headingElement
       ? headingElement.querySelector('a[href*="/release/"] > bdi')
           ?.parentElement
@@ -67,83 +164,52 @@ function runHarmonyLinker() {
     if (headingElement && releaseTitleLink) {
       const harmonyLink = createHarmonyLinkElement(mbid);
       if (harmonyLink) {
-        headingElement.insertBefore(harmonyLink, releaseTitleLink);
-        // console.log(`Harmony link added for Release page: ${mbid}`);
+        try {
+          headingElement.insertBefore(harmonyLink, releaseTitleLink);
+          console.log(`Harmony link added for Release page: ${mbid}`);
+        } catch (e) {
+          console.error("Harmony Link Script: Error inserting into H1:", e, {
+            parent: headingElement,
+            newChild: harmonyLink,
+            referenceChild: releaseTitleLink,
+          });
+        }
       }
     } else {
-      console.error(
-        "Harmony Link Script: Could not find H1 or title link (with BDI) on release page.",
-        headingElement,
-        releaseTitleLink
+      console.warn(
+        // Changed to warn as it might not be a critical error if structure varies
+        "Harmony Link Script: Could not find H1 title link structure on release page."
       );
     }
   }
 
   // 2. Handle Release Group Page
   else if (currentEntity && currentEntity.type === "release-group") {
-    const releaseTable = document.querySelector(
-      "table.tbl.mergeable-table tbody"
-    );
-    if (!releaseTable) {
-      console.error(
-        "Harmony Link Script: Could not find release table body on release group page."
-      );
-      return; // Exit this specific part of the function
-    }
-
-    // Find the BDI elements within the correct links in the table
-    const releaseTitleBDIElements = releaseTable.querySelectorAll(
-      'tr:not(.subh) > td:nth-of-type(2) a[href*="/release/"] > bdi'
-    );
-
-    releaseTitleBDIElements.forEach((bdiElement) => {
-      const releaseLink = bdiElement.parentElement; // Get the parent <a> tag
-      if (!releaseLink || releaseLink.tagName !== "A") return; // Skip if parent isn't an anchor
-
-      // Extract entity info from the link's href
-      const linkEntity = extractEntityFromURL(releaseLink.href);
-
-      if (linkEntity && linkEntity.type === "release" && linkEntity.mbid) {
-        const mbid = linkEntity.mbid;
-        const harmonyLink = createHarmonyLinkElement(mbid);
-        const parentTd = releaseLink.closest("td"); // Get the parent cell
-
-        if (harmonyLink && parentTd) {
-          // Insert the Harmony link *before* the release title link within its cell
-          parentTd.insertBefore(harmonyLink, releaseLink);
-          // console.log(`Harmony link added for release in RG table: ${mbid}`);
-        }
-      } else {
-        console.warn(
-          "Harmony Link Script: Could not extract valid release MBID from link in table row:",
-          releaseLink.href
-        );
-      }
-    });
-
-    if (releaseTitleBDIElements.length === 0) {
-      console.log(
-        "Harmony Link Script: No release title links (with BDI) found in the table on the release group page."
-      );
-    }
+    processReleaseTable(releaseTableSelector);
   }
-  // else {
-  //     // Optional: Log if the page is neither release nor release-group if needed
-  //     if (currentEntity) {
-  //         console.log(`Harmony Link Script: Not a release or release-group page (Type: ${currentEntity.type}).`);
-  //     } else {
-  //         console.log("Harmony Link Script: Could not determine entity type from URL.");
-  //     }
+
+  // 3. Handle Artist Releases Page
+  else if (
+    currentEntity &&
+    currentEntity.type === "artist" &&
+    currentPath.includes("/releases")
+  ) {
+    processReleaseTable(releaseTableSelector);
+  }
+  // else { // Keep this commented unless debugging other page types
+  //   if (currentEntity) {
+  //     console.log(
+  //       `Harmony Link Script: Not a target page (Type: ${currentEntity.type}, Path: ${currentPath}).`
+  //     );
+  //   } else {
+  //     console.log(
+  //       `Harmony Link Script: Could not determine entity type from URL: ${window.location.href}`
+  //     );
+  //   }
   // }
 }
 
 // --- Execution ---
-// Ensure the utility functions are loaded/available before running
-// Assuming extractEntityFromURL is globally available or imported correctly by the bundler
-if (typeof extractEntityFromURL === "function") {
-  runHarmonyLinker();
-} else {
-  console.error(
-    "Harmony Link Script: extractEntityFromURL function is not defined!"
-  );
-}
+// Delay slightly using setTimeout to ensure the page DOM is fully settled, especially if other scripts run
+// This can sometimes help with race conditions on complex pages. 0ms is often enough.
+setTimeout(runHarmonyLinker, 0);
