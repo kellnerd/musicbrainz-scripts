@@ -176,7 +176,7 @@ javascript:$(".remove-release-event:not(:first)").trigger("click"),void $("#coun
 - Opens [Harmony’s](https://harmony.pulsewidth.org.uk) Release Actions page for the currently visited MusicBrainz release.
 
 ```js
-javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];(a=>{a&&open("https://harmony.pulsewidth.org.uk/release/actions?mbid="+a)})(a)})();
+javascript:(()=>{const e=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1];(e=>{e&&open("https://harmony.pulsewidth.org.uk/release/actions?release_mbid="+e)})(e)})();
 ```
 
 ### [Relate This Entity To Multiple MBID](src/bookmarklets/relateThisEntityToMultipleMBID.js)

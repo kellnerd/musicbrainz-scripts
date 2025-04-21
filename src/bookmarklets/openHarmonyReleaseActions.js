@@ -7,7 +7,7 @@
  */
 function openHarmonyReleaseActions(mbid) {
 	if (mbid) {
-		open('https://harmony.pulsewidth.org.uk/release/actions?mbid=' + mbid);
+		open('https://harmony.pulsewidth.org.uk/release/actions?release_mbid=' + mbid);
 	}
 }
 
