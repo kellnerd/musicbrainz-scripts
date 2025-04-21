@@ -1,13 +1,72 @@
 import { extractEntityFromURL } from "../entity";
 
-// --- Configuration ---
-const harmonyIconUrl = "https://harmony.pulsewidth.org.uk/favicon.svg";
-const harmonyBaseUrl =
+// --- Default Configuration ---
+const DEFAULT_ENABLE_ON_RELEASE_GROUP = true;
+const DEFAULT_ENABLE_ON_ARTIST_RELEASES = true;
+const DEFAULT_DIGITAL_MEDIA_ONLY = true;
+const DEFAULT_ICON_SIZE = "1.1em";
+const DEFAULT_ICON_MARGIN_LEFT = "5px";
+const DEFAULT_HARMONY_ICON_URL =
+  "https://harmony.pulsewidth.org.uk/favicon.svg";
+const DEFAULT_HARMONY_BASE_URL =
   "https://harmony.pulsewidth.org.uk/release/actions?release_mbid=";
-const iconSize = "1.5em"; // Keep your desired size
-const iconMarginRight = "5px";
+
+// --- Key names for GM storage ---
+const KEY_ENABLE_RG = "harmonyEnableRG";
+const KEY_ENABLE_ARTIST = "harmonyEnableArtist";
+const KEY_DIGITAL_ONLY = "harmonyDigitalOnly";
+const KEY_ICON_SIZE = "harmonyIconSize";
+const KEY_ICON_MARGIN = "harmonyIconMarginLeft";
+
+// --- CSS Class Names ---
+const CSS_LINK_CLASS = "harmony-userscript-link";
+const CSS_ICON_CLASS = "harmony-userscript-icon";
+// --- Common Selectors ---
 const releaseTableSelector = "table.tbl.mergeable-table tbody";
-// --- End Configuration ---
+const releaseTitleLinkSelector = 'a[href*="/release/"] > bdi';
+
+/**
+ * Injects CSS rules into the document's head.
+ * Prevents duplicate injection using an ID.
+ * @param {string} css - The CSS rules to inject.
+ * @param {string} id - An ID for the style element to prevent duplicates.
+ */
+function injectStylesheet(css, id) {
+  const styleId = `harmony-userscript-style-${id}`;
+  if (document.getElementById(styleId)) return;
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
+/**
+ * Fetches a configuration value from GM storage, using a default if not found.
+ * @param {string} key - The key for GM_getValue.
+ * @param {any} defaultValue - The default value to return if the key is not found.
+ * @returns {Promise<any>} - The retrieved or default value.
+ */
+async function getConfigValue(key, defaultValue) {
+  try {
+    let value = await GM_getValue(key, defaultValue);
+    if (typeof defaultValue === "boolean") {
+      value = Boolean(value);
+    }
+    if (typeof value !== typeof defaultValue && defaultValue !== undefined) {
+      console.warn(
+        `Harmony Link Script: Config value for '${key}' has unexpected type. Using default.`
+      );
+      return defaultValue;
+    }
+    return value;
+  } catch (e) {
+    console.error(
+      `Harmony Link Script: Error getting config value for '${key}'. Using default.`,
+      e
+    );
+    return defaultValue;
+  }
+}
 
 /**
  * Creates the Harmony link anchor (<a>) element with the icon (<img>).
@@ -24,21 +83,16 @@ function createHarmonyLinkElement(mbid) {
   }
 
   const harmonyLink = document.createElement("a");
-  harmonyLink.href = `${harmonyBaseUrl}${mbid}`;
-  harmonyLink.target = "_blank"; // Open in new tab
-  harmonyLink.rel = "noopener noreferrer"; // Security best practice for target="_blank"
+  harmonyLink.href = `${DEFAULT_HARMONY_BASE_URL}${mbid}`;
+  harmonyLink.target = "_blank";
+  harmonyLink.rel = "noopener noreferrer";
   harmonyLink.title = `View Harmony Actions for ${mbid} (opens in new tab)`;
-  harmonyLink.style.marginRight = iconMarginRight; // Add space after the icon link
-  harmonyLink.style.textDecoration = "none"; // Avoid underline on the icon link itself
-  harmonyLink.classList.add("harmony-release-link-icon"); // Add class for potential future styling/selection
+  harmonyLink.classList.add(CSS_LINK_CLASS);
 
   const harmonyIcon = document.createElement("img");
-  harmonyIcon.src = harmonyIconUrl;
+  harmonyIcon.src = DEFAULT_HARMONY_ICON_URL;
   harmonyIcon.alt = "Harmony Logo";
-  harmonyIcon.style.height = iconSize;
-  harmonyIcon.style.width = iconSize; // Assuming square icon, keep aspect ratio
-  harmonyIcon.style.verticalAlign = "middle"; // Align vertically with text/icons
-  harmonyIcon.style.border = "none"; // Ensure no border is added by browser/CSS
+  harmonyIcon.classList.add(CSS_ICON_CLASS);
 
   harmonyLink.appendChild(harmonyIcon);
   return harmonyLink;
@@ -47,8 +101,9 @@ function createHarmonyLinkElement(mbid) {
 /**
  * Processes a table containing release links, adding Harmony icons.
  * @param {string} tableBodySelector - CSS selector for the table body (tbody).
+ * @param {boolean} digitalOnly - If true, only add icons for "Digital Media" releases.
  */
-function processReleaseTable(tableBodySelector) {
+function processReleaseTable(tableBodySelector, digitalOnly) {
   const releaseTableBody = document.querySelector(tableBodySelector);
   if (!releaseTableBody) {
     console.error(
@@ -59,13 +114,27 @@ function processReleaseTable(tableBodySelector) {
 
   // Select BDI elements within release links in the second column
   const releaseTitleBDIElements = releaseTableBody.querySelectorAll(
-    'tr:not(.subh) > td:nth-of-type(2) a[href*="/release/"] > bdi'
+    `tr:not(.subh) > td:nth-of-type(2) ${releaseTitleLinkSelector}`
   );
   let addedCount = 0;
 
   releaseTitleBDIElements.forEach((bdiElement) => {
-    const releaseLink = bdiElement.parentElement; // The <a> tag containing the BDI
+    const releaseLink = bdiElement.parentElement;
     if (!releaseLink || releaseLink.tagName !== "A") return;
+
+    const parentRow = releaseLink.closest("tr"); // Get the table row
+    if (!parentRow) return;
+
+    // --- Format Check ---
+    if (digitalOnly) {
+      const formatCell = parentRow.querySelector("td:nth-of-type(4)"); // 4th column is Format
+      const formatText = formatCell ? formatCell.textContent.trim() : "";
+      if (!formatText.includes("Digital Media")) {
+        // console.log("Skipping non-digital:", formatText);
+        return;
+      }
+      // console.log("Found digital:", formatText);
+    }
 
     const linkEntity = extractEntityFromURL(releaseLink.href);
 
@@ -75,141 +144,172 @@ function processReleaseTable(tableBodySelector) {
       const parentTd = releaseLink.closest("td"); // The containing cell (TD)
 
       if (harmonyLink && parentTd) {
-        let nodeToInsertBefore = releaseLink; // Start with the link itself
-
+        let nodeToInsertAfter = releaseLink;
         // Traverse up the DOM tree from the release link
         // until we find the element that is a DIRECT child of the TD.
         // This handles cases where the link is wrapped in other elements (like span.mp).
-        while (nodeToInsertBefore.parentElement !== parentTd) {
-          nodeToInsertBefore = nodeToInsertBefore.parentElement;
-          // Safety check: If we somehow traverse outside the TD, stop.
+        while (nodeToInsertAfter.parentElement !== parentTd) {
+          nodeToInsertAfter = nodeToInsertAfter.parentElement;
           if (
-            !nodeToInsertBefore ||
-            nodeToInsertBefore === parentTd ||
-            nodeToInsertBefore === document.body
+            !nodeToInsertAfter ||
+            nodeToInsertAfter === parentTd ||
+            nodeToInsertAfter === document.body
           ) {
             console.error(
               "Harmony Link Script: Could not find the correct insertion point within the TD for link:",
               releaseLink.href
             );
-            nodeToInsertBefore = null; // Prevent insertion if logic fails
+            nodeToInsertAfter = null; // Prevent insertion if logic fails
             break;
           }
         }
 
         // Only insert if we successfully found the correct reference node
-        if (nodeToInsertBefore) {
+        if (nodeToInsertAfter) {
           try {
-            parentTd.insertBefore(harmonyLink, nodeToInsertBefore);
+            parentTd.insertBefore(harmonyLink, nodeToInsertAfter.nextSibling);
             addedCount++;
-            // console.log(`Harmony link added for release in table: ${mbid}`);
           } catch (e) {
-            console.error(
-              "Harmony Link Script: Error during insertBefore:",
-              e,
-              {
-                parent: parentTd,
-                newChild: harmonyLink,
-                referenceChild: nodeToInsertBefore,
-              }
-            );
+            console.error("Harmony Link Script: Error during insertion:", e);
           }
         }
       }
-    } else {
-      console.warn(
-        "Harmony Link Script: Could not extract valid release MBID from link in table row:",
-        releaseLink.href
-      );
     }
   });
-
-  if (releaseTitleBDIElements.length === 0) {
-    console.log(
-      `Harmony Link Script: No release title links (with BDI) found in the table: "${tableBodySelector}".`
-    );
-  } else {
-    // Only log if some links were actually processed
-    if (addedCount > 0) {
-      console.log(
-        `Harmony Link Script: Added ${addedCount} Harmony icons to table: "${tableBodySelector}".`
-      );
-    }
-  }
+  // console.log(`Harmony Link Script: Processed table "${tableBodySelector}". Added ${addedCount} icons.`);
 }
 
 /**
- * Main function to execute the script logic.
+ * Main async function to execute the script logic.
  */
-function runHarmonyLinker() {
+async function runHarmonyLinker() {
+  // --- Get Configuration from GM Storage ---
+  const enableRG = await getConfigValue(
+    KEY_ENABLE_RG,
+    DEFAULT_ENABLE_ON_RELEASE_GROUP
+  );
+  const enableArtist = await getConfigValue(
+    KEY_ENABLE_ARTIST,
+    DEFAULT_ENABLE_ON_ARTIST_RELEASES
+  );
+  const digitalOnly = await getConfigValue(
+    KEY_DIGITAL_ONLY,
+    DEFAULT_DIGITAL_MEDIA_ONLY
+  );
+  const iconSize = await getConfigValue(KEY_ICON_SIZE, DEFAULT_ICON_SIZE);
+  const iconMarginLeft = await getConfigValue(
+    KEY_ICON_MARGIN,
+    DEFAULT_ICON_MARGIN_LEFT
+  );
+
+  // --- Inject CSS ---
+  const dynamicCSS = `
+    .${CSS_LINK_CLASS} {
+      margin-left: ${iconMarginLeft};
+      text-decoration: none !important;
+      display: inline-flex;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .${CSS_ICON_CLASS} {
+      height: ${iconSize};
+      width: ${iconSize};
+      vertical-align: middle;
+      border: none;
+      line-height: 1;
+    }
+  `;
+  injectStylesheet(dynamicCSS, "harmony-dynamic-styles");
+
+  // --- Page Specific Logic ---
   const currentPath = window.location.pathname;
   const currentEntity = extractEntityFromURL(window.location.href);
 
-  // Clearer console log for which page type is being processed
-  console.log(
-    `Harmony Link Script: Running on ${
-      currentEntity ? currentEntity.type : "unknown"
-    } page. Path: ${currentPath}`
-  );
-
   // 1. Handle Single Release Page
   if (currentEntity && currentEntity.type === "release") {
-    const mbid = currentEntity.mbid;
-    const headingElement = document.querySelector("div.releaseheader h1");
-    const releaseTitleLink = headingElement
-      ? headingElement.querySelector('a[href*="/release/"] > bdi')
-          ?.parentElement
-      : null;
+    let applyLink = true; // Assume we apply unless digitalOnly says otherwise
 
-    if (headingElement && releaseTitleLink) {
-      const harmonyLink = createHarmonyLinkElement(mbid);
-      if (harmonyLink) {
-        try {
-          headingElement.insertBefore(harmonyLink, releaseTitleLink);
-          console.log(`Harmony link added for Release page: ${mbid}`);
-        } catch (e) {
-          console.error("Harmony Link Script: Error inserting into H1:", e, {
-            parent: headingElement,
-            newChild: harmonyLink,
-            referenceChild: releaseTitleLink,
-          });
+    if (digitalOnly) {
+      // Need to find the format on the release page header.
+      const formatDt = Array.from(
+        document.querySelectorAll("#sidebar dl.properties dt")
+      ).find((dt) => dt.textContent.trim() === "Format:");
+      const formatDd = formatDt?.nextElementSibling; // Should be the <dd>
+      const formatText = formatDd ? formatDd.textContent.trim() : "";
+      if (!formatText.includes("Digital Media")) {
+        applyLink = false; // Do not apply if format isn't digital
+      }
+      // console.log("Release page format check:", formatText, "Apply:", applyLink);
+    }
+
+    if (applyLink) {
+      const mbid = currentEntity.mbid;
+      const headingElement = document.querySelector("div.releaseheader h1");
+      const releaseTitleBDI = headingElement
+        ? headingElement.querySelector(releaseTitleLinkSelector)
+        : null;
+      const releaseTitleLink = releaseTitleBDI?.parentElement;
+
+      if (headingElement && releaseTitleLink) {
+        const harmonyLink = createHarmonyLinkElement(mbid);
+        if (harmonyLink) {
+          try {
+            headingElement.insertBefore(
+              harmonyLink,
+              releaseTitleLink.nextSibling
+            );
+          } catch (e) {
+            console.error("Harmony Link Script: Error inserting into H1:", e);
+          }
         }
       }
-    } else {
-      console.warn(
-        // Changed to warn as it might not be a critical error if structure varies
-        "Harmony Link Script: Could not find H1 title link structure on release page."
-      );
     }
   }
 
   // 2. Handle Release Group Page
-  else if (currentEntity && currentEntity.type === "release-group") {
-    processReleaseTable(releaseTableSelector);
+  else if (
+    enableRG &&
+    currentEntity &&
+    currentEntity.type === "release-group"
+  ) {
+    processReleaseTable(releaseTableSelector, digitalOnly);
   }
 
   // 3. Handle Artist Releases Page
   else if (
+    enableArtist &&
     currentEntity &&
     currentEntity.type === "artist" &&
     currentPath.includes("/releases")
   ) {
-    processReleaseTable(releaseTableSelector);
+    processReleaseTable(releaseTableSelector, digitalOnly);
   }
-  // else { // Keep this commented unless debugging other page types
-  //   if (currentEntity) {
-  //     console.log(
-  //       `Harmony Link Script: Not a target page (Type: ${currentEntity.type}, Path: ${currentPath}).`
-  //     );
-  //   } else {
-  //     console.log(
-  //       `Harmony Link Script: Could not determine entity type from URL: ${window.location.href}`
-  //     );
-  //   }
-  // }
 }
 
-// --- Execution ---
-// Delay slightly using setTimeout to ensure the page DOM is fully settled, especially if other scripts run
-// This can sometimes help with race conditions on complex pages. 0ms is often enough.
-setTimeout(runHarmonyLinker, 0);
+// --- Initial Setup & Execution ---
+(async () => {
+  // Set default values in storage if they don't exist
+  await GM_setValue(
+    KEY_ENABLE_RG,
+    await GM_getValue(KEY_ENABLE_RG, DEFAULT_ENABLE_ON_RELEASE_GROUP)
+  );
+  await GM_setValue(
+    KEY_ENABLE_ARTIST,
+    await GM_getValue(KEY_ENABLE_ARTIST, DEFAULT_ENABLE_ON_ARTIST_RELEASES)
+  );
+  await GM_setValue(
+    KEY_DIGITAL_ONLY,
+    await GM_getValue(KEY_DIGITAL_ONLY, DEFAULT_DIGITAL_MEDIA_ONLY)
+  );
+  await GM_setValue(
+    KEY_ICON_SIZE,
+    await GM_getValue(KEY_ICON_SIZE, DEFAULT_ICON_SIZE)
+  );
+  await GM_setValue(
+    KEY_ICON_MARGIN,
+    await GM_getValue(KEY_ICON_MARGIN, DEFAULT_ICON_MARGIN_LEFT)
+  );
+
+  // Run main logic after slight delay
+  setTimeout(runHarmonyLinker, 50);
+})();

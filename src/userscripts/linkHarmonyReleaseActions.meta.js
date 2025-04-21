@@ -12,7 +12,7 @@ const metadata = {
   ],
   "run-at": "document-idle",
   icon: "https://harmony.pulsewidth.org.uk/favicon.svg",
-  grant: "none",
+  grant: ["GM_getValue", "GM_setValue"],
 };
 
 export default metadata;
