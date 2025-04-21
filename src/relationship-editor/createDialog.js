@@ -48,14 +48,9 @@ export async function createDialog({
 	}
 
 	if (linkTypeId) {
-		const linkTypeItem = await retry(() => {
-			// the available items are only valid for the current target type,
-			// ensure that they have already been updated after a target type change
-			const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
-			return availableLinkTypes.find((item) => (item.id == linkTypeId));
-		}, { wait: 10 });
+		const linkType = MB.linkedEntities.link_type[linkTypeId];
 
-		if (linkTypeItem) {
+		if (linkType) {
 			MB.relationshipEditor.relationshipDialogDispatch({
 				type: 'update-link-type',
 				source,
@@ -64,10 +59,12 @@ export async function createDialog({
 					source,
 					action: {
 						type: 'select-item',
-						item: linkTypeItem,
+						item: entityToSelectItem(linkType),
 					},
 				},
 			});
+		} else {
+			console.debug('Failed to find link type item for ID', linkTypeId);
 		}
 	}
 
