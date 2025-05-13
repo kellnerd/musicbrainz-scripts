@@ -86,7 +86,7 @@ function createHarmonyLinkElement(mbid) {
   harmonyLink.href = `${DEFAULT_HARMONY_BASE_URL}${mbid}`;
   harmonyLink.target = "_blank";
   harmonyLink.rel = "noopener noreferrer";
-  harmonyLink.title = `View Harmony Actions for ${mbid} (opens in new tab)`;
+  harmonyLink.title = `View Harmony Release Actions (opens in new tab)`;
   harmonyLink.classList.add(CSS_LINK_CLASS);
 
   const harmonyIcon = document.createElement("img");
@@ -130,10 +130,10 @@ function processReleaseTable(tableBodySelector, digitalOnly) {
       const formatCell = parentRow.querySelector("td:nth-of-type(4)"); // 4th column is Format
       const formatText = formatCell ? formatCell.textContent.trim() : "";
       if (!formatText.includes("Digital Media")) {
-        // console.log("Skipping non-digital:", formatText);
+        console.debug("Skipping non-digital:", formatText);
         return;
       }
-      // console.log("Found digital:", formatText);
+      console.debug("Found digital:", formatText);
     }
 
     const linkEntity = extractEntityFromURL(releaseLink.href);
@@ -176,7 +176,9 @@ function processReleaseTable(tableBodySelector, digitalOnly) {
       }
     }
   });
-  // console.log(`Harmony Link Script: Processed table "${tableBodySelector}". Added ${addedCount} icons.`);
+  console.debug(
+    `Harmony Link Script: Processed table "${tableBodySelector}". Added ${addedCount} icons.`
+  );
 }
 
 /**
@@ -239,7 +241,12 @@ async function runHarmonyLinker() {
       if (!formatText.includes("Digital Media")) {
         applyLink = false; // Do not apply if format isn't digital
       }
-      // console.log("Release page format check:", formatText, "Apply:", applyLink);
+      console.debug(
+        "Release page format check:",
+        formatText,
+        "Apply:",
+        applyLink
+      );
     }
 
     if (applyLink) {
