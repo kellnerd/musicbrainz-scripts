@@ -22,7 +22,7 @@ const KEY_ICON_MARGIN = "harmonyIconMarginLeft";
 const CSS_LINK_CLASS = "harmony-userscript-link";
 const CSS_ICON_CLASS = "harmony-userscript-icon";
 // --- Common Selectors ---
-const releaseTableSelector = "table.tbl.mergeable-table tbody";
+const releaseTableSelector = "table.tbl.mergeable-table";
 const releaseTitleLinkSelector = 'a[href*="/release/"] > bdi';
 
 /**
@@ -99,20 +99,58 @@ function createHarmonyLinkElement(mbid) {
 }
 
 /**
- * Processes a table containing release links, adding Harmony icons.
- * @param {string} tableBodySelector - CSS selector for the table body (tbody).
+ * Finds the 1-based index of a table header cell by its text content.
+ * @param {HTMLTableElement} table - The table element to search within.
+ * @param {string} headerText - The text content of the header to find (case-insensitive, trimmed).
+ * @returns {number} The 1-based column index, or -1 if not found.
+ */
+function findTableHeaderIndex(table, headerText) {
+  const lowerHeaderText = headerText.toLowerCase().trim();
+  const headerRow = table.querySelector("thead tr");
+  if (!headerRow) return -1;
+
+  const headerCells = Array.from(headerRow.querySelectorAll("th"));
+  for (let i = 0; i < headerCells.length; i++) {
+    if (headerCells[i].textContent.toLowerCase().trim() === lowerHeaderText) {
+      return i + 1; // 1-based index for nth-of-type
+    }
+  }
+  return -1; // Not found
+}
+
+/**
+ * Processes a table containing release links, adding Harmony icons after the links,
+ * optionally filtering by format using a dynamically found "Format" column.
+ * @param {string} tableSelector - CSS selector for the table element.
  * @param {boolean} digitalOnly - If true, only add icons for "Digital Media" releases.
  */
-function processReleaseTable(tableBodySelector, digitalOnly) {
-  const releaseTableBody = document.querySelector(tableBodySelector);
-  if (!releaseTableBody) {
-    console.error(
-      `Harmony Link Script: Could not find release table body using selector: "${tableBodySelector}".`
+function processReleaseTable(tableSelector, digitalOnly) {
+  const tableElement = document.querySelector(tableSelector);
+  if (!tableElement) {
+    console.warn(
+      `Harmony Link Script: Could not find release table using selector: "${tableSelector}".`
     );
     return;
   }
 
-  // Select BDI elements within release links in the second column
+  const releaseTableBody = tableElement.querySelector("tbody");
+  if (!releaseTableBody) {
+    console.warn(
+      `Harmony Link Script: Could not find tbody in table: "${tableSelector}".`
+    );
+    return;
+  }
+
+  let formatColumnIndex = -1;
+  if (digitalOnly) {
+    formatColumnIndex = findTableHeaderIndex(tableElement, "Format");
+    if (formatColumnIndex === -1) {
+      console.warn(
+        'Harmony Link Script: Could not find "Format" column header. Digital media filtering disabled for this table.'
+      );
+    }
+  }
+
   const releaseTitleBDIElements = releaseTableBody.querySelectorAll(
     `tr:not(.subh) > td:nth-of-type(2) ${releaseTitleLinkSelector}`
   );
@@ -126,8 +164,11 @@ function processReleaseTable(tableBodySelector, digitalOnly) {
     if (!parentRow) return;
 
     // --- Format Check ---
-    if (digitalOnly) {
-      const formatCell = parentRow.querySelector("td:nth-of-type(4)"); // 4th column is Format
+    if (digitalOnly && formatColumnIndex !== -1) {
+      // Use the dynamically found formatColumnIndex
+      const formatCell = parentRow.querySelector(
+        `td:nth-of-type(${formatColumnIndex})`
+      );
       const formatText = formatCell ? formatCell.textContent.trim() : "";
       if (!formatText.includes("Digital Media")) {
         console.debug("Skipping non-digital:", formatText);
@@ -177,7 +218,7 @@ function processReleaseTable(tableBodySelector, digitalOnly) {
     }
   });
   console.debug(
-    `Harmony Link Script: Processed table "${tableBodySelector}". Added ${addedCount} icons.`
+    `Harmony Link Script: Processed table "${tableSelector}". Added ${addedCount} icons.`
   );
 }
 
@@ -204,21 +245,13 @@ async function runHarmonyLinker() {
     DEFAULT_ICON_MARGIN_LEFT
   );
 
-  // --- Inject CSS ---
   const dynamicCSS = `
     .${CSS_LINK_CLASS} {
-      margin-left: ${iconMarginLeft};
-      text-decoration: none !important;
-      display: inline-flex;
-      vertical-align: middle;
-      line-height: 1;
+      margin-left: ${iconMarginLeft}; text-decoration: none !important; display: inline-flex;
+      vertical-align: middle; line-height: 1;
     }
     .${CSS_ICON_CLASS} {
-      height: ${iconSize};
-      width: ${iconSize};
-      vertical-align: middle;
-      border: none;
-      line-height: 1;
+      height: ${iconSize}; width: ${iconSize}; vertical-align: middle; border: none; line-height: 1;
     }
   `;
   injectStylesheet(dynamicCSS, "harmony-dynamic-styles");
