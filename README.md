@@ -39,6 +39,13 @@ Imports German broadcast releases from the ARD Hörspieldatenbank radio drama da
 [![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/importARDRadioDramas.user.js?raw=1)
 [![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/importARDRadioDramas.user.js)
 
+### Link Harmony release actions
+
+Adds a Harmony actions link icon next to release titles on MusicBrainz release, release group, and artist releases pages.
+
+[![Install](https://img.shields.io/badge/Install-success.svg?style=for-the-badge&logo=tampermonkey)](dist/linkHarmonyReleaseActions.user.js?raw=1)
+[![Source](https://img.shields.io/badge/Source-grey.svg?style=for-the-badge&logo=github)](dist/linkHarmonyReleaseActions.user.js)
+
 ### Parse copyright notice
 
 Parses copyright notices and automates the process of creating release and recording relationships for these.
