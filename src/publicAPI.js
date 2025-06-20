@@ -5,7 +5,7 @@ import { rateLimit } from '@kellnerd/es-utils/async/rateLimit.js';
  * Calls to the MusicBrainz API are limited to one request per second.
  * https://musicbrainz.org/doc/MusicBrainz_API
  */
-const callAPI = rateLimit(fetch, 1000);
+const callAPI = rateLimit(fetch, { interval: 1000 });
 
 /**
  * Requests the given entity from the MusicBrainz API.

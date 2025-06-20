@@ -6,7 +6,7 @@ import { guessUnicodePunctuation } from '@kellnerd/es-utils/string/punctuation.j
  * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
  * https://www.discogs.com/developers/
  */
-const callAPI = rateLimit(fetch, 60 * 1000, 25);
+const callAPI = rateLimit(fetch, { interval: 60 * 1000, requestsPerInterval: 25 });
 
 /**
  * Requests the given entity from the Discogs API.
