@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Guess Unicode punctuation
-// @version       2023.1.27
+// @version       2025.6.20
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -64,7 +64,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {import('../types').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types.d.ts').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -80,7 +80,7 @@
 	 * Transforms the values of the selected input fields using the given substitution rules.
 	 * Highlights all updated input fields in order to allow the user to review the changes.
 	 * @param {string} inputSelector CSS selector of the input fields.
-	 * @param {import('../types.js').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types.d.ts').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @param {object} [options]
 	 * @param {boolean} [options.isReactInput] Whether the input fields are manipulated by React.
 	 * @param {Event} [options.event] Event which should be triggered for changed input fields (optional, defaults to 'change').
@@ -115,7 +115,7 @@
 
 	/**
 	 * Default punctuation rules.
-	 * @type {import('../types.js').SubstitutionRule[]}
+	 * @type {import('../types.d.ts').SubstitutionRule[]}
 	 */
 	const punctuationRules = [
 		/* quoted text */
@@ -156,19 +156,20 @@
 	];
 
 	/**
-	 * Language-specific double and single quotes (RegEx replace values).
+	 * Language-specific RegEx replace values for overridable rules.
 	 * @type {Record<string, string[]>}
 	 */
-	const languageSpecificQuotes = {
+	const languageSpecificOverrides = {
 		en: ['“$1”', '‘$1’'], // English
 		fr: ['« $1 »', '‹ $1 ›'], // French
 		de: ['„$1“', '‚$1‘'], // German
+		he: ['”$1”', '’$1’', '׳', '־'], // Hebrew
 	};
 
 	/**
-	 * Indices of the quotation rules (double and single quotes) in `punctuationRules`.
+	 * Indices of the overridable rules (quotes, apostrophe and hyphen) in `punctuationRules`.
 	 */
-	const quotationRuleIndices = [0, 2];
+	const overrideRuleIndices = [0, 2, 5, 11];
 
 	/**
 	 * Additional punctuation rules for certain languages, will be appended to the default rules.
@@ -181,6 +182,9 @@
 		ja: [ // Japanese
 			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
 		],
+		he: [ // Hebrew
+			[/(?<=\S)"(?=\S)/g, '״'], // Hebrew acronyms (Rashei Teivot)
+		],
 	};
 
 	/**
@@ -189,12 +193,12 @@
 	 */
 	function punctuationRulesForLanguage(language) {
 		// create a deep copy of the quotation rules to prevent modifications of the default rules
-		let rules = punctuationRules.map((rule, index) => quotationRuleIndices.includes(index) ? [...rule] : rule);
+		let rules = punctuationRules.map((rule, index) => overrideRuleIndices.includes(index) ? [...rule] : rule);
 
 		// overwrite replace values for quotation rules with language-specific values (if they are existing)
 		const replaceValueIndex = 1;
-		languageSpecificQuotes[language]?.forEach((value, index) => {
-			const ruleIndex = quotationRuleIndices[index];
+		languageSpecificOverrides[language]?.forEach((value, index) => {
+			const ruleIndex = overrideRuleIndices[index];
 			rules[ruleIndex][replaceValueIndex] = value;
 		});
 
@@ -254,6 +258,7 @@
 		134: 'French',
 		145: 'German',
 		159: 'Greek',
+		167: 'Hebrew',
 		171: 'Hindi',
 		195: 'Italian',
 		198: 'Japanese',
@@ -463,6 +468,20 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 		'input[id*=credited-as]', // all artist names as credited (inside the artist credit bubble)
 	];
 
+	/**
+	 * Detects the selected language in the release editor and handles special cases.
+	 * @returns {string} ISO 639-1 code of the language.
+	 */
+	function detectSupportedReleaseLanguage() {
+		const languageCode = detectReleaseLanguage();
+		if (languageCode === 'he') {
+			// only return language Hebrew if the script is also Hebrew, otherwise there are no special rules
+			const scriptID = dom('script')?.selectedOptions[0].value;
+			if (scriptID !== '11') return;
+		}
+		return languageCode;
+	}
+
 	function buildUI() {
 		injectStylesheet(styles, 'guess-punctuation');
 
@@ -493,20 +512,20 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 			// button for the release information tab (after disambiguation comment input field)
 			insertIconButtonAfter(releaseInputs[1])
 				.addEventListener('click', () => {
-					guessUnicodePunctuation(releaseInputs, { language: detectReleaseLanguage() });
+					guessUnicodePunctuation(releaseInputs, { language: detectSupportedReleaseLanguage() });
 					transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 				});
 
 			// button for the tracklist tab (after the guess case button)
 			const tracklistButton = createElement(buttonTemplate.standard);
-			tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectReleaseLanguage() }));
+			tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectSupportedReleaseLanguage() }));
 			qs('.guesscase .buttons').append(tracklistButton);
 
 			// global button (next to the release editor navigation buttons)
 			const globalButton = createElement(buttonTemplate.global);
 			globalButton.addEventListener('click', () => {
 				// both release info and tracklist data
-				guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], { language: detectReleaseLanguage() });
+				guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], { language: detectSupportedReleaseLanguage() });
 				transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 				// exclude annotations from the global action as the changes are hard to verify
 			});
