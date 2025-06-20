@@ -796,7 +796,7 @@
 	/**
 	 * Transforms the given value using the given substitution rules.
 	 * @param {string} value
-	 * @param {import('../types').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @param {import('../types.d.ts').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
 	 * @returns {string}
 	 */
 	function transform(value, substitutionRules) {
@@ -1006,7 +1006,9 @@
 		return encodeURIComponent(
 			string.trim()
 				.toLowerCase()
-				.replace(/\s+/g, '-')
+				.replaceAll(' ', '-')
+				// keep only letters, numbers, underscores and hyphens
+				.replace(/[^\p{L}\d_-]+/gu, '')
 		);
 	}
 

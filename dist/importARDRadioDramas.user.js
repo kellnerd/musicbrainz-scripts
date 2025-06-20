@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Import ARD radio dramas
-// @version       2025.2.27
+// @version       2025.6.20
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Imports German broadcast releases from the ARD Hörspieldatenbank radio drama database.
@@ -117,12 +117,30 @@
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
 
-	function rateLimitedQueue(operation, interval) {
-		let queue = Promise.resolve(); // empty queue is ready
+	function rateLimitedQueue(operation, {
+		interval,
+		maxQueueSize = Infinity,
+		queueFullError = 'Max queue size reached',
+	}) {
+		// Empty queue is ready.
+		let queue = Promise.resolve();
+		let queueSize = 0;
+
 		return (...args) => {
-			const result = queue.then(() => operation(...args)); // queue the next operation
-			// start the next delay, regardless of the last operation's success
+			if (queueSize >= maxQueueSize) {
+				return Promise.reject(new Error(queueFullError));
+			}
+
+			// Queue the next operation.
+			const result = queue.then(() => operation(...args));
+			queueSize++;
+
+			// Decrease queue size when the operation finishes (succeeds or fails).
+			result.then(() => { queueSize--; }, () => { queueSize--; });
+
+			// Start the next delay, regardless of the last operation's success.
 			queue = queue.then(() => delay(interval), () => delay(interval));
+
 			return result;
 		};
 	}
@@ -132,16 +150,23 @@
 	 * @template Params
 	 * @template Result
 	 * @param {(...args: Params) => Result} operation Operation that should be rate-limited.
-	 * @param {number} interval Time interval (in ms).
-	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
-	 * @returns {(...args: Params) => Promise<Result>} Rate-limited version of the given operation.
+	 * @param {object} options
+	 * @param {number} options.interval Time interval (in ms).
+	 * @param {number} [options.requestsPerInterval] Maximum number of requests within the interval.
+	 * @param {number} [options.maxQueueSize] Maximum number of requests which are queued (optional).
+	 * @param {string} [options.queueFullError] Error message when the queue is full.
+	 * @returns {(...args: Params) => Promise<Awaited<Result>>} Rate-limited version of the given operation.
 	 */
-	function rateLimit(operation, interval, requestsPerInterval = 1) {
+	function rateLimit(operation, options) {
+		const { requestsPerInterval = 1 } = options;
+
 		if (requestsPerInterval == 1) {
-			return rateLimitedQueue(operation, interval);
+			return rateLimitedQueue(operation, options);
 		}
-		const queues = Array(requestsPerInterval).fill().map(() => rateLimitedQueue(operation, interval));
+
+		const queues = Array(requestsPerInterval).fill().map(() => rateLimitedQueue(operation, options));
 		let queueIndex = 0;
+
 		return (...args) => {
 			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
 			return queues[queueIndex](...args); // return the result of the operation
@@ -152,7 +177,7 @@
 	 * Calls to the MusicBrainz API are limited to one request per second.
 	 * https://musicbrainz.org/doc/MusicBrainz_API
 	 */
-	const callAPI = rateLimit(fetch, 1000);
+	const callAPI = rateLimit(fetch, { interval: 1000 });
 
 	/**
 	 * Requests the given entity from the MusicBrainz API.
@@ -470,7 +495,7 @@
 
 	/**
 	 * Creates a form with hidden inputs for the given data.
-	 * @param {import('../types').FormDataRecord} data Record with one or multiple values for each key.
+	 * @param {import('../types.d.ts').FormDataRecord} data Record with one or multiple values for each key.
 	 */
 	function createHiddenForm(data) {
 		const form = document.createElement('form');
@@ -486,28 +511,28 @@
 	}
 
 	/**
-	 * Flattens the given (deep) object to a single level hierarchy.
+	 * Flattens the given (potentially nested) record into a record with a single hierarchy level.
 	 * Concatenates the keys in a nested structure which lead to a value with dots.
-	 * @param {object} object 
-	 * @param {string[]} preservedKeys Keys whose values will be preserved.
-	 * @returns {object}
+	 * @param {Record<string, any>} record 
+	 * @param {string[]} preservedKeys - Keys whose values will be preserved.
+	 * @returns {Record<string, any>}
 	 */
-	function flatten(object, preservedKeys = []) {
-		const flatObject = {};
+	function flatten(record, preservedKeys = []) {
+		const flatRecord = {};
 
-		for (const key in object) {
-			let value = object[key];
+		for (const key in record) {
+			let value = record[key];
 			if (typeof value === 'object' && value !== null && !preservedKeys.includes(key)) { // also matches arrays
 				value = flatten(value, preservedKeys);
 				for (const childKey in value) {
-					flatObject[key + '.' + childKey] = value[childKey]; // concatenate keys
+					flatRecord[key + '.' + childKey] = value[childKey]; // concatenate keys
 				}
-			} else { // value is already flat (e.g. a string) or should be preserved
-				flatObject[key] = value; // keep the key
+			} else if (value !== undefined) { // value is already flat (e.g. a string) or should be preserved
+				flatRecord[key] = value; // keep the key
 			}
 		}
 
-		return flatObject;
+		return flatRecord;
 	}
 
 	/**
@@ -557,8 +582,9 @@
 
 	/**
 	 * Creates an object from the given arrays of keys and corresponding values.
-	 * @param {string[]} keys
-	 * @param {any[]} values
+	 * @template T
+	 * @param {PropertyKey[]} keys
+	 * @param {T[]} values
 	 */
 	function zipObject(keys, values) {
 		return Object.fromEntries(keys.map((_, index) => [keys[index], values[index]]));

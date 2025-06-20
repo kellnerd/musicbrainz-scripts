@@ -91,19 +91,6 @@
 
 	const editNoteSeparator = '\n—\n';
 
-	/**
-	 * Transforms the given value using the given substitution rules.
-	 * @param {string} value
-	 * @param {import('../types').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
-	 * @returns {string}
-	 */
-	function transform(value, substitutionRules) {
-		substitutionRules.forEach(([searchValue, replaceValue]) => {
-			value = value.replace(searchValue, replaceValue);
-		});
-		return value;
-	}
-
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
 		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))*/,
@@ -236,7 +223,9 @@
 		return encodeURIComponent(
 			string.trim()
 				.toLowerCase()
-				.replace(/\s+/g, '-')
+				.replaceAll(' ', '-')
+				// keep only letters, numbers, underscores and hyphens
+				.replace(/[^\p{L}\d_-]+/gu, '')
 		);
 	}
 
@@ -607,6 +596,81 @@ textarea#credit-input {
 	}
 
 	/**
+	 * Default punctuation rules.
+	 * @type {import('../types.d.ts').SubstitutionRule[]}
+	 */
+	const punctuationRules = [
+		/* quoted text */
+		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
+		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
+		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
+		// ... which is enclosed by non-word characters or at the beginning/end of the title
+		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
+
+		/* primes */
+		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
+		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
+
+		/* apostrophes */
+		[/'/g, '’'], // ... and finally the apostrophes should be remaining
+
+		/* ellipses */
+		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
+
+		/* dashes */
+		[/ - /g, ' – '], // en dash as separator
+
+		/* hyphens for (partial) ISO 8601 dates, e.g. 1987‐07–30 or 2016-04 */
+		[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g, (potentialDate) => {
+			if (Number.isNaN(Date.parse(potentialDate))) return potentialDate; // skip invalid date strings, e.g. 1989-90
+			return potentialDate.replaceAll('-', '‐');
+		}],
+
+		/* figure dashes: separate three or more groups of digits (two groups could be range) */
+		[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
+
+		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
+
+		/* hyphens */
+		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
+
+		/* rare cases where it is difficult to define precise rules: em dash, minus */
+	];
+
+	/**
+	 * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
+	 * by temporarily changing them to characters that will not be touched by the transformation rules.
+	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
+	 * @type {import('@kellnerd/es-utils').SubstitutionRule[]}
+	 */
+	[
+		/* Base64 encode URLs */
+		[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // labeled link
+		[/(?<=\/\/)(\S+)/g, (_match, path) => btoa(path)], // plain text URLs
+
+		[/'''/g, '<b>'], // bold text
+		[/''/g, '<i>'], // italic text
+
+		...punctuationRules,
+
+		[/<b>/g, "'''"],
+		[/<i>/g, "''"],
+
+		/* decode Base64 URLs */
+		[/(?<=\/\/)([A-Za-z0-9+/=]+)/g, (_match, path) => atob(path)], // plain text URLs
+		[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // labeled link
+	];
+
+	/**
+	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
+	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
+	 * @param {string} text
+	 */
+	function guessUnicodePunctuationOf(text) {
+		return transform(text, punctuationRules);
+	}
+
+	/**
 	 * @template Params
 	 * @template Result
 	 * @template {string | number} Key
@@ -758,12 +822,30 @@ textarea#credit-input {
 	// Adapted from https://thoughtspile.github.io/2018/07/07/rate-limit-promises/
 
 
-	function rateLimitedQueue(operation, interval) {
-		let queue = Promise.resolve(); // empty queue is ready
+	function rateLimitedQueue(operation, {
+		interval,
+		maxQueueSize = Infinity,
+		queueFullError = 'Max queue size reached',
+	}) {
+		// Empty queue is ready.
+		let queue = Promise.resolve();
+		let queueSize = 0;
+
 		return (...args) => {
-			const result = queue.then(() => operation(...args)); // queue the next operation
-			// start the next delay, regardless of the last operation's success
+			if (queueSize >= maxQueueSize) {
+				return Promise.reject(new Error(queueFullError));
+			}
+
+			// Queue the next operation.
+			const result = queue.then(() => operation(...args));
+			queueSize++;
+
+			// Decrease queue size when the operation finishes (succeeds or fails).
+			result.then(() => { queueSize--; }, () => { queueSize--; });
+
+			// Start the next delay, regardless of the last operation's success.
 			queue = queue.then(() => delay(interval), () => delay(interval));
+
 			return result;
 		};
 	}
@@ -773,16 +855,23 @@ textarea#credit-input {
 	 * @template Params
 	 * @template Result
 	 * @param {(...args: Params) => Result} operation Operation that should be rate-limited.
-	 * @param {number} interval Time interval (in ms).
-	 * @param {number} requestsPerInterval Maximum number of requests within the interval.
-	 * @returns {(...args: Params) => Promise<Result>} Rate-limited version of the given operation.
+	 * @param {object} options
+	 * @param {number} options.interval Time interval (in ms).
+	 * @param {number} [options.requestsPerInterval] Maximum number of requests within the interval.
+	 * @param {number} [options.maxQueueSize] Maximum number of requests which are queued (optional).
+	 * @param {string} [options.queueFullError] Error message when the queue is full.
+	 * @returns {(...args: Params) => Promise<Awaited<Result>>} Rate-limited version of the given operation.
 	 */
-	function rateLimit(operation, interval, requestsPerInterval = 1) {
+	function rateLimit(operation, options) {
+		const { requestsPerInterval = 1 } = options;
+
 		if (requestsPerInterval == 1) {
-			return rateLimitedQueue(operation, interval);
+			return rateLimitedQueue(operation, options);
 		}
-		const queues = Array(requestsPerInterval).fill().map(() => rateLimitedQueue(operation, interval));
+
+		const queues = Array(requestsPerInterval).fill().map(() => rateLimitedQueue(operation, options));
 		let queueIndex = 0;
+
 		return (...args) => {
 			queueIndex = (queueIndex + 1) % requestsPerInterval; // use the next queue
 			return queues[queueIndex](...args); // return the result of the operation
@@ -793,7 +882,7 @@ textarea#credit-input {
 	 * Calls to the MusicBrainz API are limited to one request per second.
 	 * https://musicbrainz.org/doc/MusicBrainz_API
 	 */
-	const callAPI$1 = rateLimit(fetch, 1000);
+	const callAPI$1 = rateLimit(fetch, { interval: 1000 });
 
 	/**
 	 * Requests the given entity from the MusicBrainz API.
@@ -1194,113 +1283,10 @@ textarea#credit-input {
 	});
 
 	/**
-	 * Default punctuation rules.
-	 * @type {import('../types.js').SubstitutionRule[]}
-	 */
-	const punctuationRules = [
-		/* quoted text */
-		[/(?<=[^\p{L}\d]|^)"(.+?)"(?=[^\p{L}\d]|$)/ug, '“$1”'], // double quoted text
-		[/(?<=\W|^)'(n)'(?=\W|$)/ig, '’$1’'], // special case: 'n'
-		[/(?<=[^\p{L}\d]|^)'(.+?)'(?=[^\p{L}\d]|$)/ug, '‘$1’'], // single quoted text
-		// ... which is enclosed by non-word characters or at the beginning/end of the title
-		// [^\p{L}\d] matches Unicode characters which are neither letters nor digits (\W only works with Latin letters)
-
-		/* primes */
-		[/(\d+)"/g, '$1″'], // double primes, e.g. for 12″
-		[/(\d+)'(\d+)/g, '$1′$2'], // single primes, e.g. for 3′42″ but not for 70’s
-
-		/* apostrophes */
-		[/'/g, '’'], // ... and finally the apostrophes should be remaining
-
-		/* ellipses */
-		[/(?<!\.)\.{3}(?!\.)/g, '…'], // horizontal ellipsis (but not more than three dots)
-
-		/* dashes */
-		[/ - /g, ' – '], // en dash as separator
-
-		/* hyphens for (partial) ISO 8601 dates, e.g. 1987‐07–30 or 2016-04 */
-		[/\d{4}-\d{2}(?:-\d{2})?(?=\W|$)/g, (potentialDate) => {
-			if (Number.isNaN(Date.parse(potentialDate))) return potentialDate; // skip invalid date strings, e.g. 1989-90
-			return potentialDate.replaceAll('-', '‐');
-		}],
-
-		/* figure dashes: separate three or more groups of digits (two groups could be range) */
-		[/\d+(-\d+){2,}/g, (groupedDigits) => groupedDigits.replaceAll('-', '‒')],
-
-		[/(\d+)-(\d+)/g, '$1–$2'], // en dash for ranges where it means "to", e.g. 1965–1972
-
-		/* hyphens */
-		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
-
-		/* rare cases where it is difficult to define precise rules: em dash, minus */
-	];
-
-	/**
-	 * Language-specific double and single quotes (RegEx replace values).
-	 * @type {Record<string, string[]>}
-	 */
-	const languageSpecificQuotes = {
-		en: ['“$1”', '‘$1’'], // English
-		fr: ['« $1 »', '‹ $1 ›'], // French
-		de: ['„$1“', '‚$1‘'], // German
-	};
-
-	/**
-	 * Indices of the quotation rules (double and single quotes) in `punctuationRules`.
-	 */
-	const quotationRuleIndices = [0, 2];
-
-	/**
-	 * Additional punctuation rules for certain languages, will be appended to the default rules.
-	 * @type {Record<string, SubstitutionRule[]>}
-	 */
-	const languageSpecificRules = {
-		de: [ // German
-			[/(\w+)-(\s)|(\s)-(\w+)/g, '$1$3‐$2$4'], // hyphens for abbreviated compound words
-		],
-		ja: [ // Japanese
-			[/(?<=[^\p{L}\d]|^)-(.+?)-(?=[^\p{L}\d]|$)/ug, '–$1–'], // dashes used as brackets
-		],
-	};
-
-	/**
-	 * Creates language-specific punctuation guessing substitution rules.
-	 * @param {string} [language] ISO 639-1 two letter code of the language.
-	 */
-	function punctuationRulesForLanguage(language) {
-		// create a deep copy of the quotation rules to prevent modifications of the default rules
-		let rules = punctuationRules.map((rule, index) => quotationRuleIndices.includes(index) ? [...rule] : rule);
-
-		// overwrite replace values for quotation rules with language-specific values (if they are existing)
-		const replaceValueIndex = 1;
-		languageSpecificQuotes[language]?.forEach((value, index) => {
-			const ruleIndex = quotationRuleIndices[index];
-			rules[ruleIndex][replaceValueIndex] = value;
-		});
-
-		// append language-specific rules (if they are existing)
-		languageSpecificRules[language]?.forEach((rule) => {
-			rules.push(rule);
-		});
-
-		return rules;
-	}
-
-	/**
-	 * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
-	 * These can only be guessed based on context as the ASCII symbols are ambiguous.
-	 * @param {string} text
-	 * @param {string} [language] Language of the text (ISO 639-1 two letter code, optional).
-	 */
-	function guessUnicodePunctuation(text, language) {
-		return transform(text, punctuationRulesForLanguage(language));
-	}
-
-	/**
 	 * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
 	 * https://www.discogs.com/developers/
 	 */
-	const callAPI = rateLimit(fetch, 60 * 1000, 25);
+	const callAPI = rateLimit(fetch, { interval: 60 * 1000, requestsPerInterval: 25 });
 
 	/**
 	 * Requests the given entity from the Discogs API.
@@ -1329,7 +1315,7 @@ textarea#credit-input {
 				// drop bracketed numeric suffixes for ambiguous artist names
 				artist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-				artist.anv = guessUnicodePunctuation(artist.anv || artist.name);
+				artist.anv = guessUnicodePunctuationOf(artist.anv || artist.name);
 
 				// split multiple roles into multiple credits (separated by commas which are not inside square brackets)
 				return artist.role.split(/,\s*(?![^[\]]*\])/).map((role) => {
@@ -1340,7 +1326,7 @@ textarea#credit-input {
 					const roleWithCredit = role.match(/(.+?) \[(.+)\]$/);
 					if (roleWithCredit) {
 						parsedArtist.role = roleWithCredit[1];
-						parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
+						parsedArtist.roleCredit = guessUnicodePunctuationOf(roleWithCredit[2]);
 					} else {
 						parsedArtist.role = role;
 					}
@@ -1557,7 +1543,7 @@ textarea#credit-input {
 			const creditTokens = creditLine.split(getPattern(creditSeparatorInput.value) || /$/);
 
 			if (creditTokens.length === 2) {
-				let [roleName, artistName] = creditTokens.map((token) => guessUnicodePunctuation(token.trim()));
+				let [roleName, artistName] = creditTokens.map((token) => guessUnicodePunctuationOf(token.trim()));
 
 				const swapNames = event.shiftKey;
 				if (swapNames) {
