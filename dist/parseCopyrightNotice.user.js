@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2025.4.5
+// @version       2025.6.20
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -61,23 +61,6 @@
 	 */
 	function delay(ms) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
-	/**
-	 * Retries the given operation until the result is no longer undefined.
-	 * @template T
-	 * @param {() => T | Promise<T>} operation 
-	 * @param {Object} [options]
-	 * @param {number} [options.retries] Maximum number of retries.
-	 * @param {number} [options.wait] Number of ms to wait before the next try, disabled by default.
-	 * @returns The final result of the operation.
-	 */
-	async function retry(operation, { retries = 10, wait = 0 } = {}) {
-		do {
-			const result = await operation();
-			if (result !== undefined) return result;
-			if (wait) await delay(wait);
-		} while (retries--)
 	}
 
 	/**
@@ -167,14 +150,9 @@
 		}
 
 		if (linkTypeId) {
-			const linkTypeItem = await retry(() => {
-				// the available items are only valid for the current target type,
-				// ensure that they have already been updated after a target type change
-				const availableLinkTypes = MB.relationshipEditor.relationshipDialogState.linkType.autocomplete.items;
-				return availableLinkTypes.find((item) => (item.id == linkTypeId));
-			}, { wait: 10 });
+			const linkType = MB.linkedEntities.link_type[linkTypeId];
 
-			if (linkTypeItem) {
+			if (linkType) {
 				MB.relationshipEditor.relationshipDialogDispatch({
 					type: 'update-link-type',
 					source,
@@ -183,7 +161,7 @@
 						source,
 						action: {
 							type: 'select-item',
-							item: linkTypeItem,
+							item: entityToSelectItem(linkType),
 						},
 					},
 				});

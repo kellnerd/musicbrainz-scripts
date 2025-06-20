@@ -1,4 +1,4 @@
-import { retry, waitFor } from '@kellnerd/es-utils/async/polling.js';
+import { waitFor } from '@kellnerd/es-utils/async/polling.js';
 import { qs } from '@kellnerd/es-utils/dom/select.js';
 
 /**
