@@ -1,6 +1,6 @@
 import { buildApiURL, extractEntityFromURL } from './entity.js';
+import { guessUnicodePunctuationOf } from '../guessUnicodePunctuation.js';
 import { rateLimit } from '@kellnerd/es-utils/async/rateLimit.js';
-import { guessUnicodePunctuation } from '@kellnerd/es-utils/string/punctuation.js';
 
 /**
  * Calls to the Discogs API are limited to 25 unauthenticated requests per minute.
@@ -35,7 +35,7 @@ export async function fetchCredits(releaseURL) {
 			// drop bracketed numeric suffixes for ambiguous artist names
 			artist.name = artist.name.replace(/ \(\d+\)$/, '');
 
-			artist.anv = guessUnicodePunctuation(artist.anv || artist.name);
+			artist.anv = guessUnicodePunctuationOf(artist.anv || artist.name);
 
 			// split multiple roles into multiple credits (separated by commas which are not inside square brackets)
 			return artist.role.split(/,\s*(?![^[\]]*\])/).map((role) => {
@@ -46,7 +46,7 @@ export async function fetchCredits(releaseURL) {
 				const roleWithCredit = role.match(/(.+?) \[(.+)\]$/);
 				if (roleWithCredit) {
 					parsedArtist.role = roleWithCredit[1];
-					parsedArtist.roleCredit = guessUnicodePunctuation(roleWithCredit[2]);
+					parsedArtist.roleCredit = guessUnicodePunctuationOf(roleWithCredit[2]);
 				} else {
 					parsedArtist.role = role;
 				}

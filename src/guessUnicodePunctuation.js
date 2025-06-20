@@ -40,3 +40,12 @@ export const transformationRulesToPreserveMarkup = [
 export function guessUnicodePunctuation(inputSelectors, options = {}) {
 	transformInputValues(inputSelectors.join(), punctuationRulesForLanguage(options.language), options);
 }
+
+/**
+ * Searches and replaces ASCII punctuation symbols of the given text by their preferred Unicode counterparts.
+ * These can only be guessed based on context as the ASCII symbols are ambiguous.
+ * @param {string} text
+ */
+export function guessUnicodePunctuationOf(text) {
+	return transform(text, punctuationRules);
+}

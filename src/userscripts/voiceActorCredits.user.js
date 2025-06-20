@@ -5,6 +5,7 @@ import {
 } from '../creditParserUI.js';
 import { addMessageToEditNote } from '../editNote.js';
 import { buildEntityURL } from '../entity.js';
+import { guessUnicodePunctuationOf } from '../guessUnicodePunctuation.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 import {
@@ -17,7 +18,6 @@ import {
 } from '../relationship-editor/voiceActorCredits.js';
 import { dom } from '@kellnerd/es-utils/dom/select.js';
 import { getPattern } from '@kellnerd/es-utils/regex/parse.js';
-import { guessUnicodePunctuation } from '@kellnerd/es-utils/string/punctuation.js';
 
 const UI = `
 <div id="credit-import-tools">
@@ -34,7 +34,7 @@ function buildVoiceActorCreditParserUI() {
 		const creditTokens = creditLine.split(getPattern(creditSeparatorInput.value) || /$/);
 
 		if (creditTokens.length === 2) {
-			let [roleName, artistName] = creditTokens.map((token) => guessUnicodePunctuation(token.trim()));
+			let [roleName, artistName] = creditTokens.map((token) => guessUnicodePunctuationOf(token.trim()));
 
 			const swapNames = event.shiftKey;
 			if (swapNames) {
