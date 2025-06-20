@@ -5,7 +5,7 @@ import {
 import { detectAliasLanguage, detectReleaseLanguage } from '../languages.js';
 import { onReactHydrated } from '../reactHydration.js';
 import { createElement, injectStylesheet } from '@kellnerd/es-utils/dom/create.js';
-import { qs, qsa } from '@kellnerd/es-utils/dom/select.js';
+import { dom, qs, qsa } from '@kellnerd/es-utils/dom/select.js';
 import { transformInputValues, defaultHighlightClass } from '@kellnerd/es-utils/dom/transformInputValues.js';
 
 import guessPunctuationIcon from './icons/guessPunctuation.png';
@@ -68,6 +68,20 @@ const acInputs = [
 	'input[id*=credited-as]', // all artist names as credited (inside the artist credit bubble)
 ];
 
+/**
+ * Detects the selected language in the release editor and handles special cases.
+ * @returns {string} ISO 639-1 code of the language.
+ */
+function detectSupportedReleaseLanguage() {
+	const languageCode = detectReleaseLanguage();
+	if (languageCode === 'he') {
+		// only return language Hebrew if the script is also Hebrew, otherwise there are no special rules
+		const scriptID = dom('script')?.selectedOptions[0].value;
+		if (scriptID !== '11') return;
+	}
+	return languageCode;
+}
+
 function buildUI() {
 	injectStylesheet(styles, 'guess-punctuation');
 
@@ -98,20 +112,20 @@ function buildUI() {
 		// button for the release information tab (after disambiguation comment input field)
 		insertIconButtonAfter(releaseInputs[1])
 			.addEventListener('click', () => {
-				guessUnicodePunctuation(releaseInputs, { language: detectReleaseLanguage() });
+				guessUnicodePunctuation(releaseInputs, { language: detectSupportedReleaseLanguage() });
 				transformInputValues('#annotation', transformationRulesToPreserveMarkup); // release annotation
 			});
 
 		// button for the tracklist tab (after the guess case button)
 		const tracklistButton = createElement(buttonTemplate.standard);
-		tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectReleaseLanguage() }));
+		tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectSupportedReleaseLanguage() }));
 		qs('.guesscase .buttons').append(tracklistButton);
 
 		// global button (next to the release editor navigation buttons)
 		const globalButton = createElement(buttonTemplate.global);
 		globalButton.addEventListener('click', () => {
 			// both release info and tracklist data
-			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], { language: detectReleaseLanguage() });
+			guessUnicodePunctuation([...releaseInputs, ...tracklistInputs], { language: detectSupportedReleaseLanguage() });
 			transformInputValues('#edit-note-text', transformationRulesToPreserveMarkup); // edit note
 			// exclude annotations from the global action as the changes are hard to verify
 		});

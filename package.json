@@ -35,6 +35,6 @@
     "weight-balanced-tree": "^0.6.1"
   },
   "dependencies": {
-    "@kellnerd/es-utils": "github:kellnerd/es-utils"
+    "@kellnerd/es-utils": "github:kellnerd/es-utils#v0.2.2"
   }
 }
