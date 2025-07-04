@@ -164,6 +164,7 @@ javascript:(()=>{const a=location.pathname.match(/release\/([0-9a-f-]{36})/)?.[1
 ### [Lookup With Harmony](src/bookmarklets/lookupWithHarmony.js)
 
 - Opens [Harmony](https://harmony.pulsewidth.org.uk) and performs a release lookup for the currently visited URL.
+- Uses the lookup defaults (preferred providers and region) from your Harmony settings.
 
 ```js
 javascript:void open(`https://harmony.pulsewidth.org.uk/release?url=${encodeURIComponent(location)}&category=preferred`);
