@@ -9,21 +9,30 @@ import {
 	markdownToAnnotation,
 	convertEntityLinks,
 } from '../annotationConverter.js';
-import { $transformInputValues } from '@kellnerd/es-utils/dom/transformInputValues.js';
+import { transform } from '@kellnerd/es-utils/string/transform.js';
 
 const annotationInput = [
 	'textarea[name$=text]', // entity annotation
 	'textarea[name$=description]', // collection description
 	'textarea[name$=biography]', // user profile biography
+	'textarea#annotation', // release editor
 ].join();
 
-$transformInputValues(annotationInput, markdownToAnnotation);
+document.querySelectorAll(annotationInput).forEach(async (/** @type {HTMLTextAreaElement} */ input) => {
+	let value = input.value;
+	if (!value) return;
 
-$(annotationInput).each(async (_index, input) => {
-	input.disabled = true; // lock input, requests for the names of multiple entities may take a while
-	let newValue = await convertEntityLinks(input.value);
-	if (newValue != input.value) {
-		$(input).val(newValue);
+	// Temporarily lock input, converting multiple entity links may take a while.
+	input.disabled = true;
+
+	value = transform(value, markdownToAnnotation);
+	value = await convertEntityLinks(value);
+
+	// Update inputs for changed value and trigger change event (for edit preview).
+	if (value != input.value) {
+		input.value = value;
+		input.dispatchEvent(new Event('change'));
 	}
+
 	input.disabled = false;
 });
