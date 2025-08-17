@@ -1,4 +1,5 @@
 import { transformInputValues } from '@kellnerd/es-utils/dom/transformInputValues.js';
+import { transform } from '@kellnerd/es-utils/string/transform.js';
 import {
 	punctuationRules,
 	punctuationRulesForLanguage,
