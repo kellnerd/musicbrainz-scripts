@@ -1,14 +1,5 @@
-import {
-	closingDialog,
-	createBatchDialog,
-	createDialog,
-	creditTargetAs,
-} from './createDialog.js';
-import {
-	batchCreateRelationships,
-	createAttributeTree,
-	createRelationship,
-} from './createRelationship.js';
+import { closingDialog, createBatchDialog, createDialog, creditTargetAs } from './createDialog.js';
+import { batchCreateRelationships, createAttributeTree, createRelationship } from './createRelationship.js';
 import { entityCache } from '../entityCache.js';
 import { nameToMBIDCache } from '../nameToMBIDCache.js';
 import { fetchVoiceActors as fetchVoiceActorsFromDiscogs } from '../discogs/api.js';
@@ -139,7 +130,7 @@ export async function createVoiceActorDialog({ artist, roleName, artistCredit, r
 		credited_as: roleName,
 	}];
 
-	if (recordings) {
+	if (recordings && recordings.size > 0) {
 		await createBatchDialog(recordings, {
 			target: artist,
 			targetType: 'artist',
@@ -174,7 +165,7 @@ export function createVoiceActorRelationship({ artist, roleName, artistCredit, r
 		credited_as: roleName,
 	});
 
-	if (recordings) {
+	if (recordings && recordings.size > 0) {
 		batchCreateRelationships(recordings, artist, {
 			linkTypeID: 149, // performance -> performer -> vocals
 			entity0_credit: artistCredit,
