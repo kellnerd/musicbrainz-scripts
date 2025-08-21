@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2025.6.20
+// @version       2025.8.21
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release or recording relationships for these. Also imports credits from Discogs.
@@ -90,6 +90,19 @@
 	}
 
 	const editNoteSeparator = '\n—\n';
+
+	/**
+	 * Transforms the given value using the given substitution rules.
+	 * @param {string} value
+	 * @param {import('../types.d.ts').SubstitutionRule[]} substitutionRules Pairs of values for search & replace.
+	 * @returns {string}
+	 */
+	function transform(value, substitutionRules) {
+		substitutionRules.forEach(([searchValue, replaceValue]) => {
+			value = value.replace(searchValue, replaceValue);
+		});
+		return value;
+	}
 
 	/** @type {CreditParserOptions} */
 	const parserDefaults = {
@@ -635,30 +648,6 @@ textarea#credit-input {
 		[/(?<=\S)-(?=\S)/g, '‐'], // ... and finally the hyphens should be remaining
 
 		/* rare cases where it is difficult to define precise rules: em dash, minus */
-	];
-
-	/**
-	 * Preserves apostrophe-based markup and URLs (which are supported by annotations and edit notes)
-	 * by temporarily changing them to characters that will not be touched by the transformation rules.
-	 * After the punctuation guessing transformation rules were applied, URLs and markup are restored.
-	 * @type {import('@kellnerd/es-utils').SubstitutionRule[]}
-	 */
-	[
-		/* Base64 encode URLs */
-		[/\[(.+?)(\|.+?)?\]/g, (_match, url, label = '') => `[${btoa(url)}${label}]`], // labeled link
-		[/(?<=\/\/)(\S+)/g, (_match, path) => btoa(path)], // plain text URLs
-
-		[/'''/g, '<b>'], // bold text
-		[/''/g, '<i>'], // italic text
-
-		...punctuationRules,
-
-		[/<b>/g, "'''"],
-		[/<i>/g, "''"],
-
-		/* decode Base64 URLs */
-		[/(?<=\/\/)([A-Za-z0-9+/=]+)/g, (_match, path) => atob(path)], // plain text URLs
-		[/\[([A-Za-z0-9+/=]+)(\|.+?)?\]/g, (_match, url, label = '') => `[${atob(url)}${label}]`], // labeled link
 	];
 
 	/**
@@ -1366,7 +1355,7 @@ textarea#credit-input {
 	async function addVoiceActor(artistName, roleName, bypassCache = false) {
 		const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
 
-		/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+		/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT>} */
 		const recordings = MB.relationshipEditor.state.selectedRecordings;
 
 		if (artistMBID) {
@@ -1477,7 +1466,7 @@ textarea#credit-input {
 			credited_as: roleName,
 		}];
 
-		if (recordings) {
+		if (recordings?.size) {
 			await createBatchDialog(recordings, {
 				target: artist,
 				targetType: 'artist',
@@ -1512,7 +1501,7 @@ textarea#credit-input {
 			credited_as: roleName,
 		});
 
-		if (recordings) {
+		if (recordings?.size) {
 			batchCreateRelationships(recordings, artist, {
 				linkTypeID: 149, // performance -> performer -> vocals
 				entity0_credit: artistCredit,

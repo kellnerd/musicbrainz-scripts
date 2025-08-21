@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2025.6.20
+// @version       2025.8.21
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -618,7 +618,7 @@
 			.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 			.map(simplifyName);
 
-		/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+		/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT>} */
 		const selectedRecordings = MB.relationshipEditor.state.selectedRecordings;
 
 		let addedRelCount = 0;
@@ -673,7 +673,7 @@
 				}
 
 				// also add phonographic copyright rels to all selected recordings
-				if (type === '℗' && selectedRecordings) {
+				if (type === '℗' && selectedRecordings.size) {
 					try {
 						const linkTypeId = getLinkTypeId(targetType, 'recording', type);
 						if (typeof targetEntity === 'string') {
