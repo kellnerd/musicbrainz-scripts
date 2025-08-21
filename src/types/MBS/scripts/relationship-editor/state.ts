@@ -44,13 +44,13 @@ export type RelationshipStateT =
   RelationshipStateForTypesT<CoreEntityT, CoreEntityT>;
 
 export type RelationshipPhraseGroupT = {
-  readonly relationships: tree.ImmutableTree<RelationshipStateT> | null;
+  readonly relationships: tree.ImmutableTree<RelationshipStateT>;
   readonly textPhrase: string;
 };
 
 export type RelationshipLinkTypeGroupT = {
   readonly backward: boolean;
-  readonly phraseGroups: tree.ImmutableTree<RelationshipPhraseGroupT> | null;
+  readonly phraseGroups: tree.ImmutableTree<RelationshipPhraseGroupT>;
   // Null types are represented by 0.
   readonly typeId: number;
 };
@@ -60,21 +60,21 @@ export type RelationshipLinkTypeGroupKeyT = {
   readonly typeId: number;
 };
 
-export type RelationshipLinkTypeGroupsT = tree.ImmutableTree<RelationshipLinkTypeGroupT> | null;
+export type RelationshipLinkTypeGroupsT = tree.ImmutableTree<RelationshipLinkTypeGroupT>;
 
 export type RelationshipTargetTypeGroupT = [
   CoreEntityTypeT,
   RelationshipLinkTypeGroupsT,
 ];
 
-export type RelationshipTargetTypeGroupsT = tree.ImmutableTree<RelationshipTargetTypeGroupT> | null;
+export type RelationshipTargetTypeGroupsT = tree.ImmutableTree<RelationshipTargetTypeGroupT>;
 
 export type RelationshipSourceGroupT = [
   CoreEntityT,
   RelationshipTargetTypeGroupsT,
 ];
 
-export type RelationshipSourceGroupsT = tree.ImmutableTree<RelationshipSourceGroupT> | null;
+export type RelationshipSourceGroupsT = tree.ImmutableTree<RelationshipSourceGroupT>;
 
 export type NonReleaseCoreEntityT =
   | AreaT
@@ -185,7 +185,7 @@ export type DialogAttributesT = ReadonlyArray<DialogAttributeT>;
 
 export type DialogAttributesStateT = {
   readonly attributesList: DialogAttributesT;
-  readonly resultingLinkAttributes: tree.ImmutableTree<LinkAttrT> | null;
+  readonly resultingLinkAttributes: tree.ImmutableTree<LinkAttrT>;
 };
 
 export type DialogLinkAttributeStateT = {
@@ -298,7 +298,7 @@ export type MediumWorkStateT = {
   readonly work: WorkT;
 };
 
-export type MediumWorkStateTreeT = tree.ImmutableTree<MediumWorkStateT> | null;
+export type MediumWorkStateTreeT = tree.ImmutableTree<MediumWorkStateT>;
 
 export type MediumRecordingStateT = {
   readonly isSelected: boolean;
@@ -307,11 +307,11 @@ export type MediumRecordingStateT = {
   readonly targetTypeGroups: RelationshipTargetTypeGroupsT;
 };
 
-export type MediumRecordingStateTreeT = tree.ImmutableTree<MediumRecordingStateT> | null;
+export type MediumRecordingStateTreeT = tree.ImmutableTree<MediumRecordingStateT>;
 
 export type MediumStateTreeT = tree.ImmutableTree<
   [MediumWithRecordingsT, MediumRecordingStateTreeT]
-> | null;
+>;
 
 export type ReleaseRelationshipEditorStateT = LazyReleaseStateT &
   RelationshipEditorStateT & {
@@ -322,8 +322,8 @@ export type ReleaseRelationshipEditorStateT = LazyReleaseStateT &
     readonly entity: ReleaseWithMediumsAndReleaseGroupT;
     readonly mediums: MediumStateTreeT;
     readonly mediumsByRecordingId: RecordingMediumsT;
-    readonly selectedRecordings: tree.ImmutableTree<RecordingT> | null;
-    readonly selectedWorks: tree.ImmutableTree<WorkT> | null;
+    readonly selectedRecordings: tree.ImmutableTree<RecordingT>;
+    readonly selectedWorks: tree.ImmutableTree<WorkT>;
     readonly submissionError: string | null | undefined;
     readonly submissionInProgress: boolean;
   };

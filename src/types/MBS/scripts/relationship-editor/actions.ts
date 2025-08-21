@@ -165,7 +165,7 @@ export type BatchCreateWorksDialogActionT = {
 } | WorkTypeSelectActionT;
 
 export type AcceptBatchCreateWorksDialogActionT = {
-  readonly attributes: tree.ImmutableTree<LinkAttrT> | null;
+  readonly attributes: tree.ImmutableTree<LinkAttrT>;
   readonly languages: ReadonlyArray<LanguageT>;
   readonly linkType: LinkTypeT;
   readonly type: 'accept-batch-create-works-dialog';
@@ -206,11 +206,11 @@ export type ReleaseRelationshipEditorActionT =
     readonly work: WorkT;
   } | {
     readonly isSelected: boolean;
-    readonly recordingStates: MediumRecordingStateTreeT | null;
+    readonly recordingStates: MediumRecordingStateTreeT;
     readonly type: 'toggle-select-medium-recordings';
   } | {
     readonly isSelected: boolean;
-    readonly recordingStates: MediumRecordingStateTreeT | null;
+    readonly recordingStates: MediumRecordingStateTreeT;
     readonly type: 'toggle-select-medium-works';
   } | {
     readonly editNote: string;

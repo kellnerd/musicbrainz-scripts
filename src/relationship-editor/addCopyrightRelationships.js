@@ -38,7 +38,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 		.flatMap((name) => [name.name, name.artist.name]) // entity name & credited name (possible redundancy doesn't matter)
 		.map(simplifyName);
 
-	/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+	/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT>} */
 	const selectedRecordings = MB.relationshipEditor.state.selectedRecordings;
 
 	let addedRelCount = 0;
@@ -93,7 +93,7 @@ export async function addCopyrightRelationships(copyrightInfo, customOptions = {
 			}
 
 			// also add phonographic copyright rels to all selected recordings
-			if (type === '℗' && selectedRecordings) {
+			if (type === '℗' && selectedRecordings.size) {
 				try {
 					const linkTypeId = getLinkTypeId(targetType, 'recording', type);
 					if (typeof targetEntity === 'string') {

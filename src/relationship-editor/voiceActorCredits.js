@@ -18,7 +18,7 @@ import { discogsToMBIDCache } from '../discogs/entityMapping.js';
 export async function addVoiceActor(artistName, roleName, bypassCache = false) {
 	const artistMBID = !bypassCache && await nameToMBIDCache.get('artist', artistName);
 
-	/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT> | null} */
+	/** @type {import('weight-balanced-tree').ImmutableTree<RecordingT>} */
 	const recordings = MB.relationshipEditor.state.selectedRecordings;
 
 	if (artistMBID) {
@@ -130,7 +130,7 @@ export async function createVoiceActorDialog({ artist, roleName, artistCredit, r
 		credited_as: roleName,
 	}];
 
-	if (recordings && recordings.size > 0) {
+	if (recordings?.size) {
 		await createBatchDialog(recordings, {
 			target: artist,
 			targetType: 'artist',
@@ -165,7 +165,7 @@ export function createVoiceActorRelationship({ artist, roleName, artistCredit, r
 		credited_as: roleName,
 	});
 
-	if (recordings && recordings.size > 0) {
+	if (recordings?.size) {
 		batchCreateRelationships(recordings, artist, {
 			linkTypeID: 149, // performance -> performer -> vocals
 			entity0_credit: artistCredit,

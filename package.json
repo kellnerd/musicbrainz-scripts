@@ -32,7 +32,7 @@
   "main": "index.js",
   "devDependencies": {
     "@kellnerd/userscript-bundler": "github:kellnerd/userscript-bundler#v0.8.5",
-    "weight-balanced-tree": "^0.6.1"
+    "weight-balanced-tree": "^0.9.0"
   },
   "dependencies": {
     "@kellnerd/es-utils": "github:kellnerd/es-utils#v0.2.2"
