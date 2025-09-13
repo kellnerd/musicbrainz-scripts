@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2025.8.21
+// @version       2025.9.13
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -12,6 +12,7 @@
 // @grant         GM.setValue
 // @run-at        document-idle
 // @match         *://*.musicbrainz.org/release/*/edit-relationships
+// @match         *://musicbrainz.eu/release/*/edit-relationships
 // ==/UserScript==
 
 (function () {

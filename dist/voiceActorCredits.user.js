@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Voice actor credits
-// @version       2025.8.21
+// @version       2025.9.13
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses voice actor credits from text and automates the process of creating release or recording relationships for these. Also imports credits from Discogs.
@@ -12,6 +12,7 @@
 // @grant         GM.setValue
 // @run-at        document-idle
 // @match         *://*.musicbrainz.org/release/*/edit-relationships
+// @match         *://musicbrainz.eu/release/*/edit-relationships
 // ==/UserScript==
 
 (function () {

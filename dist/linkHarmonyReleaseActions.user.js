@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Link Harmony release actions
-// @version       2025.5.26
+// @version       2025.9.13
 // @namespace     https://github.com/Dr-Blank
 // @author        Dr.Blank
 // @description   Adds a Harmony actions link icon next to release titles on MusicBrainz release, release group, and artist releases pages.
@@ -15,6 +15,9 @@
 // @match         *://*.musicbrainz.org/release/*
 // @match         *://*.musicbrainz.org/release-group/*
 // @match         *://*.musicbrainz.org/artist/*/releases*
+// @match         *://musicbrainz.eu/release/*
+// @match         *://musicbrainz.eu/release-group/*
+// @match         *://musicbrainz.eu/artist/*/releases*
 // ==/UserScript==
 
 (function () {

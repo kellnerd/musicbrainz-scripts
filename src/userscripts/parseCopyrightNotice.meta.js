@@ -15,7 +15,10 @@ const metadata = {
 		'GM.getValue',
 		'GM.setValue',
 	],
-	match: '*://*.musicbrainz.org/release/*/edit-relationships',
+	match: [
+		'*://*.musicbrainz.org/release/*/edit-relationships',
+		'*://musicbrainz.eu/release/*/edit-relationships',
+	],
 	'run-at': 'document-idle',
 };
 
