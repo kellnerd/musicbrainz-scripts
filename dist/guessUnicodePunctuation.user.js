@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Guess Unicode punctuation
-// @version       2025.9.13
+// @version       2026.10.15
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Searches and replaces ASCII punctuation symbols for many input fields by their preferred Unicode counterparts. Provides “Guess punctuation” buttons for titles, names, disambiguation comments, annotations and edit notes on all entity edit and creation pages.
@@ -411,7 +411,7 @@
 	  var guessPunctuationIcon = img;
 
 	const buttonTemplate = {
-		standard: '<button type="button">Guess punctuation</button>',
+		standard: '<button type="button" title="Guess punctuation for all visible input fields">Guess punctuation</button>',
 		global: '<button type="button" title="Guess punctuation for all supported input fields">Guess punctuation</button>',
 		icon: '<button class="icon guess-punctuation" type="button" title="Guess punctuation"></button>',
 	};
@@ -508,6 +508,10 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 				'input.track-name', // all track titles
 				'input[id^=medium-title]', // all medium titles
 			];
+			const visibleTracklistInputs = [
+				"fieldset.advanced-medium > div:not([style*='display: none']) input.track-name", // all visible track titles
+				'input[id^=medium-title]', // all medium titles
+			];
 
 			// button for the release information tab (after disambiguation comment input field)
 			insertIconButtonAfter(releaseInputs[1])
@@ -518,7 +522,7 @@ input.${defaultHighlightClass}, textarea.${defaultHighlightClass} {
 
 			// button for the tracklist tab (after the guess case button)
 			const tracklistButton = createElement(buttonTemplate.standard);
-			tracklistButton.addEventListener('click', () => guessUnicodePunctuation(tracklistInputs, { language: detectSupportedReleaseLanguage() }));
+			tracklistButton.addEventListener('click', () => guessUnicodePunctuation(visibleTracklistInputs, { language: detectSupportedReleaseLanguage() }));
 			qs('.guesscase .buttons').append(tracklistButton);
 
 			// global button (next to the release editor navigation buttons)
