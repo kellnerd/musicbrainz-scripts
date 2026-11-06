@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name          MusicBrainz: Parse copyright notice
-// @version       2025.9.13
+// @version       2026.11.6
 // @namespace     https://github.com/kellnerd/musicbrainz-scripts
 // @author        kellnerd
 // @description   Parses copyright notices and automates the process of creating release and recording relationships for these.
@@ -807,7 +807,7 @@
 		return value;
 	}
 
-	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
+	const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:\s*(?:(?:[^,.\r\n]*\bowned|copyright)\s+)?by|\sthis\scompilation)?\s+/;
 
 	const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|manufactured|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
@@ -815,7 +815,7 @@
 	const parserDefaults = {
 		nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))*/,
 		nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
-		terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\sunder\s)|(?<=(?<!Bros)\.)\W/,
+		terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\s(?:under|distributed|manufactured|marketed)\s)|(?<=(?<!Bros)\.)\W/,
 	};
 
 	/**
@@ -832,6 +832,8 @@
 
 		/** @type {CopyrightItem[]} */
 		const copyrightInfo = [];
+		/** @type {CopyrightItem[]} */
+		const distributionInfo = [];
 		const namePattern = options.nameRE.source;
 		const terminatorPattern = options.terminatorRE.source;
 
@@ -858,13 +860,17 @@
 		]);
 
 		const copyrightMatches = text.matchAll(new RegExp(
-			String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
+			String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:[^\S\r\n]+by[^\S\r\n]+(${namePattern}))?(?:${terminatorPattern})`,
 			'gimu'));
 
 		for (const match of copyrightMatches) {
 			const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
 			const types = match[1].split(/[&+]|(?<=[©℗])\s*(?=[©℗])/).map(cleanType);
 			const years = match[2]?.split(/[,&/+]/).map((year) => year.trim());
+			// A trailing "by Label" credits distribution; leading "by Owner" is handled above.
+			if (match[4]) {
+				distributionInfo.push({ name: match[4].trim(), types: ['distributed by'] });
+			}
 
 			names.forEach((name) => {
 				// skip fake copyrights which contain the release label
@@ -890,7 +896,7 @@
 			});
 		}
 
-		return getUniqueElementsByJSON(copyrightInfo);
+		return getUniqueElementsByJSON([...copyrightInfo, ...distributionInfo]);
 	}
 
 	/**
