@@ -2,7 +2,7 @@ import { preferScalar } from '@kellnerd/es-utils/array/scalar.js';
 import { getUniqueElementsByJSON } from '@kellnerd/es-utils/array/unique.js';
 import { transform } from '@kellnerd/es-utils/string/transform.js';
 
-const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:[^,.]*\sby|\sthis\scompilation)?\s+/;
+const copyrightRE = /([©℗](?:\s*[&+]?\s*[©℗])?)(?:.+?;)?\s*(\d{4}(?:\s*[,&/+]\s*\d{4})*)?(?:\s*(?:(?:[^,.\r\n]*\bowned|copyright)\s+)?by|\sthis\scompilation)?\s+/;
 
 const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|manufactured|marketed)(?:\sby)?)(?:\sand)?\s)+)/;
 
@@ -10,7 +10,7 @@ const legalInfoRE = /((?:(?:licen[sc]ed?\s(?:to|from)|(?:distributed|manufacture
 export const parserDefaults = {
 	nameRE: /.+?(?:,?\s(?:LLC|LLP|(?:Corp|Inc|Ltd)\.?|Co\.(?:\sKG)?|(?:\p{Letter}\.){2,}))*/,
 	nameSeparatorRE: /[/|](?=\s|\w{2})|\s[–-]\s/,
-	terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\sunder\s)|(?<=(?<!Bros)\.)\W/,
+	terminatorRE: /$|(?=,|(?<!Bros)\.(?:\W|$)|\s(?:under|distributed|manufactured|marketed)\s)|(?<=(?<!Bros)\.)\W/,
 };
 
 /**
@@ -27,6 +27,8 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 
 	/** @type {CopyrightItem[]} */
 	const copyrightInfo = [];
+	/** @type {CopyrightItem[]} */
+	const distributionInfo = [];
 	const namePattern = options.nameRE.source;
 	const terminatorPattern = options.terminatorRE.source;
 
@@ -53,13 +55,17 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 	]);
 
 	const copyrightMatches = text.matchAll(new RegExp(
-		String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:${terminatorPattern})`,
+		String.raw`${copyrightRE.source}(?:\s*[–-]\s+)?(${namePattern}(?:\s*/\s*${namePattern})*)(?:[^\S\r\n]+by[^\S\r\n]+(${namePattern}))?(?:${terminatorPattern})`,
 		'gimu'));
 
 	for (const match of copyrightMatches) {
 		const names = match[3].split(options.nameSeparatorRE).map((name) => name.trim());
 		const types = match[1].split(/[&+]|(?<=[©℗])\s*(?=[©℗])/).map(cleanType);
 		const years = match[2]?.split(/[,&/+]/).map((year) => year.trim());
+		// A trailing "by Label" credits distribution; leading "by Owner" is handled above.
+		if (match[4]) {
+			distributionInfo.push({ name: match[4].trim(), types: ['distributed by'] });
+		}
 
 		names.forEach((name) => {
 			// skip fake copyrights which contain the release label
@@ -85,7 +91,7 @@ export function parseCopyrightNotice(text, customOptions = {}) {
 		});
 	}
 
-	return getUniqueElementsByJSON(copyrightInfo);
+	return getUniqueElementsByJSON([...copyrightInfo, ...distributionInfo]);
 }
 
 /**

@@ -99,6 +99,33 @@ const copyrightTestCases = [
 		year: undefined,
 	}]],
 
+	/* "Owner By Distributor" suffixes (#57). */
+	['Copyright: © 2022 Maman Productions BY PIL LTD\n℗ 2022 Maman Productions BY PIL LTD', [{
+		name: 'Maman Productions',
+		types: ['©'],
+		year: '2022',
+	}, {
+		name: 'Maman Productions',
+		types: ['℗'],
+		year: '2022',
+	}, {
+		name: 'PIL LTD',
+		types: ['distributed by'],
+	}]],
+	['℗ & © Copyright by Jane Doe by Another Label', [{
+		name: 'Jane Doe',
+		types: ['℗', '©'],
+		year: undefined,
+	}, {
+		name: 'Another Label',
+		types: ['distributed by'],
+	}]],
+	['© 2023 by Example Records', [{
+		name: 'Example Records',
+		types: ['©'],
+		year: '2023',
+	}]],
+
 	/* copyright shared by multiple labels */
 	['℗ «2012 Shady Records/Aftermath Records/Interscope Records»', [{
 		name: 'Shady Records',
